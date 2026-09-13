@@ -9,6 +9,7 @@ using NSubstitute;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Features.Ra;
 using RetroHiscore.Api.Features.Sync;
+using RetroHiscore.Api.Options;
 using Testcontainers.PostgreSql;
 
 namespace RetroHiscore.Api.Tests;
@@ -30,9 +31,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        await _postgres.StartAsync();
-        _connectionString = _postgres.GetConnectionString();
-        Directory.CreateDirectory(_systemIconStoragePath);
+        await EnsurePostgresStartedAsync();
 
         RaApiClient
             .GetConsoleIdsAsync(Arg.Any<CancellationToken>())
@@ -55,7 +54,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        var connectionString = _connectionString ?? _postgres.GetConnectionString();
+        EnsurePostgresStartedAsync().GetAwaiter().GetResult();
+        var connectionString = _connectionString!;
 
         builder.UseEnvironment("Testing");
         builder.ConfigureAppConfiguration((_, config) =>
@@ -79,6 +79,32 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
         builder.ConfigureServices(services =>
         {
+            services.RemoveAll<DbContextOptions<AppDbContext>>();
+            services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+
+            services.PostConfigure<AuthOptions>(options =>
+            {
+                options.JwtSigningKey = AuthTestHelper.TestSigningKey;
+                options.WebOrigin = "http://localhost";
+                options.AllowedDiscordUserIds = [AuthTestHelper.AllowedDiscordUserId];
+            });
+
+            services.PostConfigure<RaOptions>(options =>
+            {
+                options.ApiKey = "test-key";
+                options.Username = "test-user";
+                options.MediaBaseUrl = "https://media.retroachievements.org";
+            });
+
+            services.PostConfigure<SyncOptions>(options => options.ManualCooldownSeconds = 60);
+            services.PostConfigure<GameMetadataSyncOptions>(options => options.ManualCooldownSeconds = 300);
+            services.PostConfigure<ConsoleIconSyncOptions>(options =>
+            {
+                options.StoragePath = _systemIconStoragePath;
+                options.ManualCooldownSeconds = 300;
+                options.ForceRefresh = false;
+            });
+
             services.RemoveAll<IRaApiClient>();
             services.AddSingleton(RaApiClient);
             services.RemoveAll<IConsoleIconDownloader>();
@@ -99,8 +125,22 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await db.Database.EnsureDeletedAsync();
         await db.Database.MigrateAsync();
+
+        await db.Database.ExecuteSqlRawAsync(
+            """
+            DO $$ DECLARE
+                table_name text;
+            BEGIN
+                FOR table_name IN
+                    SELECT tablename FROM pg_tables
+                    WHERE schemaname = 'public' AND tablename <> '__EFMigrationsHistory'
+                LOOP
+                    EXECUTE format('TRUNCATE TABLE %I RESTART IDENTITY CASCADE', table_name);
+                END LOOP;
+            END $$;
+            """);
+
         await SeedData.EnsureSeededAsync(db, new RaOptions());
 
         if (Directory.Exists(_systemIconStoragePath))
@@ -110,5 +150,17 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 File.Delete(file);
             }
         }
+    }
+
+    private async Task EnsurePostgresStartedAsync()
+    {
+        if (_connectionString is not null)
+        {
+            return;
+        }
+
+        await _postgres.StartAsync();
+        _connectionString = _postgres.GetConnectionString();
+        Directory.CreateDirectory(_systemIconStoragePath);
     }
 }
