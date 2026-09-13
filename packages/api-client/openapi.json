@@ -1,0 +1,661 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Retro Hiscore API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/members": {
+      "get": {
+        "operationId": "getMembers",
+        "tags": ["Members"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/MemberDto" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/members/{raUsername}": {
+      "get": {
+        "operationId": "getMember",
+        "tags": ["Members"],
+        "parameters": [
+          {
+            "name": "raUsername",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberDetailDto" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/{raUsername}/history": {
+      "get": {
+        "operationId": "getMemberHistory",
+        "tags": ["Members"],
+        "parameters": [
+          {
+            "name": "raUsername",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberHistoryResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/games": {
+      "get": {
+        "operationId": "getGames",
+        "tags": ["Games"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/GameDto" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "addGame",
+        "tags": ["Games"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AddGameRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameDto" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/{raGameId}": {
+      "delete": {
+        "operationId": "deleteGame",
+        "tags": ["Games"],
+        "parameters": [
+          {
+            "name": "raGameId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "No Content" },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/games/{raGameId}/leaderboards": {
+      "get": {
+        "operationId": "getGameLeaderboards",
+        "tags": ["Games"],
+        "parameters": [
+          {
+            "name": "raGameId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameLeaderboardsResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/games/{raGameId}/history": {
+      "get": {
+        "operationId": "getGameHistory",
+        "tags": ["Games"],
+        "parameters": [
+          {
+            "name": "raGameId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameHistoryResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/leaderboards/{raLeaderboardId}": {
+      "get": {
+        "operationId": "getLeaderboard",
+        "tags": ["Leaderboards"],
+        "parameters": [
+          {
+            "name": "raLeaderboardId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LeaderboardDetailDto" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/leaderboards/{raLeaderboardId}/history": {
+      "get": {
+        "operationId": "getLeaderboardHistory",
+        "tags": ["Leaderboards"],
+        "parameters": [
+          {
+            "name": "raLeaderboardId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LeaderboardHistoryResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/sync": {
+      "post": {
+        "operationId": "triggerSync",
+        "tags": ["Sync"],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncAcceptedResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncCooldownResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/status": {
+      "get": {
+        "operationId": "getSyncStatus",
+        "tags": ["Sync"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncStatusDto" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/metadata": {
+      "post": {
+        "operationId": "triggerMetadataSync",
+        "tags": ["Sync"],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncAcceptedResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncCooldownResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/metadata/status": {
+      "get": {
+        "operationId": "getMetadataSyncStatus",
+        "tags": ["Sync"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncStatusDto" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/console-icons": {
+      "post": {
+        "operationId": "triggerConsoleIconSync",
+        "tags": ["Sync"],
+        "parameters": [
+          {
+            "name": "force",
+            "in": "query",
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncAcceptedResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncCooldownResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/console-icons/status": {
+      "get": {
+        "operationId": "getConsoleIconSyncStatus",
+        "tags": ["Sync"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncStatusDto" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddGameRequest": {
+        "type": "object",
+        "required": ["raGameId"],
+        "properties": {
+          "raGameId": { "type": "integer" }
+        }
+      },
+      "MemberDto": {
+        "type": "object",
+        "required": ["id", "raUsername", "displayName"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "raUlid": { "type": "string", "nullable": true },
+          "displayName": { "type": "string" }
+        }
+      },
+      "MemberStandingDto": {
+        "type": "object",
+        "required": ["raGameId", "gameTitle", "raLeaderboardId", "leaderboardTitle", "score", "formattedScore"],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "raLeaderboardId": { "type": "integer", "format": "int64" },
+          "leaderboardTitle": { "type": "string" },
+          "format": { "type": "string", "nullable": true },
+          "friendRank": { "type": "integer", "nullable": true },
+          "score": { "type": "integer", "format": "int64" },
+          "formattedScore": { "type": "string" }
+        }
+      },
+      "MemberDetailDto": {
+        "type": "object",
+        "required": ["id", "raUsername", "displayName", "boardsWithScore", "friendRankOnes", "standings"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "raUlid": { "type": "string", "nullable": true },
+          "displayName": { "type": "string" },
+          "boardsWithScore": { "type": "integer" },
+          "friendRankOnes": { "type": "integer" },
+          "standings": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberStandingDto" }
+          }
+        }
+      },
+      "MemberHistoryItemDto": {
+        "type": "object",
+        "required": ["id", "raGameId", "gameTitle", "raLeaderboardId", "leaderboardTitle", "score", "formattedScore", "syncedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "raLeaderboardId": { "type": "integer", "format": "int64" },
+          "leaderboardTitle": { "type": "string" },
+          "format": { "type": "string", "nullable": true },
+          "score": { "type": "integer", "format": "int64" },
+          "formattedScore": { "type": "string" },
+          "globalRank": { "type": "integer", "nullable": true },
+          "friendRank": { "type": "integer", "nullable": true },
+          "syncedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MemberHistoryResponse": {
+        "type": "object",
+        "required": ["total", "offset", "limit", "items"],
+        "properties": {
+          "total": { "type": "integer" },
+          "offset": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberHistoryItemDto" }
+          }
+        }
+      },
+      "GameDto": {
+        "type": "object",
+        "required": ["id", "raGameId", "title", "leaderboardCount"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "consoleName": { "type": "string", "nullable": true },
+          "consoleIconUrl": { "type": "string", "nullable": true },
+          "imageBoxArtUrl": { "type": "string", "nullable": true },
+          "imageIconUrl": { "type": "string", "nullable": true },
+          "imageTitleUrl": { "type": "string", "nullable": true },
+          "imageIngameUrl": { "type": "string", "nullable": true },
+          "leaderboardCount": { "type": "integer" }
+        }
+      },
+      "StandingMemberDto": {
+        "type": "object",
+        "required": ["id", "raUsername", "displayName"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" }
+        }
+      },
+      "FriendStandingDto": {
+        "type": "object",
+        "required": ["memberId", "raUsername", "displayName"],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "score": { "type": "integer", "format": "int64", "nullable": true },
+          "formattedScore": { "type": "string", "nullable": true },
+          "globalRank": { "type": "integer", "nullable": true },
+          "friendRank": { "type": "integer", "nullable": true },
+          "scoreUpdatedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "GameLeaderboardDto": {
+        "type": "object",
+        "required": ["id", "raLeaderboardId", "title", "rankAsc", "standings"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raLeaderboardId": { "type": "integer", "format": "int64" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "format": { "type": "string", "nullable": true },
+          "rankAsc": { "type": "boolean" },
+          "standings": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FriendStandingDto" }
+          }
+        }
+      },
+      "GameLeaderboardsResponse": {
+        "type": "object",
+        "required": ["gameId", "raGameId", "title", "members", "leaderboards"],
+        "properties": {
+          "gameId": { "type": "string", "format": "uuid" },
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "consoleName": { "type": "string", "nullable": true },
+          "consoleIconUrl": { "type": "string", "nullable": true },
+          "imageBoxArtUrl": { "type": "string", "nullable": true },
+          "imageIconUrl": { "type": "string", "nullable": true },
+          "imageTitleUrl": { "type": "string", "nullable": true },
+          "imageIngameUrl": { "type": "string", "nullable": true },
+          "publisher": { "type": "string", "nullable": true },
+          "developer": { "type": "string", "nullable": true },
+          "genre": { "type": "string", "nullable": true },
+          "releasedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "metadataSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "members": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/StandingMemberDto" }
+          },
+          "leaderboards": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameLeaderboardDto" }
+          }
+        }
+      },
+      "GameHistoryItemDto": {
+        "type": "object",
+        "required": ["id", "memberId", "raUsername", "displayName", "raLeaderboardId", "leaderboardTitle", "score", "formattedScore", "syncedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "raLeaderboardId": { "type": "integer", "format": "int64" },
+          "leaderboardTitle": { "type": "string" },
+          "format": { "type": "string", "nullable": true },
+          "score": { "type": "integer", "format": "int64" },
+          "formattedScore": { "type": "string" },
+          "globalRank": { "type": "integer", "nullable": true },
+          "friendRank": { "type": "integer", "nullable": true },
+          "syncedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "GameHistoryResponse": {
+        "type": "object",
+        "required": ["total", "offset", "limit", "items"],
+        "properties": {
+          "total": { "type": "integer" },
+          "offset": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameHistoryItemDto" }
+          }
+        }
+      },
+      "LeaderboardDetailDto": {
+        "type": "object",
+        "required": ["id", "raLeaderboardId", "raGameId", "gameTitle", "title", "rankAsc", "standings"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raLeaderboardId": { "type": "integer", "format": "int64" },
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "format": { "type": "string", "nullable": true },
+          "rankAsc": { "type": "boolean" },
+          "standings": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FriendStandingDto" }
+          }
+        }
+      },
+      "LeaderboardHistoryItemDto": {
+        "type": "object",
+        "required": ["id", "memberId", "raUsername", "displayName", "score", "formattedScore", "syncedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "score": { "type": "integer", "format": "int64" },
+          "formattedScore": { "type": "string" },
+          "globalRank": { "type": "integer", "nullable": true },
+          "friendRank": { "type": "integer", "nullable": true },
+          "syncedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "LeaderboardHistoryResponse": {
+        "type": "object",
+        "required": ["total", "offset", "limit", "items"],
+        "properties": {
+          "total": { "type": "integer" },
+          "offset": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/LeaderboardHistoryItemDto" }
+          }
+        }
+      },
+      "SyncAcceptedResponse": {
+        "type": "object",
+        "required": ["jobId"],
+        "properties": {
+          "jobId": { "type": "string" }
+        }
+      },
+      "SyncCooldownResponse": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": { "type": "string" },
+          "availableAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "SyncStatusDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "nullable": true },
+          "trigger": { "type": "string", "nullable": true },
+          "status": { "type": "string", "nullable": true },
+          "startedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "finishedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "error": { "type": "string", "nullable": true }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+**/node_modules
+**/.next
+**/bin
+**/obj
+**/.git
+**/cypress/videos
+**/cypress/screenshots
+**/coverage
+**/TestResults
+**/.env
+**/.env.*
+!**/.env.example

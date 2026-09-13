@@ -1,0 +1,92 @@
+import Link from "next/link";
+import { FriendRank } from "@/components/friend-rank";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { LeaderboardHistoryItemDto } from "@/generated/api-client";
+import { formatSyncTime } from "@/lib/format";
+
+type Props = {
+  items: LeaderboardHistoryItemDto[];
+};
+
+export function LeaderboardHistorySection({ items }: Props) {
+  return (
+    <>
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Synced</TableHead>
+              <TableHead>Player</TableHead>
+              <TableHead className="text-right">Score</TableHead>
+              <TableHead className="text-right">Friend</TableHead>
+              <TableHead className="text-right">Global</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="text-xs text-muted-foreground">
+                  {formatSyncTime(item.syncedAt)}
+                </TableCell>
+                <TableCell>
+                  <Link
+                    href={`/members/${encodeURIComponent(item.raUsername)}`}
+                    className="hover:text-[var(--accent-retro)]"
+                  >
+                    {item.displayName}
+                  </Link>
+                </TableCell>
+                <TableCell className="text-right font-mono">{item.formattedScore}</TableCell>
+                <TableCell className="text-right font-mono">
+                  <FriendRank rank={item.friendRank} className="justify-end" />
+                </TableCell>
+                <TableCell className="text-right font-mono text-muted-foreground">
+                  {item.globalRank != null ? `#${item.globalRank}` : "—"}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <ul className="space-y-3 md:hidden">
+        {items.map((item) => (
+          <li
+            key={item.id}
+            className="rounded border border-border bg-card p-4 text-sm"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <Link
+                href={`/members/${encodeURIComponent(item.raUsername)}`}
+                className="font-medium hover:text-[var(--accent-retro)]"
+              >
+                {item.displayName}
+              </Link>
+              <span className="font-mono text-lg">{item.formattedScore}</span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span>{formatSyncTime(item.syncedAt)}</span>
+              <span>
+                Friend{" "}
+                <FriendRank rank={item.friendRank} className="inline-flex" iconClassName="size-3" />
+              </span>
+              <span>
+                Global{" "}
+                <span className="font-mono text-foreground">
+                  {item.globalRank != null ? `#${item.globalRank}` : "—"}
+                </span>
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}

@@ -1,0 +1,55 @@
+[tools]
+node = "24"
+dotnet = "10"
+
+[tasks.api]
+description = "Run the API"
+dir = "apps/api"
+run = "dotnet run --urls http://localhost:18943"
+
+[tasks.web]
+description = "Run the Next.js frontend"
+dir = "apps/web"
+run = "npm run dev -- --port 18321"
+
+[tasks.test]
+description = "Run API and web unit tests"
+run = "dotnet test apps/api.tests/RetroHiscore.Api.Tests.csproj && npm --prefix apps/web test -- --passWithNoTests"
+
+[tasks.test-api]
+description = "Run API tests"
+run = "dotnet test apps/api.tests/RetroHiscore.Api.Tests.csproj"
+
+[tasks.test-web]
+description = "Run web unit tests"
+dir = "apps/web"
+run = "npm test"
+
+[tasks.cypress]
+description = "Run Cypress e2e"
+dir = "apps/web"
+run = "npm run cypress:run"
+
+[tasks."docker:up"]
+description = "Start local stack with hot reload"
+run = "docker compose --profile dev up --build -d"
+
+[tasks."docker:up:prod"]
+description = "Start production-like stack (no hot reload)"
+run = "docker compose --profile prod up --build -d"
+
+[tasks."docker:down"]
+description = "Stop local stack"
+run = "docker compose down"
+
+[tasks."docker:refresh-deps"]
+description = "Recreate web node_modules volume after dependency changes"
+run = "docker compose --profile dev down && docker volume rm -f retrohiscore_web_node_modules && docker compose --profile dev up --build -d"
+
+[tasks."generate-client"]
+description = "Generate OpenAPI TypeScript client from running API"
+run = "node scripts/generate-api-client.mjs"
+
+[tasks.build]
+description = "Build API and web"
+run = "dotnet build RetroHiscore.slnx && npm --prefix apps/web run build"

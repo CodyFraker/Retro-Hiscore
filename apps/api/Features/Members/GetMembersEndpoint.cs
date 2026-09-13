@@ -1,0 +1,47 @@
+using Microsoft.EntityFrameworkCore;
+using RetroHiscore.Api.Data;
+using RetroHiscore.Api.Infrastructure;
+
+namespace RetroHiscore.Api.Features.Members;
+
+public static class GetMembersEndpoint
+{
+    public static RouteHandlerBuilder MapGetMembers(this IEndpointRouteBuilder routes)
+        => routes.MapGet("/api/members", async (AppDbContext db, CancellationToken ct) =>
+        {
+            var members = await db.Members
+                .Select(m => new
+                {
+                    m.Id,
+                    m.RaUsername,
+                    m.RaUlid,
+                    DisplayName = m.DisplayName ?? m.RaUsername,
+                    BoardsWithScore = m.Entries.Count,
+                    FriendRankOnes = m.Entries.Count(e => e.FriendRank == 1)
+                })
+                .OrderByDescending(m => m.FriendRankOnes)
+                .ThenBy(m => m.RaUsername)
+                .Select(m => new MemberDto(
+                    m.Id,
+                    m.RaUsername,
+                    m.RaUlid,
+                    m.DisplayName,
+                    m.BoardsWithScore,
+                    m.FriendRankOnes))
+                .ToListAsync(ct);
+
+            return Results.Ok(members);
+        })
+        .WithName("GetMembers")
+        .WithTags("Members")
+        .WithSummary("Returns tracked members with competitive standings.")
+        .RequireApiAuth();
+}
+
+public sealed record MemberDto(
+    Guid Id,
+    string RaUsername,
+    string? RaUlid,
+    string DisplayName,
+    int BoardsWithScore,
+    int FriendRankOnes);

@@ -1,0 +1,160 @@
+name: RetroHiscore
+
+x-api-environment: &api-environment
+  ConnectionStrings__Default: ${ConnectionStrings__Default:-Host=postgres;Port=5432;Database=retrohiscore;Username=retrohiscore;Password=retrohiscore}
+  ASPNETCORE_URLS: http://+:8080
+  ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+  RA__Username: ${RA__Username:-}
+  RA__ApiKey: ${RA__ApiKey:-}
+  Sync__IntervalMinutes: ${Sync__IntervalMinutes:-15}
+  Sync__ManualCooldownSeconds: ${Sync__ManualCooldownSeconds:-60}
+  GameMetadataSync__ManualCooldownSeconds: ${GameMetadataSync__ManualCooldownSeconds:-300}
+  ConsoleIconSync__StoragePath: ${ConsoleIconSync__StoragePath:-/data/system-icons}
+  ConsoleIconSync__ManualCooldownSeconds: ${ConsoleIconSync__ManualCooldownSeconds:-300}
+  ConsoleIconSync__ForceRefresh: ${ConsoleIconSync__ForceRefresh:-false}
+  RA__MediaBaseUrl: ${RA__MediaBaseUrl:-https://media.retroachievements.org}
+  Hangfire__DashboardSecret: ${Hangfire__DashboardSecret:-}
+  Scalar__DashboardSecret: ${Scalar__DashboardSecret:-}
+  Notifications__DiscordWebhookUrl: ${Notifications__DiscordWebhookUrl:-}
+  Notifications__NotifyOnRankChange: ${Notifications__NotifyOnRankChange:-true}
+  Notifications__NotifyOnNewLead: ${Notifications__NotifyOnNewLead:-true}
+  Auth__JwtSigningKey: ${AUTH_SECRET:-}
+  Auth__WebOrigin: ${AUTH_URL:-http://localhost:18321}
+  AUTH_ALLOWED_DISCORD_USER_IDS: ${AUTH_ALLOWED_DISCORD_USER_IDS:-}
+
+x-web-environment: &web-environment
+  NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:18943}
+  API_URL: ${API_URL:-http://api:8080}
+  AUTH_SECRET: ${AUTH_SECRET:-}
+  AUTH_URL: ${AUTH_URL:-http://localhost:18321}
+  AUTH_DISCORD_ID: ${AUTH_DISCORD_ID:-}
+  AUTH_DISCORD_SECRET: ${AUTH_DISCORD_SECRET:-}
+  AUTH_ALLOWED_DISCORD_USER_IDS: ${AUTH_ALLOWED_DISCORD_USER_IDS:-}
+  NEXTAUTH_URL: ${AUTH_URL:-http://localhost:18321}
+  NEXTAUTH_SECRET: ${AUTH_SECRET:-}
+
+services:
+  postgres:
+    container_name: RetroHiscore-postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-retrohiscore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-retrohiscore}
+      POSTGRES_DB: ${POSTGRES_DB:-retrohiscore}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-retrohiscore} -d ${POSTGRES_DB:-retrohiscore}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    profiles: [dev]
+    container_name: RetroHiscore-api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    ports:
+      - "18943:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *api-environment
+      DOTNET_USE_POLLING_FILE_WATCHER: "1"
+      DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH: "1"
+    volumes:
+      - system_icons_data:/data/system-icons
+      - ./apps/api:/src/apps/api
+      - api_bin:/src/apps/api/bin
+      - api_obj:/src/apps/api/obj
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api-prod:
+    profiles: [prod]
+    container_name: RetroHiscore-api
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "18943:8080"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *api-environment
+    volumes:
+      - system_icons_data:/data/system-icons
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      default:
+        aliases:
+          - api
+
+  web:
+    profiles: [dev]
+    container_name: RetroHiscore-web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    ports:
+      - "18321:3000"
+    environment:
+      <<: *web-environment
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./apps/web:/app
+      - web_node_modules:/app/node_modules
+      - web_next:/app/.next
+    depends_on:
+      - api
+
+  web-prod:
+    profiles: [prod]
+    container_name: RetroHiscore-web
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:18943}
+    ports:
+      - "18321:3000"
+    environment:
+      <<: *web-environment
+      API_URL: ${API_URL:-http://api-prod:8080}
+    depends_on:
+      - api-prod
+    networks:
+      default:
+        aliases:
+          - web
+
+  caddy:
+    container_name: RetroHiscore-caddy
+    image: caddy:2-alpine
+    profiles:
+      - proxy
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - api
+      - web
+      - api-prod
+      - web-prod
+
+volumes:
+  postgres_data:
+    name: RetroHiscore_postgres_data
+  system_icons_data:
+    name: RetroHiscore_system_icons_data
+  api_bin:
+  api_obj:
+  web_node_modules:
+  web_next:
