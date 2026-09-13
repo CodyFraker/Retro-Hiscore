@@ -19,6 +19,8 @@ jobs:
           dotnet-version: "10.0.x"
       - name: Test API
         run: dotnet test apps/api.tests/RetroHiscore.Api.Tests.csproj --configuration Release
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: true
 
   test-web:
     runs-on: ubuntu-latest

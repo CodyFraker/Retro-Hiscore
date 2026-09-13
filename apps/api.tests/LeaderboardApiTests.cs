@@ -12,7 +12,8 @@ using Shouldly;
 
 namespace RetroHiscore.Api.Tests;
 
-public class LeaderboardApiTests : IClassFixture<ApiFactory>, IAsyncLifetime
+[Collection("Integration")]
+public class LeaderboardApiTests : IAsyncLifetime
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

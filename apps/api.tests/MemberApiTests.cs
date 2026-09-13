@@ -10,7 +10,8 @@ using Shouldly;
 
 namespace RetroHiscore.Api.Tests;
 
-public class MemberApiTests : IClassFixture<ApiFactory>, IAsyncLifetime
+[Collection("Integration")]
+public class MemberApiTests : IAsyncLifetime
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

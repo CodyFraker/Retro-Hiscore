@@ -4,7 +4,8 @@ using Shouldly;
 
 namespace RetroHiscore.Api.Tests;
 
-public class AuthApiTests : IClassFixture<ApiFactory>
+[Collection("Integration")]
+public class AuthApiTests
 {
     private readonly ApiFactory _factory;
 

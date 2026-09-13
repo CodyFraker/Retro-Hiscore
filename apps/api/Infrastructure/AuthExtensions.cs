@@ -29,7 +29,10 @@ public static class AuthExtensions
                 $"{AuthOptions.SectionName}:JwtSigningKey is required outside the Testing environment.");
         }
 
-        signingKey ??= "test-signing-key-for-integration-tests-only";
+        if (string.IsNullOrWhiteSpace(signingKey))
+        {
+            signingKey = "test-signing-key-for-integration-tests-only";
+        }
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

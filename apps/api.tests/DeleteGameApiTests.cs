@@ -7,7 +7,8 @@ using Shouldly;
 
 namespace RetroHiscore.Api.Tests;
 
-public class DeleteGameApiTests : IClassFixture<ApiFactory>, IAsyncLifetime
+[Collection("Integration")]
+public class DeleteGameApiTests : IAsyncLifetime
 {
     private readonly ApiFactory _factory;
 
