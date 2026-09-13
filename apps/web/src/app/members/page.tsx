@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { RivalryPicker } from "@/components/rivalry/rivalry-picker";
+import type { MemberDto } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function MembersPage() {
-  let members: Awaited<ReturnType<ReturnType<typeof getServerApiClient>["getMembers"]>> = [];
+  let members: MemberDto[] = [];
   let error: string | null = null;
 
   try {
-    members = await (await getServerApiClient()).getMembers();
+    const api = await getServerApiClient();
+    members = await api.getMembers();
   } catch (err) {
     error = err instanceof Error ? err.message : "Failed to load members";
   }

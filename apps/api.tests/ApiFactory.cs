@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NSubstitute;
@@ -57,18 +58,24 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         var connectionString = _connectionString ?? _postgres.GetConnectionString();
 
         builder.UseEnvironment("Testing");
-        builder.UseSetting("ConnectionStrings:Default", connectionString);
-        builder.UseSetting("Sync:ManualCooldownSeconds", "60");
-        builder.UseSetting("GameMetadataSync:ManualCooldownSeconds", "300");
-        builder.UseSetting("ConsoleIconSync:StoragePath", _systemIconStoragePath);
-        builder.UseSetting("ConsoleIconSync:ManualCooldownSeconds", "300");
-        builder.UseSetting("ConsoleIconSync:ForceRefresh", "false");
-        builder.UseSetting("RA:ApiKey", "test-key");
-        builder.UseSetting("RA:Username", "test-user");
-        builder.UseSetting("RA:MediaBaseUrl", "https://media.retroachievements.org");
-        builder.UseSetting("Auth:JwtSigningKey", AuthTestHelper.TestSigningKey);
-        builder.UseSetting("Auth:AllowedDiscordUserIds:0", AuthTestHelper.AllowedDiscordUserId);
-        builder.UseSetting("Auth:WebOrigin", "http://localhost");
+        builder.ConfigureAppConfiguration((_, config) =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:Default"] = connectionString,
+                ["Sync:ManualCooldownSeconds"] = "60",
+                ["GameMetadataSync:ManualCooldownSeconds"] = "300",
+                ["ConsoleIconSync:StoragePath"] = _systemIconStoragePath,
+                ["ConsoleIconSync:ManualCooldownSeconds"] = "300",
+                ["ConsoleIconSync:ForceRefresh"] = "false",
+                ["RA:ApiKey"] = "test-key",
+                ["RA:Username"] = "test-user",
+                ["RA:MediaBaseUrl"] = "https://media.retroachievements.org",
+                ["Auth:JwtSigningKey"] = AuthTestHelper.TestSigningKey,
+                ["Auth:AllowedDiscordUserIds:0"] = AuthTestHelper.AllowedDiscordUserId,
+                ["Auth:WebOrigin"] = "http://localhost",
+            });
+        });
 
         builder.ConfigureServices(services =>
         {

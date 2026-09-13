@@ -5,16 +5,18 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { TrackedGamesSection } from "@/components/dashboard/tracked-games-section";
 import { countActivityByGameId } from "@/lib/dashboard-games";
+import type { DashboardResponse } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  let dashboard: Awaited<ReturnType<ReturnType<typeof getServerApiClient>["getDashboard"]>> | null = null;
+  let dashboard: DashboardResponse | null = null;
   let error: string | null = null;
 
   try {
-    dashboard = await (await getServerApiClient()).getDashboard();
+    const api = await getServerApiClient();
+    dashboard = await api.getDashboard();
   } catch (err) {
     error = err instanceof Error ? err.message : "Failed to load dashboard";
   }

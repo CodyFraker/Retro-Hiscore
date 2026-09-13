@@ -12,7 +12,7 @@ function formatAddGameError(error: unknown): string {
     return "Failed to add game";
   }
 
-  const match = error.message.match(/^API (\d+):\s*(.*)$/s);
+  const match = error.message.match(/^API (\d+):\s*([\s\S]*)$/);
   if (!match) {
     return error.message;
   }
