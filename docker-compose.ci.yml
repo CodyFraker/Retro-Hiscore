@@ -1,0 +1,31 @@
+# Run GitHub Actions-equivalent test jobs locally in Linux containers.
+# Requires Docker Desktop (or Docker Engine) with the default socket available.
+#
+#   docker compose -f docker-compose.ci.yml run --rm ci-test-api
+#   docker compose -f docker-compose.ci.yml run --rm ci-test-web
+#
+# Or: mise run ci:local
+
+services:
+  ci-test-api:
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    working_dir: /src
+    volumes:
+      - .:/src
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      TESTCONTAINERS_RYUK_DISABLED: "true"
+      TESTCONTAINERS_HOST_OVERRIDE: host.docker.internal
+      DOCKER_HOST: unix:///var/run/docker.sock
+    command: dotnet test apps/api.tests/RetroHiscore.Api.Tests.csproj --configuration Release
+
+  ci-test-web:
+    image: node:24-bookworm-slim
+    working_dir: /src
+    volumes:
+      - .:/src
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost
+    command: bash -c "cd apps/web && npm ci && npm test && npm run build"

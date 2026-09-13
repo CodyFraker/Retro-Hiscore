@@ -50,6 +50,25 @@ npm --prefix apps/web test
 npm --prefix apps/web run cypress:run   # web app must be running with intercepts or mocks
 ```
 
+### Run CI locally (Linux containers)
+
+API integration tests use Testcontainers and behave like GitHub Actions only inside Linux with Docker socket access. Run the same CI jobs locally before pushing:
+
+```bash
+# both test-api and test-web
+mise run ci:local
+
+# or individually
+mise run ci:local:api
+mise run ci:local:web
+
+# without mise
+./scripts/ci-local.sh all        # Git Bash / WSL / macOS / Linux
+pwsh ./scripts/ci-local.ps1 -Job all
+```
+
+Requires Docker Desktop (or Docker Engine). The API job mounts `/var/run/docker.sock` so Testcontainers can start Postgres, matching the [CI workflow](.github/workflows/ci.yml).
+
 ## Tracked v1 data
 
 - Games: `38130`, `2291`, `789`

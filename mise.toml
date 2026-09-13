@@ -25,6 +25,18 @@ description = "Run web unit tests"
 dir = "apps/web"
 run = "npm test"
 
+[tasks."ci:local"]
+description = "Run CI test jobs locally in Linux containers (matches GitHub Actions)"
+run = "docker compose -f docker-compose.ci.yml run --rm ci-test-api && docker compose -f docker-compose.ci.yml run --rm ci-test-web"
+
+[tasks."ci:local:api"]
+description = "Run the CI test-api job locally in a Linux container"
+run = "docker compose -f docker-compose.ci.yml run --rm ci-test-api"
+
+[tasks."ci:local:web"]
+description = "Run the CI test-web job locally in a Linux container"
+run = "docker compose -f docker-compose.ci.yml run --rm ci-test-web"
+
 [tasks.cypress]
 description = "Run Cypress e2e"
 dir = "apps/web"

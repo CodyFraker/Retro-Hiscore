@@ -162,7 +162,7 @@ public class ConsoleIconSyncApiTests : IAsyncLifetime
 
         using var syncScope = _factory.Services.CreateScope();
         var sync = syncScope.ServiceProvider.GetRequiredService<IConsoleIconSyncService>();
-        await sync.SyncAsync(SyncTrigger.Manual);
+        await sync.SyncAsync(SyncTrigger.Scheduled);
         _factory.ConsoleIconDownloader.ClearReceivedCalls();
 
         // Act

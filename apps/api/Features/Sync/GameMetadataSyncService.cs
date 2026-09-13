@@ -1,4 +1,5 @@
 using Hangfire;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
@@ -147,7 +148,16 @@ public sealed class GameMetadataSyncService(
             return null;
         }
 
-        return DateTimeOffset.TryParse(released, out var parsed) ? parsed : null;
+        if (!DateTimeOffset.TryParse(
+                released,
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
+                out var parsed))
+        {
+            return null;
+        }
+
+        return parsed.ToUniversalTime();
     }
 }
 

@@ -249,7 +249,7 @@ public sealed class LeaderboardSyncService(
             entry.Score = board.UserEntry.Score;
             entry.FormattedScore = board.UserEntry.FormattedScore;
             entry.GlobalRank = board.UserEntry.Rank;
-            entry.ScoreUpdatedAt = board.UserEntry.DateUpdated;
+            entry.ScoreUpdatedAt = board.UserEntry.DateUpdated?.ToUniversalTime();
             entry.SyncedAt = syncedAt;
 
             db.LeaderboardEntrySnapshots.Add(new LeaderboardEntrySnapshot

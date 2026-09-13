@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NSubstitute;
+using NSubstitute.ClearExtensions;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Features.Ra;
 using RetroHiscore.Api.Features.Sync;
@@ -32,14 +33,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     public async Task InitializeAsync()
     {
         await EnsurePostgresStartedAsync();
-
-        RaApiClient
-            .GetConsoleIdsAsync(Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<RaConsoleIdDto>>([]));
-
-        ConsoleIconDownloader
-            .DownloadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }));
+        ResetMocks();
     }
 
     public new async Task DisposeAsync()
@@ -121,8 +115,24 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         return client;
     }
 
+    public void ResetMocks()
+    {
+        RaApiClient.ClearSubstitute();
+        ConsoleIconDownloader.ClearSubstitute();
+
+        RaApiClient
+            .GetConsoleIdsAsync(Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<RaConsoleIdDto>>([]));
+
+        ConsoleIconDownloader
+            .DownloadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }));
+    }
+
     public async Task ResetDatabaseAsync()
     {
+        ResetMocks();
+
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await db.Database.MigrateAsync();
