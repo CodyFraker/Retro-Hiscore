@@ -5,10 +5,12 @@ using RetroHiscore.Api.Domain;
 
 namespace RetroHiscore.Api.Features.Sync;
 
-public sealed class RecurringSyncJobRegistrar(AppDbContext db) : IRecurringSyncJobRegistrar
+public sealed class RecurringSyncJobRegistrar(IRecurringJobManager recurringJobs, AppDbContext db) : IRecurringSyncJobRegistrar
 {
     public async Task RegisterAllAsync(CancellationToken cancellationToken = default)
     {
+        recurringJobs.RemoveIfExists("ra-leaderboard-sync");
+
         var jobs = await db.SyncRecurringJobs.AsNoTracking().ToListAsync(cancellationToken);
         foreach (var job in jobs)
         {
@@ -16,30 +18,30 @@ public sealed class RecurringSyncJobRegistrar(AppDbContext db) : IRecurringSyncJ
         }
     }
 
-    private static void Register(SyncRecurringJob job)
+    private void Register(SyncRecurringJob job)
     {
         switch (job.JobId)
         {
             case SyncRecurringJobIds.MemberActivity:
-                RecurringJob.AddOrUpdate<MemberActivitySyncJob>(
+                recurringJobs.AddOrUpdate<MemberActivitySyncJob>(
                     job.JobId,
                     x => x.RunScheduledAsync(CancellationToken.None),
                     SyncRecurringJobCron.ForMinuteInterval(job.IntervalMinutes ?? 15, 1, 60));
                 break;
             case SyncRecurringJobIds.LeaderboardDispatch:
-                RecurringJob.AddOrUpdate<LeaderboardSyncDispatchJob>(
+                recurringJobs.AddOrUpdate<LeaderboardSyncDispatchJob>(
                     job.JobId,
                     x => x.RunScheduledAsync(CancellationToken.None),
                     SyncRecurringJobCron.ForMinuteInterval(job.IntervalMinutes ?? 5, 1, 60));
                 break;
             case SyncRecurringJobIds.MemberRank:
-                RecurringJob.AddOrUpdate<MemberRankSyncJob>(
+                recurringJobs.AddOrUpdate<MemberRankSyncJob>(
                     job.JobId,
                     x => x.RunScheduledAsync(CancellationToken.None),
                     SyncRecurringJobCron.ForMinuteInterval(job.IntervalMinutes ?? 60, 1, 60 * 24));
                 break;
             case SyncRecurringJobIds.GameMetadata:
-                RecurringJob.AddOrUpdate<GameMetadataSyncJob>(
+                recurringJobs.AddOrUpdate<GameMetadataSyncJob>(
                     job.JobId,
                     x => x.RunScheduledAsync(CancellationToken.None),
                     SyncRecurringJobCron.ForIntervalDays(job.IntervalDays ?? 7));

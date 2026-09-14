@@ -113,7 +113,6 @@ if (!isTesting)
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
-    RecurringJob.RemoveIfExists("ra-leaderboard-sync");
     var registrar = scope.ServiceProvider.GetRequiredService<IRecurringSyncJobRegistrar>();
     await registrar.RegisterAllAsync();
 }
