@@ -4,37 +4,10 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { useApiClient } from "@/lib/use-api-client";
+import { postAdminGameAction } from "@/lib/actions/admin";
 import { parseRaGameIdInput } from "@/lib/dashboard-games";
 
-function formatAddGameError(error: unknown): string {
-  if (!(error instanceof Error)) {
-    return "Failed to add game";
-  }
-
-  const match = error.message.match(/^API (\d+):\s*([\s\S]*)$/);
-  if (!match) {
-    return error.message;
-  }
-
-  const status = Number(match[1]);
-  const body = match[2];
-  const messageMatch = body.match(/"message"\s*:\s*"([^"]+)"/);
-  if (messageMatch?.[1]) {
-    return messageMatch[1];
-  }
-
-  if (status === 409) {
-    return "That game is already tracked.";
-  }
-  if (status === 404) {
-    return "Game not found on RetroAchievements.";
-  }
-  return error.message;
-}
-
 export function AddGameForm() {
-  const api = useApiClient();
   const router = useRouter();
   const [input, setInput] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -56,15 +29,15 @@ export function AddGameForm() {
         startTransition(async () => {
           setError(null);
           setMessage(null);
-          try {
-            const game = await api.postAdminGame(parsed);
-            setInput("");
-            setMessage(`Added ${game.title}`);
-            router.push(`/admin/games/${game.raGameId}`);
-            router.refresh();
-          } catch (err) {
-            setError(formatAddGameError(err));
+          const result = await postAdminGameAction(parsed);
+          if (!result.ok) {
+            setError(result.error);
+            return;
           }
+          setInput("");
+          setMessage(`Added ${result.game.title}`);
+          router.push(`/admin/games/${result.game.raGameId}`);
+          router.refresh();
         });
       }}
     >

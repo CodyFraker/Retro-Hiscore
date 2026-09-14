@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { useApiClient } from "@/lib/use-api-client";
+import { triggerScoreSyncAction } from "@/lib/actions/sync";
 
 type Props = {
   disabledReason?: string | null;
@@ -13,24 +13,19 @@ type Props = {
 };
 
 export function RefreshButton({ disabledReason, variant = "button" }: Props) {
-  const api = useApiClient();
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const runSync = () => {
     startTransition(async () => {
-      try {
-        const result = await api.triggerSync();
-        if (!result.ok) {
-          setMessage(result.body.message);
-          return;
-        }
-        setMessage("Sync queued");
-        router.refresh();
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : "Sync failed");
+      const result = await triggerScoreSyncAction();
+      if (!result.ok) {
+        setMessage(result.message);
+        return;
       }
+      setMessage(result.message);
+      router.refresh();
     });
   };
 

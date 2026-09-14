@@ -10,7 +10,12 @@ import {
   GAME_SOURCE_TYPE_OPTIONS,
   gameSourceTypeLabel,
 } from "@/lib/game-source-labels";
-import { useApiClient } from "@/lib/use-api-client";
+import {
+  deleteAdminGameAction,
+  deleteAdminGameSourceAction,
+  postAdminGameRefreshAction,
+  upsertAdminGameSourceAction,
+} from "@/lib/actions/admin";
 
 type Props = {
   game: AdminGameDto;
@@ -26,7 +31,6 @@ const emptyForm: UpsertGameSourceRequest = {
 };
 
 export function AdminGameManagePanel({ game, initialSources }: Props) {
-  const api = useApiClient();
   const router = useRouter();
   const [sources, setSources] = useState(initialSources);
   const [form, setForm] = useState<UpsertGameSourceRequest>(emptyForm);
@@ -79,12 +83,12 @@ export function AdminGameManagePanel({ game, initialSources }: Props) {
             onClick={() => {
               startTransition(async () => {
                 setError(null);
-                try {
-                  await api.postAdminGameRefresh(game.raGameId);
-                  router.refresh();
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : "Refresh failed");
+                const result = await postAdminGameRefreshAction(game.raGameId);
+                if (!result.ok) {
+                  setError(result.error);
+                  return;
                 }
+                router.refresh();
               });
             }}
           >
@@ -101,13 +105,13 @@ export function AdminGameManagePanel({ game, initialSources }: Props) {
               }
               startTransition(async () => {
                 setError(null);
-                try {
-                  await api.deleteAdminGame(game.raGameId);
-                  router.push("/admin/games");
-                  router.refresh();
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : "Delete failed");
+                const result = await deleteAdminGameAction(game.raGameId);
+                if (!result.ok) {
+                  setError(result.error);
+                  return;
                 }
+                router.push("/admin/games");
+                router.refresh();
               });
             }}
           >
@@ -151,16 +155,16 @@ export function AdminGameManagePanel({ game, initialSources }: Props) {
                     onClick={() => {
                       startTransition(async () => {
                         setError(null);
-                        try {
-                          await api.deleteAdminGameSource(game.raGameId, source.id);
-                          setSources((prev) => prev.filter((s) => s.id !== source.id));
-                          if (editingId === source.id) {
-                            resetForm();
-                          }
-                          router.refresh();
-                        } catch (err) {
-                          setError(err instanceof Error ? err.message : "Delete failed");
+                        const result = await deleteAdminGameSourceAction(game.raGameId, source.id);
+                        if (!result.ok) {
+                          setError(result.error);
+                          return;
                         }
+                        setSources((prev) => prev.filter((s) => s.id !== source.id));
+                        if (editingId === source.id) {
+                          resetForm();
+                        }
+                        router.refresh();
                       });
                     }}
                   >
@@ -178,28 +182,23 @@ export function AdminGameManagePanel({ game, initialSources }: Props) {
             event.preventDefault();
             startTransition(async () => {
               setError(null);
-              try {
-                const payload: UpsertGameSourceRequest = {
-                  ...form,
-                  label: form.label?.trim() || null,
-                  note: form.note?.trim() || null,
-                };
-                if (editingId) {
-                  const updated = await api.putAdminGameSource(game.raGameId, editingId, payload);
-                  setSources((prev) =>
-                    prev
-                      .map((s) => (s.id === editingId ? updated : s))
-                      .sort((a, b) => a.sortOrder - b.sortOrder),
-                  );
-                } else {
-                  const created = await api.postAdminGameSource(game.raGameId, payload);
-                  setSources((prev) => [...prev, created].sort((a, b) => a.sortOrder - b.sortOrder));
-                }
-                resetForm();
-                router.refresh();
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Save failed");
+              const result = await upsertAdminGameSourceAction(game.raGameId, editingId, form);
+              if (!result.ok) {
+                setError(result.error);
+                return;
               }
+              const saved = result.source;
+              if (editingId) {
+                setSources((prev) =>
+                  prev
+                    .map((s) => (s.id === editingId ? saved : s))
+                    .sort((a, b) => a.sortOrder - b.sortOrder),
+                );
+              } else {
+                setSources((prev) => [...prev, saved].sort((a, b) => a.sortOrder - b.sortOrder));
+              }
+              resetForm();
+              router.refresh();
             });
           }}
         >

@@ -4,10 +4,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { useApiClient } from "@/lib/use-api-client";
+import { saveMemberRaAccountAction } from "@/lib/actions/settings";
 
 export function RaAccountForm() {
-  const api = useApiClient();
   const router = useRouter();
   const { update } = useSession();
   const [raUsername, setRaUsername] = useState("");
@@ -20,21 +19,17 @@ export function RaAccountForm() {
       className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!raUsername.trim() || !apiKey.trim()) {
-          setError("Enter your RetroAchievements username and API key.");
-          return;
-        }
 
         startTransition(async () => {
           setError(null);
-          try {
-            await api.putMemberRaAccount(raUsername.trim(), apiKey.trim());
-            await update({ needsOnboarding: false });
-            setApiKey("");
-            router.refresh();
-          } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to save account");
+          const result = await saveMemberRaAccountAction(raUsername, apiKey);
+          if (!result.ok) {
+            setError(result.error);
+            return;
           }
+          await update({ needsOnboarding: false });
+          setApiKey("");
+          router.refresh();
         });
       }}
     >

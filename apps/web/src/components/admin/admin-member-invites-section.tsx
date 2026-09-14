@@ -12,14 +12,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useApiClient } from "@/lib/use-api-client";
+import {
+  deleteAdminMemberInviteAction,
+  postAdminMemberInviteAction,
+} from "@/lib/actions/admin";
 
 type Props = {
   initialInvites: AdminMemberInviteDto[];
 };
 
 export function AdminMemberInvitesSection({ initialInvites }: Props) {
-  const api = useApiClient();
   const router = useRouter();
   const [discordId, setDiscordId] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -39,21 +41,16 @@ export function AdminMemberInvitesSection({ initialInvites }: Props) {
         className="flex flex-col gap-3 sm:flex-row sm:items-end"
         onSubmit={(event) => {
           event.preventDefault();
-          const trimmed = discordId.trim();
-          if (!trimmed) {
-            setError("Enter a Discord user ID.");
-            return;
-          }
 
           startTransition(async () => {
             setError(null);
-            try {
-              await api.postAdminMemberInvite(trimmed);
-              setDiscordId("");
-              router.refresh();
-            } catch (err) {
-              setError(err instanceof Error ? err.message : "Failed to add invite");
+            const result = await postAdminMemberInviteAction(discordId);
+            if (!result.ok) {
+              setError(result.error);
+              return;
             }
+            setDiscordId("");
+            router.refresh();
           });
         }}
       >
@@ -116,14 +113,12 @@ export function AdminMemberInvitesSection({ initialInvites }: Props) {
                       onClick={() => {
                         startTransition(async () => {
                           setError(null);
-                          try {
-                            await api.deleteAdminMemberInvite(invite.discordId);
-                            router.refresh();
-                          } catch (err) {
-                            setError(
-                              err instanceof Error ? err.message : "Failed to remove invite",
-                            );
+                          const result = await deleteAdminMemberInviteAction(invite.discordId);
+                          if (!result.ok) {
+                            setError(result.error);
+                            return;
                           }
+                          router.refresh();
                         });
                       }}
                     >

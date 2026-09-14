@@ -5,31 +5,26 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { useApiClient } from "@/lib/use-api-client";
+import { triggerMetadataSyncAction } from "@/lib/actions/sync";
 
 type Props = {
   variant?: "button" | "menu";
 };
 
 export function RefreshMetadataButton({ variant = "button" }: Props) {
-  const api = useApiClient();
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const runSync = () => {
     startTransition(async () => {
-      try {
-        const result = await api.triggerMetadataSync();
-        if (!result.ok) {
-          setMessage(result.body.message);
-          return;
-        }
-        setMessage("Metadata sync queued");
-        router.refresh();
-      } catch (error) {
-        setMessage(error instanceof Error ? error.message : "Metadata sync failed");
+      const result = await triggerMetadataSyncAction();
+      if (!result.ok) {
+        setMessage(result.message);
+        return;
       }
+      setMessage(result.message);
+      router.refresh();
     });
   };
 

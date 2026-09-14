@@ -13,16 +13,13 @@ describe("getApiBaseUrl", () => {
     delete process.env.API_URL;
   });
 
-  it("returns empty string in the browser for same-origin relative /api calls", () => {
+  it("throws in the browser", () => {
     // Arrange
     // @ts-expect-error jsdom-style window stub
     global.window = {};
 
-    // Act
-    const base = getApiBaseUrl();
-
-    // Assert
-    expect(base).toBe("");
+    // Act & Assert
+    expect(() => getApiBaseUrl()).toThrow("must only be called on the server");
   });
 
   it("returns API_URL on the server when set", () => {

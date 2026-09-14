@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { useApiClient } from "@/lib/use-api-client";
+import { saveMemberApiKeyAction } from "@/lib/actions/settings";
 
 type Props = {
   hasApiKey: boolean;
@@ -11,7 +11,6 @@ type Props = {
 };
 
 export function ApiKeyForm({ hasApiKey, raUsername }: Props) {
-  const api = useApiClient();
   const router = useRouter();
   const [apiKey, setApiKey] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -23,23 +22,18 @@ export function ApiKeyForm({ hasApiKey, raUsername }: Props) {
       className="space-y-4"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!apiKey.trim()) {
-          setError("Enter your RetroAchievements API key.");
-          setMessage(null);
-          return;
-        }
 
         startTransition(async () => {
           setError(null);
           setMessage(null);
-          try {
-            await api.putMemberApiKey(apiKey.trim());
-            setApiKey("");
-            setMessage(`API key saved for ${raUsername}. Score sync will use your key.`);
-            router.refresh();
-          } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to save API key");
+          const result = await saveMemberApiKeyAction(apiKey);
+          if (!result.ok) {
+            setError(result.error);
+            return;
           }
+          setApiKey("");
+          setMessage(`API key saved for ${raUsername}. Score sync will use your key.`);
+          router.refresh();
         });
       }}
     >

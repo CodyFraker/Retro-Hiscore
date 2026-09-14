@@ -13,7 +13,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useApiClient } from "@/lib/use-api-client";
+import {
+  approveAdminGameTrackQueueItemAction,
+  rejectAdminGameTrackQueueItemAction,
+} from "@/lib/actions/admin";
 
 type Props = {
   items: AdminGameTrackQueueItemDto[];
@@ -35,7 +38,6 @@ function statusLabel(status: number) {
 }
 
 export function AdminGameTrackQueueSection({ items }: Props) {
-  const api = useApiClient();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -88,12 +90,12 @@ export function AdminGameTrackQueueSection({ items }: Props) {
                       onClick={() => {
                         setError(null);
                         startTransition(async () => {
-                          try {
-                            await api.postAdminGameTrackQueueApprove(item.id);
-                            router.refresh();
-                          } catch (err) {
-                            setError(err instanceof Error ? err.message : "Approve failed");
+                          const result = await approveAdminGameTrackQueueItemAction(item.id);
+                          if (!result.ok) {
+                            setError(result.error);
+                            return;
                           }
+                          router.refresh();
                         });
                       }}
                     >
@@ -107,12 +109,12 @@ export function AdminGameTrackQueueSection({ items }: Props) {
                       onClick={() => {
                         setError(null);
                         startTransition(async () => {
-                          try {
-                            await api.postAdminGameTrackQueueReject(item.id);
-                            router.refresh();
-                          } catch (err) {
-                            setError(err instanceof Error ? err.message : "Reject failed");
+                          const result = await rejectAdminGameTrackQueueItemAction(item.id);
+                          if (!result.ok) {
+                            setError(result.error);
+                            return;
                           }
+                          router.refresh();
                         });
                       }}
                     >
