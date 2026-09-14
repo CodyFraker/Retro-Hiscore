@@ -48,6 +48,8 @@ builder.Services.AddHttpClient(nameof(DiscordNotificationService));
 builder.Services.AddScoped<IRaApiKeyPool, RaApiKeyPool>();
 builder.Services.AddScoped<ILeaderboardSyncService, LeaderboardSyncService>();
 builder.Services.AddScoped<IMemberRaGameProgressSyncService, MemberRaGameProgressSyncService>();
+builder.Services.AddScoped<IGameTrackQueueService, GameTrackQueueService>();
+builder.Services.AddScoped<IMemberRecentGamesSyncService, MemberRecentGamesSyncService>();
 builder.Services.AddScoped<IGameMetadataSyncService, GameMetadataSyncService>();
 builder.Services.AddScoped<IConsoleIconSyncService, ConsoleIconSyncService>();
 builder.Services.AddScoped<IDiscordNotificationService, DiscordNotificationService>();
@@ -94,8 +96,7 @@ if (!isTesting)
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
     var raOptions = scope.ServiceProvider.GetRequiredService<IOptions<RaOptions>>().Value;
-    var authOptions = scope.ServiceProvider.GetRequiredService<IOptions<AuthOptions>>().Value;
-    await SeedData.EnsureSeededAsync(db, raOptions, authOptions);
+    await SeedData.EnsureSeededAsync(db, raOptions);
 }
 
 app.UseCors();
@@ -166,6 +167,7 @@ app.MapGetMemberHistory();
 app.MapGetGames();
 app.MapGetGameLeaderboards();
 app.MapGetGameHistory();
+app.MapGetGameLeaderboardPopulationHistory();
 app.MapGetGameSources();
 app.MapGetLeaderboard();
 app.MapGetLeaderboardHistory();
@@ -178,6 +180,9 @@ app.MapGetConsoleIconSyncStatus();
 app.MapGetAdminOps();
 app.MapGetAdminGames();
 app.MapPostAdminGame();
+app.MapGetAdminGameTrackQueue();
+app.MapPostAdminGameTrackQueueApprove();
+app.MapPostAdminGameTrackQueueReject();
 app.MapDeleteAdminGame();
 app.MapPostAdminGameRefresh();
 app.MapGetAdminGameSources();

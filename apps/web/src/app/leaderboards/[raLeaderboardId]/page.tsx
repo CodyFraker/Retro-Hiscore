@@ -1,6 +1,7 @@
 import { ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FormattedSyncTime } from "@/components/formatted-sync-time";
 import { DeltaCallout } from "@/components/charts/delta-callout";
 import { ScoreTrendChart } from "@/components/charts/score-trend-chart";
 import { LeaderboardHistorySection } from "@/components/leaderboards/leaderboard-history-section";
@@ -54,12 +55,30 @@ export default async function LeaderboardPage({ params }: Props) {
         <p className="text-xs text-muted-foreground">
           {detail.rankAsc ? "Lower score ranks higher" : "Higher score ranks higher"}
         </p>
+        {detail.globalEntryCount != null && (
+          <p className="text-sm text-muted-foreground">
+            <span className="font-mono text-foreground">
+              {detail.globalEntryCount.toLocaleString()}
+            </span>{" "}
+            ranked players on RetroAchievements
+            {detail.globalEntryCountSyncedAt && (
+              <>
+                {" "}
+                · as of{" "}
+                <FormattedSyncTime value={detail.globalEntryCountSyncedAt} />
+              </>
+            )}
+          </p>
+        )}
       </div>
 
       <section className="space-y-3">
         <h2 className="steam-section-heading">Friend standings</h2>
         <div className="rounded border border-border p-3 md:p-0 md:overflow-x-auto">
-          <LeaderboardStandingsSection standings={detail.standings} />
+          <LeaderboardStandingsSection
+            standings={detail.standings}
+            globalEntryCount={detail.globalEntryCount}
+          />
         </div>
       </section>
 

@@ -29,6 +29,10 @@ public static class ActivityBuilder
             .Where(s => s.SyncedAt == currentSync || s.SyncedAt == previousSync)
             .ToListAsync(ct);
 
+        var populationByBoardAndSync = await db.LeaderboardPopulationSnapshots
+            .Where(p => p.SyncedAt == currentSync || p.SyncedAt == previousSync)
+            .ToDictionaryAsync(p => (p.LeaderboardId, p.SyncedAt), p => p.EntryCount, ct);
+
         var activity = new List<ActivityItemDto>();
 
         foreach (var boardGroup in snapshots.GroupBy(s => s.LeaderboardId))
@@ -45,7 +49,8 @@ public static class ActivityBuilder
                         memberGroup.Select(s => new SnapshotDeltaCalculator.SnapshotPoint(
                             s.SyncedAt,
                             s.Score,
-                            s.FriendRank)).ToList());
+                            s.FriendRank,
+                            s.GlobalRank)).ToList());
                 })
                 .ToList();
 
@@ -54,6 +59,12 @@ public static class ActivityBuilder
                 var currentSnapshot = boardGroup
                     .Where(s => s.MemberId == delta.MemberId && s.SyncedAt == currentSync)
                     .FirstOrDefault();
+
+                int? globalEntryCount = populationByBoardAndSync.TryGetValue(
+                    (first.LeaderboardId, currentSync),
+                    out var count)
+                    ? count
+                    : null;
 
                 activity.Add(new ActivityItemDto(
                     delta.MemberId,
@@ -66,6 +77,9 @@ public static class ActivityBuilder
                     first.Leaderboard.Title,
                     delta.ScoreDelta,
                     delta.FriendRankDelta,
+                    delta.CurrentGlobalRank,
+                    globalEntryCount,
+                    delta.GlobalRankDelta,
                     currentSnapshot?.FormattedScore));
             }
         }

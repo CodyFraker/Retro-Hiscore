@@ -10,12 +10,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Leaderboard> Leaderboards => Set<Leaderboard>();
     public DbSet<LeaderboardEntry> LeaderboardEntries => Set<LeaderboardEntry>();
     public DbSet<LeaderboardEntrySnapshot> LeaderboardEntrySnapshots => Set<LeaderboardEntrySnapshot>();
+    public DbSet<LeaderboardPopulationSnapshot> LeaderboardPopulationSnapshots => Set<LeaderboardPopulationSnapshot>();
     public DbSet<MemberRaRankSnapshot> MemberRaRankSnapshots => Set<MemberRaRankSnapshot>();
     public DbSet<RaAchievement> RaAchievements => Set<RaAchievement>();
     public DbSet<MemberRaAchievement> MemberRaAchievements => Set<MemberRaAchievement>();
     public DbSet<SyncRun> SyncRuns => Set<SyncRun>();
     public DbSet<RaConsole> Consoles => Set<RaConsole>();
     public DbSet<GameSource> GameSources => Set<GameSource>();
+    public DbSet<MemberRecentGamePlay> MemberRecentGamePlays => Set<MemberRecentGamePlay>();
+    public DbSet<GameTrackQueue> GameTrackQueues => Set<GameTrackQueue>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -91,6 +94,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.Member).WithMany().HasForeignKey(x => x.MemberId);
         });
 
+        modelBuilder.Entity<LeaderboardPopulationSnapshot>(e =>
+        {
+            e.HasIndex(x => new { x.LeaderboardId, x.SyncedAt });
+            e.HasOne(x => x.Leaderboard)
+                .WithMany(x => x.PopulationSnapshots)
+                .HasForeignKey(x => x.LeaderboardId);
+        });
+
         modelBuilder.Entity<MemberRaRankSnapshot>(e =>
         {
             e.HasIndex(x => new { x.MemberId, x.SyncedAt });
@@ -123,6 +134,29 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<SyncRun>(e =>
         {
             e.Property(x => x.Error).HasMaxLength(4000);
+        });
+
+        modelBuilder.Entity<MemberRecentGamePlay>(e =>
+        {
+            e.HasKey(x => new { x.MemberId, x.RaGameId });
+            e.Property(x => x.Title).HasMaxLength(256);
+            e.Property(x => x.ConsoleName).HasMaxLength(128);
+            e.Property(x => x.ImageIcon).HasMaxLength(256);
+            e.Property(x => x.ImageBoxArt).HasMaxLength(256);
+            e.HasOne(x => x.Member).WithMany().HasForeignKey(x => x.MemberId);
+            e.HasIndex(x => x.RaGameId);
+            e.HasIndex(x => x.LastPlayedAt);
+        });
+
+        modelBuilder.Entity<GameTrackQueue>(e =>
+        {
+            e.HasIndex(x => x.RaGameId);
+            e.HasIndex(x => x.Status);
+            e.HasIndex(x => new { x.RaGameId, x.Status });
+            e.Property(x => x.Title).HasMaxLength(256);
+            e.Property(x => x.ConsoleName).HasMaxLength(128);
+            e.Property(x => x.FailureMessage).HasMaxLength(2000);
+            e.HasOne(x => x.ResolvedByMember).WithMany().HasForeignKey(x => x.ResolvedByMemberId);
         });
     }
 }

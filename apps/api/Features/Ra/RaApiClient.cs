@@ -74,6 +74,27 @@ public sealed class RaApiClient(HttpClient httpClient, IOptions<RaOptions> optio
         }
     }
 
+    public async Task<int?> GetLeaderboardEntryCountAsync(
+        long leaderboardId,
+        string? apiKey = null,
+        CancellationToken cancellationToken = default)
+    {
+        var key = ResolveApiKey(apiKey);
+        var query = new Dictionary<string, string>
+        {
+            ["y"] = key,
+            ["i"] = leaderboardId.ToString(),
+            ["c"] = "1",
+            ["o"] = "0"
+        };
+
+        var page = await GetAsync<RaPagedResponse<RaLeaderboardEntryDto>>(
+            "API_GetLeaderboardEntries.php",
+            query,
+            cancellationToken);
+        return page.Total;
+    }
+
     public async Task<RaUserSummaryDto?> GetUserSummaryAsync(
         string username,
         string apiKey,
@@ -97,6 +118,36 @@ public sealed class RaApiClient(HttpClient httpClient, IOptions<RaOptions> optio
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             return null;
+        }
+    }
+
+    public async Task<IReadOnlyList<RaUserRecentlyPlayedGameDto>> GetUserRecentlyPlayedGamesAsync(
+        string usernameOrUlid,
+        int count = 15,
+        int offset = 0,
+        string? apiKey = null,
+        CancellationToken cancellationToken = default)
+    {
+        var key = ResolveApiKey(apiKey);
+        var query = new Dictionary<string, string>
+        {
+            ["y"] = key,
+            ["u"] = usernameOrUlid,
+            ["c"] = count.ToString(),
+            ["o"] = offset.ToString()
+        };
+
+        try
+        {
+            var results = await GetAsync<List<RaUserRecentlyPlayedGameDto>>(
+                "API_GetUserRecentlyPlayedGames.php",
+                query,
+                cancellationToken);
+            return results ?? [];
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return [];
         }
     }
 

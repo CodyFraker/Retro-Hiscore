@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { MemberStandingDto } from "@/generated/api-client";
+import { formatGlobalRank } from "@/lib/format-global-rank";
 
 type Props = {
   standings: MemberStandingDto[];
@@ -25,6 +26,7 @@ export function MemberStandingsSection({ standings }: Props) {
               <TableHead>Game</TableHead>
               <TableHead>Board</TableHead>
               <TableHead className="text-right">Friend</TableHead>
+              <TableHead className="text-right">Global</TableHead>
               <TableHead className="text-right">Score</TableHead>
             </TableRow>
           </TableHeader>
@@ -52,6 +54,9 @@ export function MemberStandingsSection({ standings }: Props) {
                 </TableCell>
                 <TableCell className="text-right font-mono">
                   <FriendRank rank={standing.friendRank} className="justify-end" />
+                </TableCell>
+                <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                  {formatGlobalRank(standing.globalRank, standing.globalEntryCount) ?? "—"}
                 </TableCell>
                 <TableCell className="text-right font-mono">{standing.formattedScore}</TableCell>
               </TableRow>
@@ -82,7 +87,12 @@ export function MemberStandingsSection({ standings }: Props) {
               <FormatBadge format={standing.format} />
             </div>
             <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
-              <FriendRank rank={standing.friendRank} />
+              <div className="space-y-1">
+                <FriendRank rank={standing.friendRank} />
+                <p className="text-xs text-muted-foreground">
+                  {formatGlobalRank(standing.globalRank, standing.globalEntryCount) ?? "No global rank"}
+                </p>
+              </div>
               <span className="font-mono text-lg">{standing.formattedScore}</span>
             </div>
           </li>

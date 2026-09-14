@@ -71,12 +71,28 @@ public sealed class DiscordNotificationService(
     {
         var rankPart = item.FriendRankDelta switch
         {
-            > 0 => $" moved up {item.FriendRankDelta} rank(s)",
-            < 0 => $" dropped {Math.Abs(item.FriendRankDelta.Value)} rank(s)",
+            > 0 => $" moved up {item.FriendRankDelta} friend rank(s)",
+            < 0 => $" dropped {Math.Abs(item.FriendRankDelta.Value)} friend rank(s)",
             _ => ""
         };
 
-        return $"**{item.DisplayName}**{rankPart} on **{item.GameTitle}** — {item.LeaderboardTitle}";
+        var globalPart = "";
+        if (item.GlobalRank is not null && item.GlobalEntryCount is not null)
+        {
+            globalPart = $" (now #{item.GlobalRank} of {item.GlobalEntryCount:N0})";
+        }
+        else if (item.GlobalRank is not null)
+        {
+            globalPart = $" (now #{item.GlobalRank} globally)";
+        }
+
+        if (item.GlobalRankDelta is not null && item.GlobalRankDelta != 0)
+        {
+            var direction = item.GlobalRankDelta > 0 ? "improved" : "dropped";
+            globalPart += $" — global {direction} {Math.Abs(item.GlobalRankDelta.Value)}";
+        }
+
+        return $"**{item.DisplayName}**{rankPart} on **{item.GameTitle}** — {item.LeaderboardTitle}{globalPart}";
     }
 
     private sealed class DiscordWebhookPayload

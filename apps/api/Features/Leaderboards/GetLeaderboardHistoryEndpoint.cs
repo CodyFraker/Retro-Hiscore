@@ -43,6 +43,10 @@ public static class GetLeaderboardHistoryEndpoint
                     s.Score,
                     s.FormattedScore,
                     s.GlobalRank,
+                    db.LeaderboardPopulationSnapshots
+                        .Where(p => p.LeaderboardId == s.LeaderboardId && p.SyncedAt == s.SyncedAt)
+                        .Select(p => (int?)p.EntryCount)
+                        .FirstOrDefault(),
                     s.FriendRank,
                     s.SyncedAt))
                 .ToListAsync(ct);
@@ -51,6 +55,7 @@ public static class GetLeaderboardHistoryEndpoint
         })
         .WithName("GetLeaderboardHistory")
         .WithTags("Leaderboards")
+        .WithSummary("Returns paginated friend score snapshots for a leaderboard.")
         .RequireApiAuth();
 }
 
@@ -63,6 +68,7 @@ public sealed record LeaderboardHistoryItemDto(
     long Score,
     string FormattedScore,
     int? GlobalRank,
+    int? GlobalEntryCount,
     int? FriendRank,
     DateTimeOffset SyncedAt);
 

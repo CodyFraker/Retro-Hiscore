@@ -1,17 +1,17 @@
-import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { ChampionshipStandings } from "@/components/dashboard/championship-standings";
-import type { ActivityItemDto, ChampionshipRowDto } from "@/generated/api-client";
+import { GroupRecentGamesCard } from "@/components/dashboard/group-recent-games-card";
+import type { ChampionshipRowDto, RecentGroupGameDto } from "@/generated/api-client";
 
 type Props = {
   championship: ChampionshipRowDto[];
-  activity: ActivityItemDto[];
+  recentGroupGames: RecentGroupGameDto[];
 };
 
-export function DashboardSidebar({ championship, activity }: Props) {
+export function DashboardSidebar({ championship, recentGroupGames }: Props) {
   return (
     <>
       <ChampionshipStandings rows={championship} />
-      <ActivityFeed items={activity} />
+      <GroupRecentGamesCard games={recentGroupGames} />
     </>
   );
 }

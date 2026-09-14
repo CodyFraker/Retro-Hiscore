@@ -38,6 +38,9 @@ public class DiscordNotificationTests
                 "High Score",
                 50,
                 1,
+                100,
+                5000,
+                null,
                 "150")
         };
 
@@ -75,6 +78,9 @@ public class DiscordNotificationTests
                 "High Score",
                 50,
                 1,
+                100,
+                5000,
+                null,
                 "150")
         };
 
@@ -114,6 +120,9 @@ public class DiscordNotificationTests
                 "High Score",
                 50,
                 1,
+                100,
+                5000,
+                null,
                 "150")
         };
 

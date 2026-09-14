@@ -46,6 +46,7 @@ export type RecentlyUpdatedBoard = {
   raLeaderboardId: number;
   title: string;
   latestScoreUpdatedAt: string;
+  globalEntryCount: number | null;
 };
 
 export function recentlyUpdatedBoards(
@@ -63,6 +64,7 @@ export function recentlyUpdatedBoards(
         raLeaderboardId: board.raLeaderboardId,
         title: board.title,
         latestScoreUpdatedAt: stamps[0] ?? "",
+        globalEntryCount: board.globalEntryCount ?? null,
       };
     })
     .filter((board) => board.latestScoreUpdatedAt)

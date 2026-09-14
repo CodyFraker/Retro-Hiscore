@@ -7,10 +7,24 @@ type Props = {
 
 export function GameStatsStrip({ stats }: Props) {
   return (
-    <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
       <StatTile label="Leaderboards" value={String(stats.leaderboardCount)} />
       <StatTile label="Friends scored" value={String(stats.membersWithScores)} />
       <StatTile label="Total scores" value={String(stats.totalScores)} />
+      <StatTile
+        label="Ranked entries (all boards)"
+        value={stats.totalRankedEntriesAcrossBoards > 0
+          ? stats.totalRankedEntriesAcrossBoards.toLocaleString()
+          : "—"}
+        compact
+      />
+      <StatTile
+        label="Busiest board"
+        value={stats.busiestBoard
+          ? `${stats.busiestBoard.globalEntryCount.toLocaleString()} · ${stats.busiestBoard.title}`
+          : "—"}
+        compact
+      />
       <StatTile
         label="Last activity"
         value={stats.lastActivityAt ? formatSyncTime(stats.lastActivityAt) : "—"}

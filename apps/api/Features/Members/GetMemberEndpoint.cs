@@ -34,6 +34,8 @@ public static class GetMemberEndpoint
                 e.Leaderboard.Title,
                 e.Leaderboard.Format,
                 e.FriendRank,
+                e.GlobalRank,
+                e.Leaderboard.GlobalEntryCount,
                 e.Score,
                 e.FormattedScore)).ToList();
 
@@ -52,6 +54,7 @@ public static class GetMemberEndpoint
         })
         .WithName("GetMember")
         .WithTags("Members")
+        .WithSummary("Returns a member profile and leaderboard standings across tracked games.")
         .RequireApiAuth();
 }
 
@@ -62,6 +65,8 @@ public sealed record MemberStandingDto(
     string LeaderboardTitle,
     string? Format,
     int? FriendRank,
+    int? GlobalRank,
+    int? GlobalEntryCount,
     long Score,
     string FormattedScore);
 

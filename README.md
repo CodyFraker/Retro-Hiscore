@@ -10,7 +10,7 @@ Friend RetroAchievements leaderboard tracker: C# API + Next.js dashboard.
 
 ## Quick start (Docker, hot reload)
 
-1. Copy `.env.example` to `.env` and set `RA__ApiKey` (shared catalog key), `RA__MemberLinks__*` (Discord ID ↔ RA username), and Discord OAuth vars.
+1. Copy `.env.example` to `.env` and set `RA__ApiKey` (shared catalog key), `AUTH_ADMIN_DISCORD_USER_IDS`, and Discord OAuth vars.
 2. `docker compose --profile dev up --build` (or `mise run docker:up`)
 3. Open http://localhost:18321 (frontend) and http://localhost:18943 (API / Scalar at `/scalar`).
 
@@ -69,19 +69,18 @@ pwsh ./scripts/ci-local.ps1 -Job all
 
 Requires Docker Desktop (or Docker Engine). The API job mounts `/var/run/docker.sock` so Testcontainers can start Postgres, matching the [CI workflow](.github/workflows/ci.yml).
 
-## Tracked v1 data
+## Default tracked games (optional)
 
-- Games: `38130`, `2291`, `789`
-- Members: `ShrimpPoboy`, `beefboybilly`, `xXScubXx`
+- When `RA__TrackedGameIds__*` is unset, the API seeds games `38130`, `2291`, and `789` on first startup.
 - Sync every 15 minutes + manual refresh (60s cooldown)
 
 ## Admin sync metrics
 
-- Set `AUTH_ADMIN_DISCORD_USER_IDS` to a comma-separated list of Discord user IDs (must also appear in `AUTH_ALLOWED_DISCORD_USER_IDS`).
+- Set `AUTH_ADMIN_DISCORD_USER_IDS` to a comma-separated list of Discord user IDs. Each person must also be invited as a member (Admin → member invites) before they can sign in.
 - Admins see an **Admin** nav link and `/admin` with sync health, run history, member API key coverage, and Hangfire recurring job context (`GET /api/admin/ops`).
 
 ## Member API keys and Discord avatars
 
-- Admin links each friend's Discord ID to their RA username via `RA__MemberLinks__N__*` in `.env`.
-- Each user submits their own RetroAchievements API key under **Settings** in the web app. Score sync uses that member's key; catalog/metadata uses the shared `RA__ApiKey` with pool failover across all configured keys.
+- Admins invite friends by Discord user ID in the web app (Admin → member invites).
+- Each user links their RetroAchievements account and API key under **Settings**. Score sync uses that member's key; catalog/metadata uses the shared `RA__ApiKey` with pool failover across all configured keys.
 - Discord avatars refresh on login and appear across the dashboard, standings, and member pages.

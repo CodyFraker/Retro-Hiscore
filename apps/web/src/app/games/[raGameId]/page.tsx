@@ -7,6 +7,7 @@ import { GameDeltaCallout } from "@/components/game/game-delta-callout";
 import { GameStandingsSection } from "@/components/game/game-standings-section";
 import { GameMetadata } from "@/components/game/game-metadata";
 import { GameStatsStrip } from "@/components/game/game-stats-strip";
+import { GamePopulationTrendCharts } from "@/components/game/game-population-trend-charts";
 import { GameTrendCharts } from "@/components/game/game-trend-charts";
 import { BoardWinSummary } from "@/components/game/board-win-summary";
 import { RetroachievementsLink } from "@/components/game/retroachievements-link";
@@ -33,11 +34,13 @@ export default async function GamePage({ params }: Props) {
   const api = await getServerApiClient();
   let data: Awaited<ReturnType<typeof api.getGameLeaderboards>>;
   let history: Awaited<ReturnType<typeof api.getGameHistory>>;
+  let populationHistory: Awaited<ReturnType<typeof api.getGameLeaderboardPopulationHistory>>;
   let sources: Awaited<ReturnType<typeof api.getGameSources>>;
   try {
-    [data, history, sources] = await Promise.all([
+    [data, history, populationHistory, sources] = await Promise.all([
       api.getGameLeaderboards(raGameId),
       api.getGameHistory(raGameId, 200, 0),
+      api.getGameLeaderboardPopulationHistory(raGameId, 200),
       api.getGameSources(raGameId),
     ]);
   } catch {
@@ -115,6 +118,10 @@ export default async function GamePage({ params }: Props) {
         <>
           <GameStatsStrip stats={stats} />
 
+          <div className="rounded border border-border p-3 md:p-0 md:overflow-x-auto">
+            <GameStandingsSection leaderboards={data.leaderboards} members={data.members} />
+          </div>
+
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             <BoardWinSummary rows={winRows} />
 
@@ -135,6 +142,9 @@ export default async function GamePage({ params }: Props) {
                       </Link>
                       <span className="text-xs text-muted-foreground">
                         {formatSyncTime(board.latestScoreUpdatedAt)}
+                        {board.globalEntryCount != null && (
+                          <> · {board.globalEntryCount.toLocaleString()} on RA</>
+                        )}
                       </span>
                     </li>
                   ))}
@@ -144,11 +154,8 @@ export default async function GamePage({ params }: Props) {
           </div>
 
           <GameTrendCharts items={history.items} />
+          <GamePopulationTrendCharts data={populationHistory} />
           <GameDeltaCallout deltas={deltas} />
-
-          <div className="rounded border border-border p-3 md:p-0 md:overflow-x-auto">
-            <GameStandingsSection leaderboards={data.leaderboards} members={data.members} />
-          </div>
         </>
       )}
     </div>

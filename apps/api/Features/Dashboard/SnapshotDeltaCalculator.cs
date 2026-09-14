@@ -2,7 +2,7 @@ namespace RetroHiscore.Api.Features.Dashboard;
 
 public static class SnapshotDeltaCalculator
 {
-    public sealed record SnapshotPoint(DateTimeOffset SyncedAt, long Score, int? FriendRank);
+    public sealed record SnapshotPoint(DateTimeOffset SyncedAt, long Score, int? FriendRank, int? GlobalRank);
 
     public sealed record MemberSnapshotSeries(Guid MemberId, string DisplayName, IReadOnlyList<SnapshotPoint> Points);
 
@@ -14,7 +14,10 @@ public static class SnapshotDeltaCalculator
         long? CurrentScore,
         int? FriendRankDelta,
         int? PreviousFriendRank,
-        int? CurrentFriendRank);
+        int? CurrentFriendRank,
+        int? GlobalRankDelta,
+        int? PreviousGlobalRank,
+        int? CurrentGlobalRank);
 
     public static IReadOnlyList<MemberSnapshotDelta> ComputeMemberDeltas(IReadOnlyList<MemberSnapshotSeries> series)
     {
@@ -32,13 +35,19 @@ public static class SnapshotDeltaCalculator
                     last?.Score,
                     null,
                     null,
-                    last?.FriendRank);
+                    last?.FriendRank,
+                    null,
+                    null,
+                    last?.GlobalRank);
             }
 
             var previous = points[^2];
             var current = points[^1];
             int? friendRankDelta = previous.FriendRank is not null && current.FriendRank is not null
                 ? previous.FriendRank - current.FriendRank
+                : null;
+            int? globalRankDelta = previous.GlobalRank is not null && current.GlobalRank is not null
+                ? previous.GlobalRank - current.GlobalRank
                 : null;
 
             return new MemberSnapshotDelta(
@@ -49,7 +58,10 @@ public static class SnapshotDeltaCalculator
                 current.Score,
                 friendRankDelta,
                 previous.FriendRank,
-                current.FriendRank);
+                current.FriendRank,
+                globalRankDelta,
+                previous.GlobalRank,
+                current.GlobalRank);
         }).ToList();
     }
 

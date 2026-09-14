@@ -142,6 +142,17 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       );
     },
+    getMemberRaAchievementHistory: (raUsername: string, limit?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<MemberRaAchievementHistoryResponse>(
+        baseUrl,
+        \`/api/members/\${encodeURIComponent(raUsername)}/ra-achievement-history\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
     getMemberHistory: (raUsername: string, limit?: number, offset?: number) => {
       const params = new URLSearchParams();
       if (limit != null) params.set("limit", String(limit));
@@ -167,6 +178,17 @@ export function createApiClient(options: ApiClientOptions) {
       return request<GameHistoryResponse>(
         baseUrl,
         \`/api/games/\${raGameId}/history\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getGameLeaderboardPopulationHistory: (raGameId: number, limit?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<GameLeaderboardPopulationHistoryResponse>(
+        baseUrl,
+        \`/api/games/\${raGameId}/leaderboard-population-history\${qs ? \`?\${qs}\` : ""}\`,
         undefined,
         fetchImpl,
       );
@@ -228,6 +250,22 @@ export function createApiClient(options: ApiClientOptions) {
       request<SyncStatusDto>(baseUrl, "/api/sync/console-icons/status", undefined, fetchImpl),
     getAdminOps: () => request<AdminOpsDto>(baseUrl, "/api/admin/ops", undefined, fetchImpl),
     getAdminGames: () => request<AdminGameDto[]>(baseUrl, "/api/admin/games", undefined, fetchImpl),
+    getAdminGameTrackQueue: () =>
+      request<AdminGameTrackQueueItemDto[]>(baseUrl, "/api/admin/game-track-queue", undefined, fetchImpl),
+    postAdminGameTrackQueueApprove: (id: string) =>
+      request<AdminGameTrackQueueItemDto>(
+        baseUrl,
+        \`/api/admin/game-track-queue/\${id}/approve\`,
+        { method: "POST" },
+        fetchImpl,
+      ),
+    postAdminGameTrackQueueReject: (id: string) =>
+      request<AdminGameTrackQueueItemDto>(
+        baseUrl,
+        \`/api/admin/game-track-queue/\${id}/reject\`,
+        { method: "POST" },
+        fetchImpl,
+      ),
     postAdminGame: (raGameId: number) =>
       request<AdminGameDto>(baseUrl, "/api/admin/games", {
         method: "POST",

@@ -1,6 +1,5 @@
-import type { ActivityItemDto, DashboardGameDto } from "../../generated/api-client";
+import type { DashboardGameDto } from "../../generated/api-client";
 import {
-  countActivityByGameId,
   filterGamesByQuery,
   parseRaGameIdInput,
   sortDashboardGames,
@@ -18,49 +17,13 @@ function game(overrides: Partial<DashboardGameDto> & Pick<DashboardGameDto, "raG
     imageTitleUrl: overrides.imageTitleUrl ?? null,
     imageIngameUrl: overrides.imageIngameUrl ?? null,
     leaderboardCount: overrides.leaderboardCount ?? 0,
+    maxGlobalEntryCount: overrides.maxGlobalEntryCount ?? null,
+    maxGlobalEntryCountLeaderboardTitle: overrides.maxGlobalEntryCountLeaderboardTitle ?? null,
     friendRankOneLeader: overrides.friendRankOneLeader ?? null,
+    playersWithAvatars: overrides.playersWithAvatars ?? [],
     lastActivityAt: overrides.lastActivityAt ?? null,
   };
 }
-
-describe("countActivityByGameId", () => {
-  it("groups activity items by game id", () => {
-    const activity: ActivityItemDto[] = [
-      {
-        memberId: "a",
-        raUsername: "a",
-        displayName: "A",
-        raGameId: 1,
-        gameTitle: "One",
-        raLeaderboardId: 10,
-        leaderboardTitle: "Board",
-      },
-      {
-        memberId: "b",
-        raUsername: "b",
-        displayName: "B",
-        raGameId: 1,
-        gameTitle: "One",
-        raLeaderboardId: 11,
-        leaderboardTitle: "Board 2",
-      },
-      {
-        memberId: "c",
-        raUsername: "c",
-        displayName: "C",
-        raGameId: 2,
-        gameTitle: "Two",
-        raLeaderboardId: 20,
-        leaderboardTitle: "Board",
-      },
-    ];
-
-    const counts = countActivityByGameId(activity);
-
-    expect(counts.get(1)).toBe(2);
-    expect(counts.get(2)).toBe(1);
-  });
-});
 
 describe("filterGamesByQuery", () => {
   const games = [
@@ -89,26 +52,20 @@ describe("sortDashboardGames", () => {
     game({ raGameId: 2, title: "Beta", leaderboardCount: 8, lastActivityAt: "2026-02-01T00:00:00Z" }),
     game({ raGameId: 3, title: "Gamma", leaderboardCount: 5 }),
   ];
-  const activityCounts = new Map<number, number>([[1, 3], [3, 1]]);
 
   it("sorts by recent activity descending", () => {
-    const sorted = sortDashboardGames(games, "recent", activityCounts);
+    const sorted = sortDashboardGames(games, "recent");
     expect(sorted.map((g) => g.raGameId)).toEqual([2, 1, 3]);
   });
 
   it("sorts by name ascending", () => {
-    const sorted = sortDashboardGames(games, "name", activityCounts);
+    const sorted = sortDashboardGames(games, "name");
     expect(sorted.map((g) => g.title)).toEqual(["Alpha", "Beta", "Gamma"]);
   });
 
   it("sorts by board count descending", () => {
-    const sorted = sortDashboardGames(games, "boards", activityCounts);
+    const sorted = sortDashboardGames(games, "boards");
     expect(sorted.map((g) => g.raGameId)).toEqual([2, 3, 1]);
-  });
-
-  it("sorts by activity change count descending", () => {
-    const sorted = sortDashboardGames(games, "changes", activityCounts);
-    expect(sorted.map((g) => g.raGameId)).toEqual([1, 3, 2]);
   });
 });
 

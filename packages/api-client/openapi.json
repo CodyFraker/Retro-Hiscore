@@ -361,6 +361,36 @@
         }
       }
     },
+    "/api/games/{raGameId}/leaderboard-population-history": {
+      "get": {
+        "operationId": "getGameLeaderboardPopulationHistory",
+        "tags": ["Games"],
+        "parameters": [
+          {
+            "name": "raGameId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameLeaderboardPopulationHistoryResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
     "/api/games/{raGameId}/history": {
       "get": {
         "operationId": "getGameHistory",
@@ -765,6 +795,8 @@
           "leaderboardTitle": { "type": "string" },
           "format": { "type": "string", "nullable": true },
           "friendRank": { "type": "integer", "nullable": true },
+          "globalRank": { "type": "integer", "nullable": true },
+          "globalEntryCount": { "type": "integer", "nullable": true },
           "score": { "type": "integer", "format": "int64" },
           "formattedScore": { "type": "string" }
         }
@@ -1030,6 +1062,8 @@
           "description": { "type": "string", "nullable": true },
           "format": { "type": "string", "nullable": true },
           "rankAsc": { "type": "boolean" },
+          "globalEntryCount": { "type": "integer", "nullable": true },
+          "globalEntryCountSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
           "standings": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/FriendStandingDto" }
@@ -1083,6 +1117,7 @@
           "score": { "type": "integer", "format": "int64" },
           "formattedScore": { "type": "string" },
           "globalRank": { "type": "integer", "nullable": true },
+          "globalEntryCount": { "type": "integer", "nullable": true },
           "friendRank": { "type": "integer", "nullable": true },
           "syncedAt": { "type": "string", "format": "date-time" }
         }
@@ -1100,6 +1135,36 @@
           }
         }
       },
+      "LeaderboardPopulationPointDto": {
+        "type": "object",
+        "required": ["syncedAt", "entryCount"],
+        "properties": {
+          "syncedAt": { "type": "string", "format": "date-time" },
+          "entryCount": { "type": "integer" }
+        }
+      },
+      "LeaderboardPopulationSeriesDto": {
+        "type": "object",
+        "required": ["raLeaderboardId", "title", "points"],
+        "properties": {
+          "raLeaderboardId": { "type": "integer", "format": "int64" },
+          "title": { "type": "string" },
+          "points": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/LeaderboardPopulationPointDto" }
+          }
+        }
+      },
+      "GameLeaderboardPopulationHistoryResponse": {
+        "type": "object",
+        "required": ["boards"],
+        "properties": {
+          "boards": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/LeaderboardPopulationSeriesDto" }
+          }
+        }
+      },
       "LeaderboardDetailDto": {
         "type": "object",
         "required": ["id", "raLeaderboardId", "raGameId", "gameTitle", "title", "rankAsc", "standings"],
@@ -1112,6 +1177,8 @@
           "description": { "type": "string", "nullable": true },
           "format": { "type": "string", "nullable": true },
           "rankAsc": { "type": "boolean" },
+          "globalEntryCount": { "type": "integer", "nullable": true },
+          "globalEntryCountSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
           "standings": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/FriendStandingDto" }
@@ -1130,6 +1197,7 @@
           "score": { "type": "integer", "format": "int64" },
           "formattedScore": { "type": "string" },
           "globalRank": { "type": "integer", "nullable": true },
+          "globalEntryCount": { "type": "integer", "nullable": true },
           "friendRank": { "type": "integer", "nullable": true },
           "syncedAt": { "type": "string", "format": "date-time" }
         }
@@ -1199,6 +1267,9 @@
           "leaderboardTitle": { "type": "string" },
           "scoreDelta": { "type": "integer", "format": "int64", "nullable": true },
           "friendRankDelta": { "type": "integer", "nullable": true },
+          "globalRank": { "type": "integer", "nullable": true },
+          "globalEntryCount": { "type": "integer", "nullable": true },
+          "globalRankDelta": { "type": "integer", "nullable": true },
           "formattedScore": { "type": "string", "nullable": true }
         }
       },
@@ -1212,9 +1283,18 @@
           "friendRankOnes": { "type": "integer" }
         }
       },
+      "DashboardGamePlayerAvatarDto": {
+        "type": "object",
+        "required": ["displayName", "raUsername", "avatarUrl"],
+        "properties": {
+          "displayName": { "type": "string" },
+          "raUsername": { "type": "string" },
+          "avatarUrl": { "type": "string" }
+        }
+      },
       "DashboardGameDto": {
         "type": "object",
-        "required": ["id", "raGameId", "title", "leaderboardCount"],
+        "required": ["id", "raGameId", "title", "leaderboardCount", "playersWithAvatars"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "raGameId": { "type": "integer" },
@@ -1230,21 +1310,126 @@
           "imageTitleUrl": { "type": "string", "nullable": true },
           "imageIngameUrl": { "type": "string", "nullable": true },
           "leaderboardCount": { "type": "integer" },
+          "maxGlobalEntryCount": { "type": "integer", "nullable": true },
+          "maxGlobalEntryCountLeaderboardTitle": { "type": "string", "nullable": true },
           "friendRankOneLeader": { "$ref": "#/components/schemas/DashboardGameLeaderDto", "nullable": true },
+          "playersWithAvatars": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DashboardGamePlayerAvatarDto" }
+          },
           "lastActivityAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "RecentGroupGamePlayerDto": {
+        "type": "object",
+        "required": ["memberId", "raUsername", "displayName", "lastPlayedAt"],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "lastPlayedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RecentGroupGameDto": {
+        "type": "object",
+        "required": [
+          "raGameId",
+          "title",
+          "consoleId",
+          "lastPlayedAt",
+          "isTracked",
+          "players"
+        ],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "consoleId": { "type": "integer" },
+          "consoleName": { "type": "string", "nullable": true },
+          "consoleIconUrl": { "type": "string", "nullable": true },
+          "imageBoxArtUrl": { "type": "string", "nullable": true },
+          "imageIconUrl": { "type": "string", "nullable": true },
+          "lastPlayedAt": { "type": "string", "format": "date-time" },
+          "isTracked": { "type": "boolean" },
+          "players": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RecentGroupGamePlayerDto" }
+          }
+        }
+      },
+      "AdminGameTrackQueueItemDto": {
+        "type": "object",
+        "required": ["id", "raGameId", "status", "title", "enqueuedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raGameId": { "type": "integer" },
+          "status": { "type": "integer" },
+          "title": { "type": "string" },
+          "consoleName": { "type": "string", "nullable": true },
+          "enqueuedAt": { "type": "string", "format": "date-time" },
+          "resolvedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "failureMessage": { "type": "string", "nullable": true }
+        }
+      },
+      "AdminGameDto": {
+        "type": "object",
+        "required": ["id", "raGameId", "title", "leaderboardCount", "sourceCount"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "consoleName": { "type": "string", "nullable": true },
+          "consoleIconUrl": { "type": "string", "nullable": true },
+          "imageBoxArtUrl": { "type": "string", "nullable": true },
+          "imageIconUrl": { "type": "string", "nullable": true },
+          "imageTitleUrl": { "type": "string", "nullable": true },
+          "imageIngameUrl": { "type": "string", "nullable": true },
+          "leaderboardCount": { "type": "integer" },
+          "sourceCount": { "type": "integer" },
+          "metadataSyncedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "GameSourceDto": {
+        "type": "object",
+        "required": ["id", "sourceType", "url", "sortOrder"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "sourceType": { "type": "string" },
+          "url": { "type": "string" },
+          "label": { "type": "string", "nullable": true },
+          "sortOrder": { "type": "integer" },
+          "note": { "type": "string", "nullable": true }
+        }
+      },
+      "UpsertGameSourceRequest": {
+        "type": "object",
+        "required": ["sourceType", "url", "sortOrder"],
+        "properties": {
+          "sourceType": { "type": "string" },
+          "url": { "type": "string" },
+          "label": { "type": "string", "nullable": true },
+          "sortOrder": { "type": "integer" },
+          "note": { "type": "string", "nullable": true }
+        }
+      },
+      "PostAdminGameRequest": {
+        "type": "object",
+        "required": ["raGameId"],
+        "properties": {
+          "raGameId": { "type": "integer" }
         }
       },
       "DashboardResponse": {
         "type": "object",
-        "required": ["championship", "activity", "games"],
+        "required": ["championship", "recentGroupGames", "games"],
         "properties": {
           "championship": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/ChampionshipRowDto" }
           },
-          "activity": {
+          "recentGroupGames": {
             "type": "array",
-            "items": { "$ref": "#/components/schemas/ActivityItemDto" }
+            "items": { "$ref": "#/components/schemas/RecentGroupGameDto" }
           },
           "games": {
             "type": "array",
@@ -1275,9 +1460,12 @@
           "memberAScore": { "type": "integer", "format": "int64", "nullable": true },
           "memberAFormattedScore": { "type": "string", "nullable": true },
           "memberAFriendRank": { "type": "integer", "nullable": true },
+          "memberAGlobalRank": { "type": "integer", "nullable": true },
           "memberBScore": { "type": "integer", "format": "int64", "nullable": true },
           "memberBFormattedScore": { "type": "string", "nullable": true },
           "memberBFriendRank": { "type": "integer", "nullable": true },
+          "memberBGlobalRank": { "type": "integer", "nullable": true },
+          "globalEntryCount": { "type": "integer", "nullable": true },
           "leaderUsername": { "type": "string", "nullable": true }
         }
       },

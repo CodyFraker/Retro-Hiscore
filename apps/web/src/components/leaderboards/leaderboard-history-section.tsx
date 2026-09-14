@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import type { LeaderboardHistoryItemDto } from "@/generated/api-client";
 import { formatSyncTime } from "@/lib/format";
+import { formatGlobalRank } from "@/lib/format-global-rank";
 
 type Props = {
   items: LeaderboardHistoryItemDto[];
@@ -50,7 +51,7 @@ export function LeaderboardHistorySection({ items }: Props) {
                   <FriendRank rank={item.friendRank} className="justify-end" />
                 </TableCell>
                 <TableCell className="text-right font-mono text-muted-foreground">
-                  {item.globalRank != null ? `#${item.globalRank}` : "—"}
+                  {formatGlobalRank(item.globalRank, item.globalEntryCount) ?? "—"}
                 </TableCell>
               </TableRow>
             ))}
@@ -83,7 +84,7 @@ export function LeaderboardHistorySection({ items }: Props) {
               <span>
                 Global{" "}
                 <span className="font-mono text-foreground">
-                  {item.globalRank != null ? `#${item.globalRank}` : "—"}
+                  {formatGlobalRank(item.globalRank, item.globalEntryCount) ?? "—"}
                 </span>
               </span>
             </div>

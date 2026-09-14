@@ -105,45 +105,53 @@ public class DashboardApiTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetDashboard_ReturnsActivityAcrossTwoSyncs()
+    public async Task GetDashboard_ReturnsRecentGroupGamesAggregatedByRaGameId()
     {
         // Arrange
-        var olderSync = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
-        var newerSync = new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero);
+        var olderPlay = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var newerPlay = new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero);
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
-            var game = await db.Games.SingleAsync(g => g.RaGameId == 38130);
-            var board = new Leaderboard
-            {
-                RaLeaderboardId = 3813012,
-                GameId = game.Id,
-                Title = "Board C",
-                Format = "VALUE",
-                RankAsc = false
-            };
-            db.Leaderboards.Add(board);
-            await db.SaveChangesAsync();
+            var billy = await db.Members.SingleAsync(m => m.RaUsername == "beefboybilly");
 
-            db.LeaderboardEntrySnapshots.AddRange(
-                new LeaderboardEntrySnapshot
+            db.MemberRecentGamePlays.AddRange(
+                new MemberRecentGamePlay
                 {
-                    LeaderboardId = board.Id,
                     MemberId = shrimp.Id,
-                    Score = 100,
-                    FormattedScore = "100",
-                    FriendRank = 2,
-                    SyncedAt = olderSync
+                    RaGameId = 9001,
+                    Title = "Shared Game",
+                    ConsoleId = 1,
+                    ConsoleName = "Genesis",
+                    LastPlayedAt = newerPlay,
+                    NumAchieved = 3,
+                    NumPossibleAchievements = 10,
+                    SyncedAt = newerPlay
                 },
-                new LeaderboardEntrySnapshot
+                new MemberRecentGamePlay
                 {
-                    LeaderboardId = board.Id,
+                    MemberId = billy.Id,
+                    RaGameId = 9001,
+                    Title = "Shared Game",
+                    ConsoleId = 1,
+                    ConsoleName = "Genesis",
+                    LastPlayedAt = olderPlay,
+                    NumAchieved = 1,
+                    NumPossibleAchievements = 10,
+                    SyncedAt = newerPlay
+                },
+                new MemberRecentGamePlay
+                {
                     MemberId = shrimp.Id,
-                    Score = 200,
-                    FormattedScore = "200",
-                    FriendRank = 1,
-                    SyncedAt = newerSync
+                    RaGameId = 9002,
+                    Title = "Solo Game",
+                    ConsoleId = 2,
+                    ConsoleName = "SNES",
+                    LastPlayedAt = newerPlay.AddDays(1),
+                    NumAchieved = 0,
+                    NumPossibleAchievements = 0,
+                    SyncedAt = newerPlay
                 });
             await db.SaveChangesAsync();
         }
@@ -155,11 +163,12 @@ public class DashboardApiTests : IAsyncLifetime
 
         // Assert
         dashboard.ShouldNotBeNull();
-        dashboard.Activity.Count.ShouldBe(1);
-        dashboard.Activity[0].RaUsername.ShouldBe("ShrimpPoboy");
-        dashboard.Activity[0].ScoreDelta.ShouldBe(100);
-        dashboard.Activity[0].FriendRankDelta.ShouldBe(1);
-        dashboard.Activity[0].RaLeaderboardId.ShouldBe(3813012);
+        dashboard.RecentGroupGames.Count.ShouldBe(2);
+        dashboard.RecentGroupGames[0].RaGameId.ShouldBe(9002);
+        dashboard.RecentGroupGames[1].RaGameId.ShouldBe(9001);
+        var shared = dashboard.RecentGroupGames.Single(g => g.RaGameId == 9001);
+        shared.Players.Count.ShouldBe(2);
+        shared.IsTracked.ShouldBeFalse();
     }
 
     [Fact]
@@ -171,6 +180,7 @@ public class DashboardApiTests : IAsyncLifetime
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            shrimp.AvatarUrl = "https://cdn.discordapp.com/avatars/1/test.png";
             var game = await db.Games.SingleAsync(g => g.RaGameId == 38130);
             game.Title = "Pinball";
             var board = new Leaderboard
@@ -209,6 +219,9 @@ public class DashboardApiTests : IAsyncLifetime
         pinball.FriendRankOneLeader.ShouldNotBeNull();
         pinball.FriendRankOneLeader!.DisplayName.ShouldBe("ShrimpPoboy");
         pinball.FriendRankOneLeader.FriendRankOnes.ShouldBe(1);
+        pinball.PlayersWithAvatars.Count.ShouldBe(1);
+        pinball.PlayersWithAvatars[0].RaUsername.ShouldBe("ShrimpPoboy");
+        pinball.PlayersWithAvatars[0].AvatarUrl.ShouldBe("https://cdn.discordapp.com/avatars/1/test.png");
         pinball.LastActivityAt.ShouldBe(activityAt);
     }
 

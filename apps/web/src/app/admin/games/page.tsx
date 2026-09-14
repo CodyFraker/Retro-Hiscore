@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { AddGameForm } from "@/components/add-game-form";
+import { AdminGameTrackQueueSection } from "@/components/admin/admin-game-track-queue-section";
 import { AdminGamesSection } from "@/components/admin/admin-games-section";
 import { authOptions } from "@/lib/auth-options";
 import { getServerApiClient } from "@/lib/api";
@@ -22,7 +23,10 @@ export default async function AdminGamesPage() {
 
   try {
     const api = await getServerApiClient();
-    const games = await api.getAdminGames();
+    const [games, queue] = await Promise.all([
+      api.getAdminGames(),
+      api.getAdminGameTrackQueue(),
+    ]);
 
     return (
       <div className="space-y-10">
@@ -34,6 +38,8 @@ export default async function AdminGamesPage() {
             Track RetroAchievements titles, add download mirrors, and refresh metadata for your group.
           </p>
         </div>
+
+        <AdminGameTrackQueueSection items={queue} />
 
         <section className="space-y-3 rounded border border-border p-5">
           <h2 className="text-lg font-semibold">Add game</h2>

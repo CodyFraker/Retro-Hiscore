@@ -35,6 +35,9 @@ export type GameDelta = {
   leaderboardTitle: string;
   scoreDelta: number | null;
   friendRankDelta: number | null;
+  globalRankDelta: number | null;
+  globalEntryCount: number | null;
+  globalEntryCountDelta: number | null;
 };
 
 export function toMemberLeadSeries(items: GameHistoryItemDto[]): MemberLeadSeries[] {
@@ -167,9 +170,15 @@ export function toGameDeltas(items: GameHistoryItemDto[]): GameDelta[] {
   for (const board of boardSeries) {
     const memberDeltas = computeMemberDeltas(board.series);
     for (const delta of memberDeltas) {
-      if (delta.scoreDelta == null && delta.friendRankDelta == null) {
+      if (
+        delta.scoreDelta == null &&
+        delta.friendRankDelta == null &&
+        delta.globalRankDelta == null
+      ) {
         continue;
       }
+
+      const populationDelta = computeBoardPopulationDelta(board.raLeaderboardId, items);
 
       deltas.push({
         memberId: delta.memberId,
@@ -178,6 +187,9 @@ export function toGameDeltas(items: GameHistoryItemDto[]): GameDelta[] {
         leaderboardTitle: board.leaderboardTitle,
         scoreDelta: delta.scoreDelta,
         friendRankDelta: delta.friendRankDelta,
+        globalRankDelta: delta.globalRankDelta,
+        globalEntryCount: populationDelta?.currentCount ?? null,
+        globalEntryCountDelta: populationDelta?.delta ?? null,
       });
     }
   }
@@ -187,6 +199,36 @@ export function toGameDeltas(items: GameHistoryItemDto[]): GameDelta[] {
       a.leaderboardTitle.localeCompare(b.leaderboardTitle) ||
       a.displayName.localeCompare(b.displayName),
   );
+}
+
+function computeBoardPopulationDelta(
+  raLeaderboardId: number,
+  items: GameHistoryItemDto[],
+): { currentCount: number; delta: number } | null {
+  const boardItems = items.filter((item) => item.raLeaderboardId === raLeaderboardId);
+  const bySync = new Map<string, number>();
+
+  for (const item of boardItems) {
+    if (item.globalEntryCount != null && !bySync.has(item.syncedAt)) {
+      bySync.set(item.syncedAt, item.globalEntryCount);
+    }
+  }
+
+  const stamps = [...bySync.keys()].sort(
+    (a, b) => new Date(a).getTime() - new Date(b).getTime(),
+  );
+
+  if (stamps.length === 0) {
+    return null;
+  }
+
+  const currentCount = bySync.get(stamps[stamps.length - 1])!;
+  if (stamps.length < 2) {
+    return { currentCount, delta: 0 };
+  }
+
+  const previousCount = bySync.get(stamps[stamps.length - 2])!;
+  return { currentCount, delta: currentCount - previousCount };
 }
 
 export function countDistinctSyncTimestampsForMemberLeads(series: MemberLeadSeries[]): number {

@@ -17,7 +17,8 @@ public static class AdminGameTracking
         ILeaderboardSyncService leaderboardSync,
         IConsoleIconSyncService consoleIconSync,
         IOptions<RaOptions> raOptions,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool syncMemberScores = true)
     {
         if (raGameId <= 0)
         {
@@ -53,7 +54,10 @@ public static class AdminGameTracking
         db.Games.Add(game);
         await db.SaveChangesAsync(ct);
 
-        await leaderboardSync.SyncGameAsync(game, ct);
+        if (syncMemberScores)
+        {
+            await leaderboardSync.SyncGameAsync(game, ct);
+        }
 
         if (game.ConsoleId is int consoleId)
         {

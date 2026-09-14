@@ -213,6 +213,39 @@ public sealed class RaUserSummaryRecentGameDto
     public int? AchievementsTotal { get; set; }
 }
 
+public sealed class RaUserRecentlyPlayedGameDto
+{
+    [JsonPropertyName("GameID")]
+    public int GameId { get; set; }
+
+    [JsonPropertyName("ConsoleID")]
+    public int ConsoleId { get; set; }
+
+    [JsonPropertyName("ConsoleName")]
+    public string? ConsoleName { get; set; }
+
+    [JsonPropertyName("Title")]
+    public string Title { get; set; } = string.Empty;
+
+    [JsonPropertyName("ImageIcon")]
+    public string? ImageIcon { get; set; }
+
+    [JsonPropertyName("ImageBoxArt")]
+    public string? ImageBoxArt { get; set; }
+
+    [JsonPropertyName("LastPlayed")]
+    public string? LastPlayed { get; set; }
+
+    [JsonPropertyName("NumAchieved")]
+    public int? NumAchieved { get; set; }
+
+    [JsonPropertyName("NumPossibleAchievements")]
+    public int? NumPossibleAchievements { get; set; }
+
+    [JsonPropertyName("AchievementsTotal")]
+    public int? AchievementsTotal { get; set; }
+}
+
 public sealed class RaUserSummaryAwardedDto
 {
     [JsonPropertyName("NumPossibleAchievements")]
@@ -304,6 +337,15 @@ public sealed class RaGameAchievementProgressDto
 
     [JsonPropertyName("DateEarnedHardcore")]
     public string? DateEarnedHardcore { get; set; }
+}
+
+public sealed class RaLeaderboardEntryDto
+{
+    [JsonPropertyName("Rank")]
+    public int Rank { get; set; }
+
+    [JsonPropertyName("User")]
+    public string User { get; set; } = string.Empty;
 }
 
 public sealed class RaUserEntryDto

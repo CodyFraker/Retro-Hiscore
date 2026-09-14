@@ -10,6 +10,10 @@ public class Leaderboard
     public string? Description { get; set; }
     public string? Format { get; set; }
     public bool RankAsc { get; set; }
+    public int? GlobalEntryCount { get; set; }
+    public DateTimeOffset? GlobalEntryCountSyncedAt { get; set; }
     public ICollection<LeaderboardEntry> Entries { get; set; } = new List<LeaderboardEntry>();
+    public ICollection<LeaderboardPopulationSnapshot> PopulationSnapshots { get; set; } =
+        new List<LeaderboardPopulationSnapshot>();
     public ICollection<LeaderboardEntrySnapshot> Snapshots { get; set; } = new List<LeaderboardEntrySnapshot>();
 }

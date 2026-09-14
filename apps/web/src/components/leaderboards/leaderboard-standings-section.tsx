@@ -11,12 +11,14 @@ import {
 } from "@/components/ui/table";
 import type { FriendStandingDto } from "@/generated/api-client";
 import { formatStandingScore, formatSyncTime } from "@/lib/format";
+import { formatGlobalRank } from "@/lib/format-global-rank";
 
 type Props = {
   standings: FriendStandingDto[];
+  globalEntryCount?: number | null;
 };
 
-export function LeaderboardStandingsSection({ standings }: Props) {
+export function LeaderboardStandingsSection({ standings, globalEntryCount }: Props) {
   return (
     <>
       <div className="hidden md:block">
@@ -49,7 +51,7 @@ export function LeaderboardStandingsSection({ standings }: Props) {
                   {formatStandingScore(standing)}
                 </TableCell>
                 <TableCell className="text-right font-mono text-muted-foreground">
-                  {standing.globalRank != null ? `#${standing.globalRank}` : "—"}
+                  {formatGlobalRank(standing.globalRank, globalEntryCount) ?? "—"}
                 </TableCell>
                 <TableCell className="text-right text-xs text-muted-foreground">
                   {standing.scoreUpdatedAt ? formatSyncTime(standing.scoreUpdatedAt) : "No score"}
@@ -85,7 +87,7 @@ export function LeaderboardStandingsSection({ standings }: Props) {
               <span>
                 Global{" "}
                 <span className="font-mono text-foreground">
-                  {standing.globalRank != null ? `#${standing.globalRank}` : "—"}
+                  {formatGlobalRank(standing.globalRank, globalEntryCount) ?? "—"}
                 </span>
               </span>
               <span>

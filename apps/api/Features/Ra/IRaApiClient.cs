@@ -11,11 +11,23 @@ public interface IRaApiClient
         string? apiKey = null,
         CancellationToken cancellationToken = default);
 
+    Task<int?> GetLeaderboardEntryCountAsync(
+        long leaderboardId,
+        string? apiKey = null,
+        CancellationToken cancellationToken = default);
+
     Task<RaUserSummaryDto?> GetUserSummaryAsync(
         string username,
         string apiKey,
         int recentGamesCount = 3,
         int recentAchievementsCount = 8,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<RaUserRecentlyPlayedGameDto>> GetUserRecentlyPlayedGamesAsync(
+        string usernameOrUlid,
+        int count = 15,
+        int offset = 0,
+        string? apiKey = null,
         CancellationToken cancellationToken = default);
 
     Task<RaGameInfoAndUserProgressDto?> GetGameInfoAndUserProgressAsync(

@@ -169,6 +169,9 @@ describe("toGameDeltas", () => {
         leaderboardTitle: "Board A",
         scoreDelta: 50,
         friendRankDelta: 1,
+        globalRankDelta: null,
+        globalEntryCount: null,
+        globalEntryCountDelta: null,
       },
     ]);
   });

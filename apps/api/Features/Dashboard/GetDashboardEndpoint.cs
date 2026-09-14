@@ -5,6 +5,7 @@ using RetroHiscore.Api.Infrastructure;
 using RetroHiscore.Api.Features.Games;
 using RetroHiscore.Api.Features.Ra;
 using RetroHiscore.Api.Features.Sync;
+using RetroHiscore.Api.Options;
 
 namespace RetroHiscore.Api.Features.Dashboard;
 
@@ -14,6 +15,7 @@ public static class GetDashboardEndpoint
         => routes.MapGet("/api/dashboard", async (
             AppDbContext db,
             IOptions<RaOptions> raOptions,
+            IOptions<SyncOptions> syncOptions,
             CancellationToken ct) =>
         {
             var mediaBaseUrl = raOptions.Value.MediaBaseUrl;
@@ -39,7 +41,7 @@ public static class GetDashboardEndpoint
                 .ThenBy(c => c.DisplayName)
                 .ToList();
 
-            var activity = await ActivityBuilder.BuildAsync(db, ct);
+            var recentGroupGames = await RecentGroupGamesBuilder.BuildAsync(db, syncOptions, raOptions, ct);
 
             var gamesRaw = await db.Games
                 .OrderBy(g => g.Title)
@@ -100,9 +102,39 @@ public static class GetDashboardEndpoint
                     .OrderByDescending(d => d)
                     .FirstOrDefault();
 
+                var boardPopulations = entriesForGame
+                    .Select(e => e.Leaderboard)
+                    .DistinctBy(l => l.Id)
+                    .Where(l => l.GlobalEntryCount is not null)
+                    .ToList();
+
+                var busiestBoard = boardPopulations
+                    .OrderByDescending(l => l.GlobalEntryCount)
+                    .FirstOrDefault();
+
                 DashboardGameLeaderDto? leader = winRows is null
                     ? null
                     : new DashboardGameLeaderDto(winRows.DisplayName, winRows.RaUsername, winRows.AvatarUrl, winRows.FriendRankOnes);
+
+                var playersWithAvatars = entriesForGame
+                    .GroupBy(e => e.MemberId)
+                    .Select(memberGroup =>
+                    {
+                        var member = memberGroup.First().Member;
+                        return new
+                        {
+                            RaUsername = member.RaUsername ?? string.Empty,
+                            DisplayName = MemberAuthHelper.DisplayLabel(member),
+                            member.AvatarUrl
+                        };
+                    })
+                    .Where(row => !string.IsNullOrWhiteSpace(row.AvatarUrl))
+                    .Select(row => new DashboardGamePlayerAvatarDto(
+                        row.DisplayName,
+                        row.RaUsername,
+                        row.AvatarUrl!))
+                    .OrderBy(row => row.DisplayName, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
 
                 return new DashboardGameDto(
                     g.Id,
@@ -115,18 +147,21 @@ public static class GetDashboardEndpoint
                     RaMediaUrl.ToAbsolute(g.ImageTitle, mediaBaseUrl),
                     RaMediaUrl.ToAbsolute(g.ImageIngame, mediaBaseUrl),
                     g.LeaderboardCount,
+                    busiestBoard?.GlobalEntryCount,
+                    busiestBoard?.Title,
                     leader,
+                    playersWithAvatars,
                     lastActivityAt);
             })
             .OrderByDescending(g => g.LastActivityAt ?? DateTimeOffset.MinValue)
             .ThenBy(g => g.Title)
             .ToList();
 
-            return Results.Ok(new DashboardResponse(championship, activity, games));
+            return Results.Ok(new DashboardResponse(championship, recentGroupGames, games));
         })
         .WithName("GetDashboard")
         .WithTags("Dashboard")
-        .WithSummary("Returns championship standings, recent activity, and enriched game cards for the home dashboard.")
+        .WithSummary("Returns championship standings, group recent games, and enriched game cards for the home dashboard.")
         .RequireApiAuth();
 }
 
@@ -149,9 +184,14 @@ public sealed record ActivityItemDto(
     string LeaderboardTitle,
     long? ScoreDelta,
     int? FriendRankDelta,
+    int? GlobalRank,
+    int? GlobalEntryCount,
+    int? GlobalRankDelta,
     string? FormattedScore);
 
 public sealed record DashboardGameLeaderDto(string DisplayName, string RaUsername, string? AvatarUrl, int FriendRankOnes);
+
+public sealed record DashboardGamePlayerAvatarDto(string DisplayName, string RaUsername, string AvatarUrl);
 
 public sealed record DashboardGameDto(
     Guid Id,
@@ -164,10 +204,32 @@ public sealed record DashboardGameDto(
     string? ImageTitleUrl,
     string? ImageIngameUrl,
     int LeaderboardCount,
+    int? MaxGlobalEntryCount,
+    string? MaxGlobalEntryCountLeaderboardTitle,
     DashboardGameLeaderDto? FriendRankOneLeader,
+    IReadOnlyList<DashboardGamePlayerAvatarDto> PlayersWithAvatars,
     DateTimeOffset? LastActivityAt);
+
+public sealed record RecentGroupGamePlayerDto(
+    Guid MemberId,
+    string RaUsername,
+    string DisplayName,
+    string? AvatarUrl,
+    DateTimeOffset LastPlayedAt);
+
+public sealed record RecentGroupGameDto(
+    int RaGameId,
+    string Title,
+    int ConsoleId,
+    string? ConsoleName,
+    string? ConsoleIconUrl,
+    string? ImageBoxArtUrl,
+    string? ImageIconUrl,
+    DateTimeOffset LastPlayedAt,
+    bool IsTracked,
+    IReadOnlyList<RecentGroupGamePlayerDto> Players);
 
 public sealed record DashboardResponse(
     IReadOnlyList<ChampionshipRowDto> Championship,
-    IReadOnlyList<ActivityItemDto> Activity,
+    IReadOnlyList<RecentGroupGameDto> RecentGroupGames,
     IReadOnlyList<DashboardGameDto> Games);

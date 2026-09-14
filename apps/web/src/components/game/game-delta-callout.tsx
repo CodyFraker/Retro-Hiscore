@@ -37,13 +37,33 @@ export function GameDeltaCallout({ deltas }: Props) {
               )}
               {delta.friendRankDelta != null && (
                 <span>
-                  Rank{" "}
+                  Friend rank{" "}
                   <span className="text-foreground">
                     {delta.friendRankDelta > 0
                       ? `↑${delta.friendRankDelta}`
                       : delta.friendRankDelta < 0
                         ? `↓${Math.abs(delta.friendRankDelta)}`
                         : "—"}
+                  </span>
+                </span>
+              )}
+              {delta.globalRankDelta != null && delta.globalRankDelta !== 0 && (
+                <span>
+                  Global{" "}
+                  <span className="text-foreground">
+                    {delta.globalRankDelta > 0
+                      ? `↑${delta.globalRankDelta}`
+                      : `↓${Math.abs(delta.globalRankDelta)}`}
+                  </span>
+                </span>
+              )}
+              {delta.globalEntryCountDelta != null && delta.globalEntryCountDelta !== 0 && (
+                <span>
+                  Field{" "}
+                  <span className="text-foreground">
+                    {delta.globalEntryCountDelta > 0
+                      ? `+${delta.globalEntryCountDelta.toLocaleString()}`
+                      : delta.globalEntryCountDelta.toLocaleString()}
                   </span>
                 </span>
               )}

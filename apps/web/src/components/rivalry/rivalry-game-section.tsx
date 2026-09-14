@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { MemberSummaryDto, RivalryBoardDto, RivalryGameDto } from "@/generated/api-client";
+import { formatGlobalRank } from "@/lib/format-global-rank";
 
 type Props = {
   game: RivalryGameDto;
@@ -99,11 +100,17 @@ function RivalryBoardTableRow({ board }: { board: RivalryBoardDto }) {
         <div className="text-xs text-muted-foreground">
           <FriendRank rank={board.memberAFriendRank} className="justify-end" />
         </div>
+        <div className="text-xs text-muted-foreground">
+          {formatGlobalRank(board.memberAGlobalRank, board.globalEntryCount) ?? ""}
+        </div>
       </TableCell>
       <TableCell className="text-right font-mono text-sm">
         <div>{formatScore(board.memberBScore, board.memberBFormattedScore)}</div>
         <div className="text-xs text-muted-foreground">
           <FriendRank rank={board.memberBFriendRank} className="justify-end" />
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {formatGlobalRank(board.memberBGlobalRank, board.globalEntryCount) ?? ""}
         </div>
       </TableCell>
       <TableCell className="text-right text-sm text-muted-foreground">
@@ -140,6 +147,9 @@ function RivalryBoardCard({
             {formatScore(board.memberAScore, board.memberAFormattedScore)}
           </p>
           <FriendRank rank={board.memberAFriendRank} iconClassName="size-3" />
+          <p className="text-xs text-muted-foreground">
+            {formatGlobalRank(board.memberAGlobalRank, board.globalEntryCount)}
+          </p>
         </div>
         <div className="text-right">
           <p className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
@@ -150,6 +160,9 @@ function RivalryBoardCard({
             {formatScore(board.memberBScore, board.memberBFormattedScore)}
           </p>
           <FriendRank rank={board.memberBFriendRank} className="justify-end" iconClassName="size-3" />
+          <p className="text-xs text-muted-foreground">
+            {formatGlobalRank(board.memberBGlobalRank, board.globalEntryCount)}
+          </p>
         </div>
       </div>
       <p className="mt-2 text-xs text-muted-foreground">

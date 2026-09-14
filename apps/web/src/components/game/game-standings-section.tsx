@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import type { GameLeaderboardDto, StandingMemberDto } from "@/generated/api-client";
 import { formatStandingScore } from "@/lib/format";
+import { formatGlobalRank } from "@/lib/format-global-rank";
 
 type Props = {
   leaderboards: GameLeaderboardDto[];
@@ -55,6 +56,11 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
                   {board.description && (
                     <p className="mt-1 text-xs text-muted-foreground">{board.description}</p>
                   )}
+                  {board.globalEntryCount != null && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {board.globalEntryCount.toLocaleString()} ranked players on RA
+                    </p>
+                  )}
                 </TableCell>
                 {members.map((member) => {
                   const standing = board.standings.find((s) => s.memberId === member.id);
@@ -68,9 +74,9 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
                           iconClassName="size-3"
                         />
                       </div>
-                      {standing?.globalRank != null && (
+                      {formatGlobalRank(standing?.globalRank, board.globalEntryCount) && (
                         <div className="text-xs text-muted-foreground">
-                          #{standing.globalRank} globally
+                          {formatGlobalRank(standing?.globalRank, board.globalEntryCount)}
                         </div>
                       )}
                     </TableCell>
@@ -100,6 +106,11 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
             {board.description && (
               <p className="mt-1 text-xs text-muted-foreground">{board.description}</p>
             )}
+            {board.globalEntryCount != null && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {board.globalEntryCount.toLocaleString()} ranked players on RA
+              </p>
+            )}
             <ul className="mt-3 divide-y divide-border border-t border-border">
               {members.map((member) => {
                 const standing = board.standings.find((s) => s.memberId === member.id);
@@ -124,9 +135,9 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
                           iconClassName="size-3"
                         />
                       </div>
-                      {standing?.globalRank != null && (
+                      {formatGlobalRank(standing?.globalRank, board.globalEntryCount) && (
                         <div className="text-xs text-muted-foreground">
-                          #{standing.globalRank} globally
+                          {formatGlobalRank(standing?.globalRank, board.globalEntryCount)}
                         </div>
                       )}
                     </div>

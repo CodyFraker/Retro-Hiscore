@@ -2,31 +2,22 @@ import { ChevronRight, ImageOff, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ConsoleName } from "@/components/console-name";
-import { MemberAvatar } from "@/components/members/member-avatar";
-import { Badge } from "@/components/ui/badge";
+import { GameCardPlayerAvatars } from "@/components/dashboard/game-card-player-avatars";
 import { Button } from "@/components/ui/button";
 import type { DashboardGameDto } from "@/generated/api-client";
 import { FormattedSyncTime } from "@/components/formatted-sync-time";
 
 type Props = {
   game: DashboardGameDto;
-  recentChangeCount?: number;
   onDelete?: () => void;
   deleting?: boolean;
 };
 
-export function GameCard({ game, recentChangeCount = 0, onDelete, deleting }: Props) {
+export function GameCard({ game, onDelete, deleting }: Props) {
   const artUrl = game.imageBoxArtUrl ?? game.imageIconUrl;
-  const recentlyActive = recentChangeCount > 0;
 
   return (
-    <li
-      className={
-        recentlyActive
-          ? "border-l-2 border-[var(--accent-retro)]"
-          : undefined
-      }
-    >
+    <li>
       <div className="flex items-center gap-2 pr-2">
         <Link
           href={`/games/${game.raGameId}`}
@@ -63,16 +54,16 @@ export function GameCard({ game, recentChangeCount = 0, onDelete, deleting }: Pr
             )}
           </div>
           <div className="flex max-sm:w-full max-sm:items-start max-sm:pt-1 shrink-0 flex-wrap flex-col items-end gap-1.5 sm:flex-row sm:items-center">
-            {recentlyActive && (
-              <Badge className="bg-[var(--accent-retro)]/15 text-[var(--accent-retro)] hover:bg-[var(--accent-retro)]/15">
-                {recentChangeCount} change{recentChangeCount === 1 ? "" : "s"}
-              </Badge>
-            )}
-            <Badge variant="secondary">
+            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
               {game.leaderboardCount === 0
                 ? "Waiting for first sync"
                 : `${game.leaderboardCount} boards`}
-            </Badge>
+            </span>
+            {game.maxGlobalEntryCount != null && (
+              <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+                Up to {game.maxGlobalEntryCount.toLocaleString()} on RA
+              </span>
+            )}
           </div>
           <ChevronRight className="hidden size-4 shrink-0 text-muted-foreground sm:block" aria-hidden />
         </Link>
@@ -90,23 +81,7 @@ export function GameCard({ game, recentChangeCount = 0, onDelete, deleting }: Pr
           </Button>
         )}
       </div>
-      {game.friendRankOneLeader && (
-        <p className="px-4 pb-4 text-xs text-muted-foreground">
-          <Link
-            href={`/members/${encodeURIComponent(game.friendRankOneLeader.raUsername)}`}
-            className="inline-flex items-center gap-1.5 font-medium text-foreground hover:text-[var(--accent-retro)]"
-          >
-            <MemberAvatar
-              avatarUrl={game.friendRankOneLeader.avatarUrl}
-              displayName={game.friendRankOneLeader.displayName}
-              size={20}
-            />
-            {game.friendRankOneLeader.displayName}
-          </Link>{" "}
-          leads {game.friendRankOneLeader.friendRankOnes} board
-          {game.friendRankOneLeader.friendRankOnes === 1 ? "" : "s"}
-        </p>
-      )}
+      <GameCardPlayerAvatars players={game.playersWithAvatars} />
     </li>
   );
 }

@@ -88,9 +88,12 @@ public static class GetRivalryEndpoint
                         entryA?.Score,
                         entryA?.FormattedScore,
                         entryA?.FriendRank,
+                        entryA?.GlobalRank,
                         entryB?.Score,
                         entryB?.FormattedScore,
                         entryB?.FriendRank,
+                        entryB?.GlobalRank,
+                        board.GlobalEntryCount,
                         leaderUsername));
                 }
 
@@ -143,9 +146,12 @@ public sealed record RivalryBoardDto(
     long? MemberAScore,
     string? MemberAFormattedScore,
     int? MemberAFriendRank,
+    int? MemberAGlobalRank,
     long? MemberBScore,
     string? MemberBFormattedScore,
     int? MemberBFriendRank,
+    int? MemberBGlobalRank,
+    int? GlobalEntryCount,
     string? LeaderUsername);
 
 public sealed record RivalryGameDto(

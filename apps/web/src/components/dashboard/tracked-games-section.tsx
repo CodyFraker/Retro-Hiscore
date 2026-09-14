@@ -6,7 +6,6 @@ import { GameCard } from "@/components/dashboard/game-card";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DashboardGameDto } from "@/generated/api-client";
 import {
-  activityCountForGame,
   type DashboardGameSortKey,
   filterGamesByQuery,
   sortDashboardGames,
@@ -14,29 +13,22 @@ import {
 
 type Props = {
   games: DashboardGameDto[];
-  activityCounts: Record<number, number>;
 };
 
 const SORT_OPTIONS: { value: DashboardGameSortKey; label: string }[] = [
   { value: "recent", label: "Recent activity" },
-  { value: "changes", label: "Most changes" },
   { value: "boards", label: "Board count" },
   { value: "name", label: "Name (A–Z)" },
 ];
 
-export function TrackedGamesSection({ games, activityCounts }: Props) {
+export function TrackedGamesSection({ games }: Props) {
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<DashboardGameSortKey>("recent");
 
-  const activityCountMap = useMemo(
-    () => new Map(Object.entries(activityCounts).map(([id, count]) => [Number(id), count])),
-    [activityCounts],
-  );
-
   const visibleGames = useMemo(() => {
     const filtered = filterGamesByQuery(games, query);
-    return sortDashboardGames(filtered, sortKey, activityCountMap);
-  }, [games, query, sortKey, activityCountMap]);
+    return sortDashboardGames(filtered, sortKey);
+  }, [games, query, sortKey]);
 
   if (games.length === 0) {
     return (
@@ -103,11 +95,7 @@ export function TrackedGamesSection({ games, activityCounts }: Props) {
           <CardContent className="px-0">
             <ul className="divide-y divide-border">
               {visibleGames.map((game) => (
-                <GameCard
-                  key={game.id}
-                  game={game}
-                  recentChangeCount={activityCountForGame(activityCountMap, game.raGameId)}
-                />
+                <GameCard key={game.id} game={game} />
               ))}
             </ul>
           </CardContent>

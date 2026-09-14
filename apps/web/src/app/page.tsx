@@ -3,7 +3,6 @@ import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
 import { TrackedGamesSection } from "@/components/dashboard/tracked-games-section";
-import { countActivityByGameId } from "@/lib/dashboard-games";
 import type { DashboardResponse } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
 
@@ -21,9 +20,6 @@ export default async function HomePage() {
   }
 
   const games = dashboard?.games ?? [];
-  const activityCounts = Object.fromEntries(
-    countActivityByGameId(dashboard?.activity ?? []).entries(),
-  );
 
   return (
     <div className="space-y-8">
@@ -39,13 +35,13 @@ export default async function HomePage() {
       {!error && (
         <DashboardLayout
           primary={
-            <TrackedGamesSection games={games} activityCounts={activityCounts} />
+            <TrackedGamesSection games={games} />
           }
           sidebar={
             dashboard ? (
               <DashboardSidebar
                 championship={dashboard.championship}
-                activity={dashboard.activity}
+                recentGroupGames={dashboard.recentGroupGames}
               />
             ) : undefined
           }

@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { HeaderUserMenu } from "@/components/header-user-menu";
 import { RefreshButton } from "@/components/refresh-button";
 import { RefreshMetadataButton } from "@/components/refresh-metadata-button";
 import { SettingsLinkButton } from "@/components/settings-link-button";
@@ -95,26 +96,12 @@ export function SiteHeaderBar({
           </div>
         </div>
 
-        <div className="hidden items-start gap-3 md:flex">
-          <Link
-            href="/settings"
-            className="flex items-center gap-2 rounded-lg text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {avatarUrl && (
-              <Image
-                src={avatarUrl}
-                alt=""
-                width={28}
-                height={28}
-                className="rounded-full"
-              />
-            )}
-            <span>{displayName}</span>
-          </Link>
-          <RefreshMetadataButton />
-          <RefreshButton />
-          <SettingsLinkButton />
-          <SignOutButton />
+        <div className="hidden md:flex">
+          <HeaderUserMenu
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            showAdminNav={showAdminNav}
+          />
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -158,8 +145,12 @@ export function SiteHeaderBar({
               </Link>
               <div className="flex flex-col gap-3 border-t border-border pt-4">
                 <SettingsLinkButton onNavigate={() => setOpen(false)} />
-                <RefreshMetadataButton />
-                <RefreshButton />
+                {showAdminNav ? (
+                  <>
+                    <RefreshMetadataButton />
+                    <RefreshButton />
+                  </>
+                ) : null}
                 <SignOutButton />
               </div>
             </div>

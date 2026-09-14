@@ -146,6 +146,19 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 });
             });
 
+        RaApiClient
+            .GetUserRecentlyPlayedGamesAsync(
+                Arg.Any<string>(),
+                Arg.Any<int>(),
+                Arg.Any<int>(),
+                Arg.Any<string?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<RaUserRecentlyPlayedGameDto>>([]));
+
+        RaApiClient
+            .GetLeaderboardEntryCountAsync(Arg.Any<long>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<int?>(0));
+
         ConsoleIconDownloader
             .DownloadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new ConsoleIconDownload(SamplePngBytes, "image/png")));
@@ -182,14 +195,23 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             END $$;
             """);
 
-        var authOptions = new AuthOptions { AdminDiscordUserIds = [AuthTestHelper.AdminDiscordUserId] };
-        await SeedData.EnsureSeededAsync(db, new RaOptions(), authOptions);
+        await SeedData.EnsureSeededAsync(db, new RaOptions());
         await EnsureDefaultTestMembersAsync(db);
     }
 
     private static async Task EnsureDefaultTestMembersAsync(AppDbContext db)
     {
-        var admin = await db.Members.SingleAsync(m => m.DiscordId == AuthTestHelper.AdminDiscordUserId);
+        var admin = await db.Members.FirstOrDefaultAsync(m => m.DiscordId == AuthTestHelper.AdminDiscordUserId);
+        if (admin is null)
+        {
+            admin = new Member
+            {
+                DiscordId = AuthTestHelper.AdminDiscordUserId,
+                IsAdmin = true,
+            };
+            db.Members.Add(admin);
+        }
+
         admin.RaUsername = "ShrimpPoboy";
         admin.DisplayName = "ShrimpPoboy";
         admin.IsAdmin = true;

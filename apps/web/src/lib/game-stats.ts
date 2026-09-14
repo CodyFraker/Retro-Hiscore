@@ -5,6 +5,12 @@ export type GameStats = {
   leaderboardCount: number;
   membersWithScores: number;
   totalScores: number;
+  totalRankedEntriesAcrossBoards: number;
+  busiestBoard: {
+    raLeaderboardId: number;
+    title: string;
+    globalEntryCount: number;
+  } | null;
   lastActivityAt: string | null;
   currentLeader: {
     memberId: string;
@@ -39,10 +45,31 @@ export function summarizeGameStats(data: GameLeaderboardsResponse): GameStats {
 
   const topWinner = winRows.find((row) => row.friendRankOnes > 0);
 
+  let totalRankedEntriesAcrossBoards = 0;
+  let busiestBoard: GameStats["busiestBoard"] = null;
+
+  for (const board of data.leaderboards) {
+    if (board.globalEntryCount != null) {
+      totalRankedEntriesAcrossBoards += board.globalEntryCount;
+      if (
+        busiestBoard == null ||
+        board.globalEntryCount > busiestBoard.globalEntryCount
+      ) {
+        busiestBoard = {
+          raLeaderboardId: board.raLeaderboardId,
+          title: board.title,
+          globalEntryCount: board.globalEntryCount,
+        };
+      }
+    }
+  }
+
   return {
     leaderboardCount: data.leaderboards.length,
     membersWithScores: scoredMemberIds.size,
     totalScores,
+    totalRankedEntriesAcrossBoards,
+    busiestBoard,
     lastActivityAt,
     currentLeader: topWinner
       ? {

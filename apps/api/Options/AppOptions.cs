@@ -6,6 +6,9 @@ public class SyncOptions
 
     public int IntervalMinutes { get; set; } = 15;
     public int ManualCooldownSeconds { get; set; } = 60;
+    public int RecentGamesPerMember { get; set; } = 15;
+    public int DashboardRecentGamesLimit { get; set; } = 15;
+    public int MaxLeaderboardEligibilityProbesPerSync { get; set; } = 10;
 }
 
 public class GameMetadataSyncOptions

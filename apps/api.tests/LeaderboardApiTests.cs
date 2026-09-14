@@ -93,8 +93,10 @@ public class LeaderboardApiTests : IAsyncLifetime
             .Returns(call =>
             {
                 var gameId = call.ArgAt<int>(0);
-                var user = call.ArgAt<string>(1);
-                if (!string.Equals(user, "ShrimpPoboy", StringComparison.OrdinalIgnoreCase))
+                var identity = call.ArgAt<string>(1);
+                var isShrimp = string.Equals(identity, "ShrimpPoboy", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(identity, "01TESTULID", StringComparison.OrdinalIgnoreCase);
+                if (!isShrimp)
                 {
                     return Task.FromResult<IReadOnlyList<RaUserGameLeaderboardDto>>([]);
                 }
@@ -120,6 +122,10 @@ public class LeaderboardApiTests : IAsyncLifetime
                 ]);
             });
 
+        _factory.RaApiClient
+            .GetLeaderboardEntryCountAsync(Arg.Any<long>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(10_247);
+
         using var scope = _factory.Services.CreateScope();
         var sync = scope.ServiceProvider.GetRequiredService<ILeaderboardSyncService>();
 
@@ -132,6 +138,7 @@ public class LeaderboardApiTests : IAsyncLifetime
         run.Status.ShouldBe(SyncRunStatus.Succeeded);
         payload.ShouldNotBeNull();
         payload.Leaderboards.Count.ShouldBe(1);
+        payload.Leaderboards[0].GlobalEntryCount.ShouldBe(10_247);
 
         var shrimp = payload.Leaderboards[0].Standings.Single(s => s.RaUsername == "ShrimpPoboy");
         shrimp.Score.ShouldBe(352750);

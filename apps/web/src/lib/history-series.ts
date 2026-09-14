@@ -4,6 +4,7 @@ export type HistoryPoint = {
   syncedAt: string;
   score: number;
   friendRank: number | null;
+  globalRank: number | null;
 };
 
 export type MemberSeries = {
@@ -22,6 +23,9 @@ export type MemberDelta = {
   friendRankDelta: number | null;
   previousFriendRank: number | null;
   currentFriendRank: number | null;
+  globalRankDelta: number | null;
+  previousGlobalRank: number | null;
+  currentGlobalRank: number | null;
 };
 
 export function toChartSeries(items: LeaderboardHistoryItemDto[]): MemberSeries[] {
@@ -43,6 +47,7 @@ export function toChartSeries(items: LeaderboardHistoryItemDto[]): MemberSeries[
       syncedAt: item.syncedAt,
       score: item.score,
       friendRank: item.friendRank ?? null,
+      globalRank: item.globalRank ?? null,
     });
   }
 
@@ -79,6 +84,9 @@ export function computeMemberDeltas(series: MemberSeries[]): MemberDelta[] {
         friendRankDelta: null,
         previousFriendRank: null,
         currentFriendRank: last?.friendRank ?? null,
+        globalRankDelta: null,
+        previousGlobalRank: null,
+        currentGlobalRank: last?.globalRank ?? null,
       };
     }
 
@@ -87,6 +95,10 @@ export function computeMemberDeltas(series: MemberSeries[]): MemberDelta[] {
     const friendRankDelta =
       previous.friendRank != null && current.friendRank != null
         ? previous.friendRank - current.friendRank
+        : null;
+    const globalRankDelta =
+      previous.globalRank != null && current.globalRank != null
+        ? previous.globalRank - current.globalRank
         : null;
 
     return {
@@ -98,6 +110,9 @@ export function computeMemberDeltas(series: MemberSeries[]): MemberDelta[] {
       friendRankDelta,
       previousFriendRank: previous.friendRank,
       currentFriendRank: current.friendRank,
+      globalRankDelta,
+      previousGlobalRank: previous.globalRank,
+      currentGlobalRank: current.globalRank,
     };
   });
 }

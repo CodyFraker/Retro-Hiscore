@@ -62,6 +62,8 @@ public static class GetGameLeaderboardsEndpoint
                     l.Description,
                     l.Format,
                     l.RankAsc,
+                    l.GlobalEntryCount,
+                    l.GlobalEntryCountSyncedAt,
                     standings);
             }).ToList();
 
@@ -89,6 +91,7 @@ public static class GetGameLeaderboardsEndpoint
         })
         .WithName("GetGameLeaderboards")
         .WithTags("Games")
+        .WithSummary("Returns friend standings for every tracked leaderboard on a game.")
         .RequireApiAuth();
 }
 
@@ -112,6 +115,8 @@ public sealed record GameLeaderboardDto(
     string? Description,
     string? Format,
     bool RankAsc,
+    int? GlobalEntryCount,
+    DateTimeOffset? GlobalEntryCountSyncedAt,
     IReadOnlyList<FriendStandingDto> Standings);
 
 public sealed record GameLeaderboardsResponse(

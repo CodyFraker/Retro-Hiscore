@@ -52,10 +52,13 @@ public static class GetLeaderboardEndpoint
                 leaderboard.Description,
                 leaderboard.Format,
                 leaderboard.RankAsc,
+                leaderboard.GlobalEntryCount,
+                leaderboard.GlobalEntryCountSyncedAt,
                 standings));
         })
         .WithName("GetLeaderboard")
         .WithTags("Leaderboards")
+        .WithSummary("Returns friend standings and metadata for a single leaderboard.")
         .RequireApiAuth();
 }
 
@@ -68,4 +71,6 @@ public sealed record LeaderboardDetailDto(
     string? Description,
     string? Format,
     bool RankAsc,
+    int? GlobalEntryCount,
+    DateTimeOffset? GlobalEntryCountSyncedAt,
     IReadOnlyList<FriendStandingDto> Standings);

@@ -16,6 +16,7 @@ function gameData(overrides: Partial<GameLeaderboardsResponse> = {}): GameLeader
         raLeaderboardId: 1001,
         title: "Board A",
         rankAsc: false,
+        globalEntryCount: 500,
         standings: [
           {
             memberId: "m1",
@@ -42,6 +43,7 @@ function gameData(overrides: Partial<GameLeaderboardsResponse> = {}): GameLeader
         raLeaderboardId: 1002,
         title: "Board B",
         rankAsc: false,
+        globalEntryCount: 1200,
         standings: [
           {
             memberId: "m1",
@@ -79,6 +81,12 @@ describe("summarizeGameStats", () => {
     expect(stats.leaderboardCount).toBe(2);
     expect(stats.membersWithScores).toBe(2);
     expect(stats.totalScores).toBe(3);
+    expect(stats.totalRankedEntriesAcrossBoards).toBe(1700);
+    expect(stats.busiestBoard).toEqual({
+      raLeaderboardId: 1002,
+      title: "Board B",
+      globalEntryCount: 1200,
+    });
     expect(stats.lastActivityAt).toBe("2026-01-03T00:00:00Z");
   });
 
