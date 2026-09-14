@@ -15,6 +15,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<MemberRaAchievement> MemberRaAchievements => Set<MemberRaAchievement>();
     public DbSet<SyncRun> SyncRuns => Set<SyncRun>();
     public DbSet<RaConsole> Consoles => Set<RaConsole>();
+    public DbSet<GameSource> GameSources => Set<GameSource>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,6 +43,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Publisher).HasMaxLength(256);
             e.Property(x => x.Developer).HasMaxLength(256);
             e.Property(x => x.Genre).HasMaxLength(256);
+        });
+
+        modelBuilder.Entity<GameSource>(e =>
+        {
+            e.HasIndex(x => x.GameId);
+            e.Property(x => x.Url).HasMaxLength(2048).IsRequired();
+            e.Property(x => x.Label).HasMaxLength(128);
+            e.Property(x => x.Note).HasMaxLength(512);
+            e.HasOne(x => x.Game)
+                .WithMany(x => x.Sources)
+                .HasForeignKey(x => x.GameId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<RaConsole>(e =>

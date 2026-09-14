@@ -14,9 +14,13 @@ public static class GetRivalryEndpoint
             CancellationToken ct) =>
         {
             var memberA = await db.Members
-                .FirstOrDefaultAsync(m => EF.Functions.ILike(m.RaUsername, usernameA), ct);
+                .FirstOrDefaultAsync(
+                    m => m.RaUsername != null && EF.Functions.ILike(m.RaUsername, usernameA),
+                    ct);
             var memberB = await db.Members
-                .FirstOrDefaultAsync(m => EF.Functions.ILike(m.RaUsername, usernameB), ct);
+                .FirstOrDefaultAsync(
+                    m => m.RaUsername != null && EF.Functions.ILike(m.RaUsername, usernameB),
+                    ct);
 
             if (memberA is null || memberB is null)
             {
@@ -95,16 +99,16 @@ public static class GetRivalryEndpoint
 
             var summaryA = new MemberSummaryDto(
                 memberA.Id,
-                memberA.RaUsername,
-                memberA.DisplayName ?? memberA.RaUsername,
+                memberA.RaUsername ?? string.Empty,
+                memberA.DisplayName ?? memberA.RaUsername ?? string.Empty,
                 memberA.AvatarUrl,
                 entries.Count(e => e.MemberId == memberA.Id),
                 entries.Count(e => e.MemberId == memberA.Id && e.FriendRank == 1));
 
             var summaryB = new MemberSummaryDto(
                 memberB.Id,
-                memberB.RaUsername,
-                memberB.DisplayName ?? memberB.RaUsername,
+                memberB.RaUsername ?? string.Empty,
+                memberB.DisplayName ?? memberB.RaUsername ?? string.Empty,
                 memberB.AvatarUrl,
                 entries.Count(e => e.MemberId == memberB.Id),
                 entries.Count(e => e.MemberId == memberB.Id && e.FriendRank == 1));

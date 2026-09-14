@@ -40,7 +40,11 @@ function NavLinks({
   showAdminNav?: boolean;
 }) {
   const links = showAdminNav
-    ? [...BASE_NAV_LINKS, { href: "/admin", label: "Admin" }]
+    ? [
+        ...BASE_NAV_LINKS,
+        { href: "/admin/games", label: "Manage Games" },
+        { href: "/admin", label: "Admin" },
+      ]
     : BASE_NAV_LINKS;
 
   return (

@@ -37,8 +37,8 @@ public static class GetLeaderboardHistoryEndpoint
                 .Select(s => new LeaderboardHistoryItemDto(
                     s.Id,
                     s.MemberId,
-                    s.Member.RaUsername,
-                    s.Member.DisplayName ?? s.Member.RaUsername,
+                    s.Member.RaUsername ?? string.Empty,
+                    s.Member.DisplayName ?? s.Member.RaUsername ?? string.Empty,
                     s.Member.AvatarUrl,
                     s.Score,
                     s.FormattedScore,

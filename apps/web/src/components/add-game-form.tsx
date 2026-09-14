@@ -57,11 +57,11 @@ export function AddGameForm() {
           setError(null);
           setMessage(null);
           try {
-            const game = await api.addGame(parsed);
+            const game = await api.postAdminGame(parsed);
             setInput("");
             setMessage(`Added ${game.title}`);
+            router.push(`/admin/games/${game.raGameId}`);
             router.refresh();
-            document.getElementById("tracked-games")?.scrollIntoView({ behavior: "smooth" });
           } catch (err) {
             setError(formatAddGameError(err));
           }

@@ -204,6 +204,15 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             });
         }
 
+        if (!await db.Members.AnyAsync(m => m.RaUsername == "xXScubXx"))
+        {
+            db.Members.Add(new Member
+            {
+                RaUsername = "xXScubXx",
+                DisplayName = "xXScubXx"
+            });
+        }
+
         await db.SaveChangesAsync();
     }
 

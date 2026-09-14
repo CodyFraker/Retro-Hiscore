@@ -1,5 +1,4 @@
 import { AlertCircle } from "lucide-react";
-import { AddGamePanel } from "@/components/dashboard/add-game-panel";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
@@ -40,10 +39,7 @@ export default async function HomePage() {
       {!error && (
         <DashboardLayout
           primary={
-            <>
-              <AddGamePanel />
-              <TrackedGamesSection games={games} activityCounts={activityCounts} />
-            </>
+            <TrackedGamesSection games={games} activityCounts={activityCounts} />
           }
           sidebar={
             dashboard ? (

@@ -155,12 +155,8 @@ export function createApiClient(options: ApiClientOptions) {
       );
     },
     getGames: () => request<GameDto[]>(baseUrl, "/api/games", undefined, fetchImpl),
-    addGame: (raGameId: number) =>
-      request<GameDto>(baseUrl, "/api/games", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ raGameId }),
-      }, fetchImpl),
+    getGameSources: (raGameId: number) =>
+      request<GameSourceDto[]>(baseUrl, \`/api/games/\${raGameId}/sources\`, undefined, fetchImpl),
     getGameLeaderboards: (raGameId: number) =>
       request<GameLeaderboardsResponse>(baseUrl, \`/api/games/\${raGameId}/leaderboards\`, undefined, fetchImpl),
     getGameHistory: (raGameId: number, limit?: number, offset?: number) => {
@@ -231,6 +227,38 @@ export function createApiClient(options: ApiClientOptions) {
     getConsoleIconSyncStatus: () =>
       request<SyncStatusDto>(baseUrl, "/api/sync/console-icons/status", undefined, fetchImpl),
     getAdminOps: () => request<AdminOpsDto>(baseUrl, "/api/admin/ops", undefined, fetchImpl),
+    getAdminGames: () => request<AdminGameDto[]>(baseUrl, "/api/admin/games", undefined, fetchImpl),
+    postAdminGame: (raGameId: number) =>
+      request<AdminGameDto>(baseUrl, "/api/admin/games", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raGameId }),
+      }, fetchImpl),
+    deleteAdminGame: (raGameId: number) =>
+      request<void>(baseUrl, \`/api/admin/games/\${raGameId}\`, { method: "DELETE" }, fetchImpl),
+    postAdminGameRefresh: (raGameId: number) =>
+      request<AdminGameDto>(baseUrl, \`/api/admin/games/\${raGameId}/refresh\`, { method: "POST" }, fetchImpl),
+    getAdminGameSources: (raGameId: number) =>
+      request<GameSourceDto[]>(baseUrl, \`/api/admin/games/\${raGameId}/sources\`, undefined, fetchImpl),
+    postAdminGameSource: (raGameId: number, body: UpsertGameSourceRequest) =>
+      request<GameSourceDto>(baseUrl, \`/api/admin/games/\${raGameId}/sources\`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
+    putAdminGameSource: (raGameId: number, sourceId: string, body: UpsertGameSourceRequest) =>
+      request<GameSourceDto>(baseUrl, \`/api/admin/games/\${raGameId}/sources/\${sourceId}\`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
+    deleteAdminGameSource: (raGameId: number, sourceId: string) =>
+      request<void>(
+        baseUrl,
+        \`/api/admin/games/\${raGameId}/sources/\${sourceId}\`,
+        { method: "DELETE" },
+        fetchImpl,
+      ),
     getAdminMemberInvites: () =>
       request<AdminMemberInviteDto[]>(baseUrl, "/api/admin/member-invites", undefined, fetchImpl),
     postAdminMemberInvite: (discordId: string) =>

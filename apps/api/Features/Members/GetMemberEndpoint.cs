@@ -10,7 +10,9 @@ public static class GetMemberEndpoint
         => routes.MapGet("/api/members/{raUsername}", async (string raUsername, AppDbContext db, CancellationToken ct) =>
         {
             var member = await db.Members
-                .FirstOrDefaultAsync(m => EF.Functions.ILike(m.RaUsername, raUsername), ct);
+                .FirstOrDefaultAsync(
+                    m => m.RaUsername != null && EF.Functions.ILike(m.RaUsername, raUsername),
+                    ct);
 
             if (member is null)
             {
@@ -40,9 +42,9 @@ public static class GetMemberEndpoint
 
             return Results.Ok(new MemberDetailDto(
                 member.Id,
-                member.RaUsername,
+                member.RaUsername ?? string.Empty,
                 member.RaUlid,
-                member.DisplayName ?? member.RaUsername,
+                member.DisplayName ?? member.RaUsername ?? string.Empty,
                 member.AvatarUrl,
                 boardsWithScore,
                 friendRankOnes,

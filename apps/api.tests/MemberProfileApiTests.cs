@@ -44,7 +44,7 @@ public class MemberProfileApiTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task PutApiKey_Returns404_WhenDiscordNotLinked()
+    public async Task PutApiKey_SetsKeyOnSeededMember_WithoutExplicitLinkStep()
     {
         // Arrange
         var client = _factory.CreateAuthenticatedClient();
@@ -53,14 +53,17 @@ public class MemberProfileApiTests : IAsyncLifetime
         var response = await client.PutAsJsonAsync("/api/members/me/api-key", new PutMemberApiKeyRequest("member-key-123"));
 
         // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var member = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+        member.RaApiKey.ShouldBe("member-key-123");
     }
 
     [Fact]
     public async Task PutApiKey_Returns403_WhenNotAllowlisted()
     {
         // Arrange
-        await LinkMemberAsync(AuthTestHelper.DeniedDiscordUserId, "beefboybilly");
         var client = _factory.CreateAuthenticatedClient(AuthTestHelper.DeniedDiscordUserId);
 
         // Act

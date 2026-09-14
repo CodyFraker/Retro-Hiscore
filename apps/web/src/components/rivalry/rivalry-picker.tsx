@@ -11,8 +11,9 @@ type Props = {
 
 export function RivalryPicker({ members }: Props) {
   const router = useRouter();
-  const [usernameA, setUsernameA] = useState(members[0]?.raUsername ?? "");
-  const [usernameB, setUsernameB] = useState(members[1]?.raUsername ?? "");
+  const selectable = members.filter((member) => member.raUsername);
+  const [usernameA, setUsernameA] = useState(selectable[0]?.raUsername ?? "");
+  const [usernameB, setUsernameB] = useState(selectable[1]?.raUsername ?? "");
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -25,7 +26,7 @@ export function RivalryPicker({ members }: Props) {
     );
   }
 
-  if (members.length < 2) {
+  if (selectable.length < 2) {
     return null;
   }
 
@@ -38,8 +39,8 @@ export function RivalryPicker({ members }: Props) {
           onChange={(event) => setUsernameA(event.target.value)}
           className="block w-full rounded-md bg-input px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-auto"
         >
-          {members.map((member) => (
-            <option key={member.id} value={member.raUsername}>
+          {selectable.map((member) => (
+            <option key={member.id} value={member.raUsername ?? ""}>
               {member.displayName}
             </option>
           ))}
@@ -52,8 +53,8 @@ export function RivalryPicker({ members }: Props) {
           onChange={(event) => setUsernameB(event.target.value)}
           className="block w-full rounded-md bg-input px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-auto"
         >
-          {members.map((member) => (
-            <option key={member.id} value={member.raUsername}>
+          {selectable.map((member) => (
+            <option key={member.id} value={member.raUsername ?? ""}>
               {member.displayName}
             </option>
           ))}

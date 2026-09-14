@@ -27,9 +27,9 @@ public class DeleteGameApiTests : IAsyncLifetime
     [Fact]
     public async Task DeleteGame_ReturnsNotFound_WhenMissing()
     {
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
-        var response = await client.DeleteAsync("/api/games/999999");
+        var response = await client.DeleteAsync("/api/admin/games/999999");
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
@@ -54,9 +54,9 @@ public class DeleteGameApiTests : IAsyncLifetime
             await db.SaveChangesAsync();
         }
 
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
-        var response = await client.DeleteAsync($"/api/games/{raGameId}");
+        var response = await client.DeleteAsync($"/api/admin/games/{raGameId}");
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 

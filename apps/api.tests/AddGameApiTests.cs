@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using RetroHiscore.Api.Data;
+using RetroHiscore.Api.Features.Admin;
 using RetroHiscore.Api.Features.Games;
 using RetroHiscore.Api.Features.Ra;
 using RetroHiscore.Api.Features.Sync;
@@ -42,11 +43,11 @@ public class AddGameApiTests : IAsyncLifetime
         const int raGameId = 99999;
         await _factory.SetMemberApiKeyAsync("ShrimpPoboy", "shrimp-test-key");
         SetupRaMocks(raGameId, includeMemberScore: true);
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/games", new { raGameId });
-        var created = await response.Content.ReadFromJsonAsync<GameDto>(JsonOptions);
+        var response = await client.PostAsJsonAsync("/api/admin/games", new PostAdminGameRequest(raGameId));
+        var created = await response.Content.ReadFromJsonAsync<AdminGameDto>(JsonOptions);
         var games = await client.GetFromJsonAsync<List<GameDto>>("/api/games", JsonOptions);
         var detail = await client.GetFromJsonAsync<GameLeaderboardsResponse>($"/api/games/{raGameId}/leaderboards", JsonOptions);
 
@@ -75,10 +76,10 @@ public class AddGameApiTests : IAsyncLifetime
     public async Task AddGame_Returns409_WhenGameAlreadyTracked()
     {
         // Arrange
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/games", new { raGameId = 38130 });
+        var response = await client.PostAsJsonAsync("/api/admin/games", new PostAdminGameRequest(38130));
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
@@ -93,10 +94,10 @@ public class AddGameApiTests : IAsyncLifetime
         _factory.RaApiClient
             .GetGameAsync(raGameId, Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new RaGameDto { Title = "" }));
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/games", new { raGameId });
+        var response = await client.PostAsJsonAsync("/api/admin/games", new PostAdminGameRequest(raGameId));
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -111,11 +112,11 @@ public class AddGameApiTests : IAsyncLifetime
         // Arrange
         const int raGameId = 88888;
         SetupRaMocks(raGameId, includeMemberScore: false);
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
         // Act
-        var response = await client.PostAsJsonAsync("/api/games", new { raGameId });
-        var created = await response.Content.ReadFromJsonAsync<GameDto>(JsonOptions);
+        var response = await client.PostAsJsonAsync("/api/admin/games", new PostAdminGameRequest(raGameId));
+        var created = await response.Content.ReadFromJsonAsync<AdminGameDto>(JsonOptions);
         var detail = await client.GetFromJsonAsync<GameLeaderboardsResponse>($"/api/games/{raGameId}/leaderboards", JsonOptions);
 
         // Assert

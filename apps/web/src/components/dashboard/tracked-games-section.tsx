@@ -1,12 +1,10 @@
 "use client";
 
 import { Gamepad2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { GameCard } from "@/components/dashboard/game-card";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DashboardGameDto } from "@/generated/api-client";
-import { useApiClient } from "@/lib/use-api-client";
 import {
   activityCountForGame,
   type DashboardGameSortKey,
@@ -27,12 +25,8 @@ const SORT_OPTIONS: { value: DashboardGameSortKey; label: string }[] = [
 ];
 
 export function TrackedGamesSection({ games, activityCounts }: Props) {
-  const api = useApiClient();
-  const router = useRouter();
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<DashboardGameSortKey>("recent");
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [pending, startTransition] = useTransition();
 
   const activityCountMap = useMemo(
     () => new Map(Object.entries(activityCounts).map(([id, count]) => [Number(id), count])),
@@ -44,22 +38,6 @@ export function TrackedGamesSection({ games, activityCounts }: Props) {
     return sortDashboardGames(filtered, sortKey, activityCountMap);
   }, [games, query, sortKey, activityCountMap]);
 
-  function handleDelete(game: DashboardGameDto) {
-    if (!window.confirm(`Stop tracking ${game.title}?`)) {
-      return;
-    }
-
-    setDeletingId(game.raGameId);
-    startTransition(async () => {
-      try {
-        await api.deleteGame(game.raGameId);
-        router.refresh();
-      } finally {
-        setDeletingId(null);
-      }
-    });
-  }
-
   if (games.length === 0) {
     return (
       <Card id="tracked-games">
@@ -68,7 +46,8 @@ export function TrackedGamesSection({ games, activityCounts }: Props) {
           <div className="space-y-1">
             <p className="font-medium">No games tracked yet</p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Add a RetroAchievements game above, then run Refresh scores to pull friend leaderboards.
+              An administrator can add games from Manage Games, then run Refresh scores to pull friend
+              leaderboards.
             </p>
           </div>
         </CardContent>
@@ -128,8 +107,6 @@ export function TrackedGamesSection({ games, activityCounts }: Props) {
                   key={game.id}
                   game={game}
                   recentChangeCount={activityCountForGame(activityCountMap, game.raGameId)}
-                  deleting={pending && deletingId === game.raGameId}
-                  onDelete={() => handleDelete(game)}
                 />
               ))}
             </ul>

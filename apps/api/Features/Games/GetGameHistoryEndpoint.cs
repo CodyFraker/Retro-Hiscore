@@ -36,8 +36,8 @@ public static class GetGameHistoryEndpoint
                 .Select(s => new GameHistoryItemDto(
                     s.Id,
                     s.MemberId,
-                    s.Member.RaUsername,
-                    s.Member.DisplayName ?? s.Member.RaUsername,
+                    s.Member.RaUsername ?? string.Empty,
+                    s.Member.DisplayName ?? s.Member.RaUsername ?? string.Empty,
                     s.Member.AvatarUrl,
                     s.Leaderboard.RaLeaderboardId,
                     s.Leaderboard.Title,

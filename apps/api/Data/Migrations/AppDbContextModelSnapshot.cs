@@ -85,6 +85,41 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.ToTable("Games");
                 });
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameSource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Label")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.ToTable("GameSources");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.Leaderboard", b =>
                 {
                     b.Property<Guid>("Id")
@@ -499,9 +534,22 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Navigation("Member");
                 });
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameSource", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Game", "Game")
+                        .WithMany("Sources")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.Game", b =>
                 {
                     b.Navigation("Leaderboards");
+
+                    b.Navigation("Sources");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.Leaderboard", b =>

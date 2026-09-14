@@ -22,7 +22,9 @@ public static class GetMemberRaSummaryEndpoint
             CancellationToken ct) =>
         {
             var member = await db.Members
-                .FirstOrDefaultAsync(m => EF.Functions.ILike(m.RaUsername, raUsername), ct);
+                .FirstOrDefaultAsync(
+                    m => m.RaUsername != null && EF.Functions.ILike(m.RaUsername, raUsername),
+                    ct);
 
             if (member is null)
             {

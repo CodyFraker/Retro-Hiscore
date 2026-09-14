@@ -41,7 +41,7 @@ public static class ActivityBuilder
                     var member = memberGroup.First().Member;
                     return new SnapshotDeltaCalculator.MemberSnapshotSeries(
                         memberGroup.Key,
-                        member.DisplayName ?? member.RaUsername,
+                        member.DisplayName ?? member.RaUsername ?? string.Empty,
                         memberGroup.Select(s => new SnapshotDeltaCalculator.SnapshotPoint(
                             s.SyncedAt,
                             s.Score,

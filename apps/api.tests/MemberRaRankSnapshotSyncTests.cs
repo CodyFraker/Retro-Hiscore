@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using RetroHiscore.Api.Data;
+using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Ra;
 using RetroHiscore.Api.Features.Sync;
 using Shouldly;

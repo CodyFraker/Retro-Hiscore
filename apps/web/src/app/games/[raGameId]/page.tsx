@@ -10,6 +10,7 @@ import { GameStatsStrip } from "@/components/game/game-stats-strip";
 import { GameTrendCharts } from "@/components/game/game-trend-charts";
 import { BoardWinSummary } from "@/components/game/board-win-summary";
 import { RetroachievementsLink } from "@/components/game/retroachievements-link";
+import { GameSourcesSection } from "@/components/game/game-sources-section";
 import { getServerApiClient } from "@/lib/api";
 import { recentlyUpdatedBoards, summarizeBoardWins } from "@/lib/board-wins";
 import { toGameDeltas } from "@/lib/game-history-series";
@@ -32,10 +33,12 @@ export default async function GamePage({ params }: Props) {
   const api = await getServerApiClient();
   let data: Awaited<ReturnType<typeof api.getGameLeaderboards>>;
   let history: Awaited<ReturnType<typeof api.getGameHistory>>;
+  let sources: Awaited<ReturnType<typeof api.getGameSources>>;
   try {
-    [data, history] = await Promise.all([
+    [data, history, sources] = await Promise.all([
       api.getGameLeaderboards(raGameId),
       api.getGameHistory(raGameId, 200, 0),
+      api.getGameSources(raGameId),
     ]);
   } catch {
     notFound();
@@ -100,6 +103,8 @@ export default async function GamePage({ params }: Props) {
           <RetroachievementsLink raGameId={data.raGameId} />
         </div>
       </div>
+
+      <GameSourcesSection sources={sources} />
 
       {data.leaderboards.length === 0 ? (
         <p className="flex items-center gap-2 text-muted-foreground">
