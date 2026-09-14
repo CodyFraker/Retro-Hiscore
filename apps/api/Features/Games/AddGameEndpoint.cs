@@ -16,6 +16,7 @@ public static class AddGameEndpoint
             HttpRequest httpRequest,
             AppDbContext db,
             IRaApiClient raApiClient,
+            IRaApiKeyPool apiKeyPool,
             ILeaderboardSyncService leaderboardSync,
             IConsoleIconSyncService consoleIconSync,
             IOptions<RaOptions> raOptions,
@@ -35,7 +36,10 @@ public static class AddGameEndpoint
                 return Results.Conflict(new { message = $"Game {request.RaGameId} is already tracked." });
             }
 
-            var payload = await raApiClient.GetGameAsync(request.RaGameId, ct);
+            var payload = await apiKeyPool.ExecuteAsync(
+                [raOptions.Value.ApiKey],
+                (key, token) => raApiClient.GetGameAsync(request.RaGameId, key, token),
+                ct);
             if (string.IsNullOrWhiteSpace(payload.Title))
             {
                 return Results.NotFound(new { message = $"Game {request.RaGameId} was not found on RetroAchievements." });

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FriendRank } from "@/components/friend-rank";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import {
   Table,
   TableBody,
@@ -42,8 +43,18 @@ export function RivalryGameSection({ game, memberA, memberB }: Props) {
           <TableHeader>
             <TableRow>
               <TableHead>Board</TableHead>
-              <TableHead className="text-right">{memberA.displayName}</TableHead>
-              <TableHead className="text-right">{memberB.displayName}</TableHead>
+              <TableHead className="text-right">
+                <span className="inline-flex items-center justify-end gap-2">
+                  <MemberAvatar avatarUrl={memberA.avatarUrl} displayName={memberA.displayName} size={20} />
+                  {memberA.displayName}
+                </span>
+              </TableHead>
+              <TableHead className="text-right">
+                <span className="inline-flex items-center justify-end gap-2">
+                  <MemberAvatar avatarUrl={memberB.avatarUrl} displayName={memberB.displayName} size={20} />
+                  {memberB.displayName}
+                </span>
+              </TableHead>
               <TableHead className="text-right">Leader</TableHead>
             </TableRow>
           </TableHeader>
@@ -121,14 +132,20 @@ function RivalryBoardCard({
       </Link>
       <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border pt-3">
         <div>
-          <p className="text-xs text-muted-foreground">{memberA.displayName}</p>
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            <MemberAvatar avatarUrl={memberA.avatarUrl} displayName={memberA.displayName} size={20} />
+            {memberA.displayName}
+          </p>
           <p className="font-mono text-lg">
             {formatScore(board.memberAScore, board.memberAFormattedScore)}
           </p>
           <FriendRank rank={board.memberAFriendRank} iconClassName="size-3" />
         </div>
         <div className="text-right">
-          <p className="text-xs text-muted-foreground">{memberB.displayName}</p>
+          <p className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+            <MemberAvatar avatarUrl={memberB.avatarUrl} displayName={memberB.displayName} size={20} />
+            {memberB.displayName}
+          </p>
           <p className="font-mono text-lg">
             {formatScore(board.memberBScore, board.memberBFormattedScore)}
           </p>

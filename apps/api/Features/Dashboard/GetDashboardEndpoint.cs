@@ -33,6 +33,7 @@ public static class GetDashboardEndpoint
                         g.Key,
                         member.RaUsername,
                         member.DisplayName ?? member.RaUsername,
+                        member.AvatarUrl,
                         g.Count(e => e.FriendRank == 1),
                         g.Count());
                 })
@@ -82,6 +83,7 @@ public static class GetDashboardEndpoint
                         {
                             member.RaUsername,
                             DisplayName = member.DisplayName ?? member.RaUsername,
+                            member.AvatarUrl,
                             FriendRankOnes = memberGroup.Count(e => e.FriendRank == 1)
                         };
                     })
@@ -98,7 +100,7 @@ public static class GetDashboardEndpoint
 
                 DashboardGameLeaderDto? leader = winRows is null
                     ? null
-                    : new DashboardGameLeaderDto(winRows.DisplayName, winRows.RaUsername, winRows.FriendRankOnes);
+                    : new DashboardGameLeaderDto(winRows.DisplayName, winRows.RaUsername, winRows.AvatarUrl, winRows.FriendRankOnes);
 
                 return new DashboardGameDto(
                     g.Id,
@@ -130,6 +132,7 @@ public sealed record ChampionshipRowDto(
     Guid MemberId,
     string RaUsername,
     string DisplayName,
+    string? AvatarUrl,
     int FriendRankOnes,
     int BoardsWithScore);
 
@@ -137,6 +140,7 @@ public sealed record ActivityItemDto(
     Guid MemberId,
     string RaUsername,
     string DisplayName,
+    string? AvatarUrl,
     int RaGameId,
     string GameTitle,
     long RaLeaderboardId,
@@ -145,7 +149,7 @@ public sealed record ActivityItemDto(
     int? FriendRankDelta,
     string? FormattedScore);
 
-public sealed record DashboardGameLeaderDto(string DisplayName, string RaUsername, int FriendRankOnes);
+public sealed record DashboardGameLeaderDto(string DisplayName, string RaUsername, string? AvatarUrl, int FriendRankOnes);
 
 public sealed record DashboardGameDto(
     Guid Id,

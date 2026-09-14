@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import { RivalryGameSection } from "@/components/rivalry/rivalry-game-section";
 import { getServerApiClient } from "@/lib/api";
 
@@ -81,8 +82,24 @@ export default async function RivalryPage({ params }: Props) {
           <ArrowLeft className="size-4 shrink-0" />
           All members
         </Link>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl text-[var(--accent-retro)]">
-          {rivalry.memberA.displayName} vs {rivalry.memberB.displayName}
+        <h1 className="flex flex-wrap items-center gap-3 font-[family-name:var(--font-display)] text-3xl text-[var(--accent-retro)]">
+          <span className="inline-flex items-center gap-2">
+            <MemberAvatar
+              avatarUrl={rivalry.memberA.avatarUrl}
+              displayName={rivalry.memberA.displayName}
+              size={40}
+            />
+            {rivalry.memberA.displayName}
+          </span>
+          <span>vs</span>
+          <span className="inline-flex items-center gap-2">
+            <MemberAvatar
+              avatarUrl={rivalry.memberB.avatarUrl}
+              displayName={rivalry.memberB.displayName}
+              size={40}
+            />
+            {rivalry.memberB.displayName}
+          </span>
         </h1>
         <p className="text-sm text-muted-foreground">
           {leader

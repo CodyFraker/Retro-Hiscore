@@ -44,6 +44,7 @@ builder.Services.AddHttpClient<IConsoleIconDownloader, ConsoleIconDownloader>(cl
 });
 builder.Services.AddHttpClient(nameof(DiscordNotificationService));
 
+builder.Services.AddScoped<IRaApiKeyPool, RaApiKeyPool>();
 builder.Services.AddScoped<ILeaderboardSyncService, LeaderboardSyncService>();
 builder.Services.AddScoped<IGameMetadataSyncService, GameMetadataSyncService>();
 builder.Services.AddScoped<IConsoleIconSyncService, ConsoleIconSyncService>();
@@ -150,6 +151,9 @@ app.Use(async (context, next) =>
 app.MapHealthChecks("/health");
 app.MapGetDashboard();
 app.MapGetMembers();
+app.MapGetCurrentMember();
+app.MapPutMemberApiKey();
+app.MapPutMemberProfile();
 app.MapGetRivalry();
 app.MapGetMember();
 app.MapGetMemberHistory();

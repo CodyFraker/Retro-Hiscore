@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FriendRank } from "@/components/friend-rank";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import {
   Table,
   TableBody,
@@ -38,8 +39,9 @@ export function LeaderboardStandingsSection({ standings }: Props) {
                 <TableCell>
                   <Link
                     href={`/members/${encodeURIComponent(standing.raUsername)}`}
-                    className="hover:text-[var(--accent-retro)]"
+                    className="flex items-center gap-2 hover:text-[var(--accent-retro)]"
                   >
+                    <MemberAvatar avatarUrl={standing.avatarUrl} displayName={standing.displayName} size={24} />
                     {standing.displayName}
                   </Link>
                 </TableCell>
@@ -69,8 +71,9 @@ export function LeaderboardStandingsSection({ standings }: Props) {
                 <FriendRank rank={standing.friendRank} />
                 <Link
                   href={`/members/${encodeURIComponent(standing.raUsername)}`}
-                  className="block font-medium hover:text-[var(--accent-retro)]"
+                  className="flex items-center gap-2 font-medium hover:text-[var(--accent-retro)]"
                 >
+                  <MemberAvatar avatarUrl={standing.avatarUrl} displayName={standing.displayName} size={24} />
                   {standing.displayName}
                 </Link>
               </div>

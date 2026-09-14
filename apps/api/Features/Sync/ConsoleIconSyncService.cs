@@ -17,12 +17,15 @@ public interface IConsoleIconSyncService
 public sealed class ConsoleIconSyncService(
     AppDbContext db,
     IRaApiClient raApiClient,
+    IRaApiKeyPool apiKeyPool,
     IConsoleIconDownloader iconDownloader,
+    IOptions<RaOptions> raOptions,
     IOptions<ConsoleIconSyncOptions> options,
     ILogger<ConsoleIconSyncService> logger) : IConsoleIconSyncService
 {
     public const string RequestPath = "/system-icons";
 
+    private readonly RaOptions _raOptions = raOptions.Value;
     private readonly ConsoleIconSyncOptions _options = options.Value;
 
     public bool IsManualCooldownActive(out DateTimeOffset? availableAt)
@@ -104,7 +107,10 @@ public sealed class ConsoleIconSyncService(
                 return run;
             }
 
-            var raConsoles = await raApiClient.GetConsoleIdsAsync(cancellationToken);
+            var raConsoles = await apiKeyPool.ExecuteAsync(
+                [_raOptions.ApiKey],
+                (key, ct) => raApiClient.GetConsoleIdsAsync(key, ct),
+                cancellationToken);
             var byId = raConsoles.ToDictionary(c => c.Id);
 
             foreach (var consoleId in neededIds)

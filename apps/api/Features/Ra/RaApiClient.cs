@@ -14,38 +14,42 @@ public sealed class RaApiClient(HttpClient httpClient, IOptions<RaOptions> optio
 
     private readonly RaOptions _options = options.Value;
 
-    public async Task<RaGameDto> GetGameAsync(int gameId, CancellationToken cancellationToken = default)
+    public async Task<RaGameDto> GetGameAsync(int gameId, string? apiKey = null, CancellationToken cancellationToken = default)
     {
-        EnsureConfigured();
+        var key = ResolveApiKey(apiKey);
         var query = new Dictionary<string, string>
         {
-            ["y"] = _options.ApiKey,
+            ["y"] = key,
             ["i"] = gameId.ToString()
         };
-        return await GetWithRetryAsync<RaGameDto>("API_GetGame.php", query, cancellationToken);
+        return await GetAsync<RaGameDto>("API_GetGame.php", query, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<RaConsoleIdDto>> GetConsoleIdsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<RaConsoleIdDto>> GetConsoleIdsAsync(string? apiKey = null, CancellationToken cancellationToken = default)
     {
-        EnsureConfigured();
+        var key = ResolveApiKey(apiKey);
         var query = new Dictionary<string, string>
         {
-            ["y"] = _options.ApiKey,
+            ["y"] = key,
             ["g"] = "1"
         };
-        var results = await GetWithRetryAsync<List<RaConsoleIdDto>>("API_GetConsoleIDs.php", query, cancellationToken);
-        return results;
+        return await GetAsync<List<RaConsoleIdDto>>("API_GetConsoleIDs.php", query, cancellationToken);
     }
 
-    public Task<IReadOnlyList<RaGameLeaderboardDto>> GetGameLeaderboardsAsync(int gameId, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<RaGameLeaderboardDto>> GetGameLeaderboardsAsync(
+        int gameId,
+        string? apiKey = null,
+        CancellationToken cancellationToken = default)
         => GetAllPagesAsync<RaGameLeaderboardDto>(
             "API_GetGameLeaderboards.php",
             new Dictionary<string, string> { ["i"] = gameId.ToString() },
+            apiKey,
             cancellationToken);
 
     public async Task<IReadOnlyList<RaUserGameLeaderboardDto>> GetUserGameLeaderboardsAsync(
         int gameId,
         string usernameOrUlid,
+        string? apiKey = null,
         CancellationToken cancellationToken = default)
     {
         try
@@ -57,6 +61,7 @@ public sealed class RaApiClient(HttpClient httpClient, IOptions<RaOptions> optio
                     ["i"] = gameId.ToString(),
                     ["u"] = usernameOrUlid
                 },
+                apiKey,
                 cancellationToken);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.UnprocessableEntity)
@@ -72,10 +77,10 @@ public sealed class RaApiClient(HttpClient httpClient, IOptions<RaOptions> optio
     private async Task<IReadOnlyList<T>> GetAllPagesAsync<T>(
         string endpoint,
         Dictionary<string, string> query,
+        string? apiKey,
         CancellationToken cancellationToken)
     {
-        EnsureConfigured();
-
+        var key = ResolveApiKey(apiKey);
         var results = new List<T>();
         var offset = 0;
         const int pageSize = 500;
@@ -84,12 +89,12 @@ public sealed class RaApiClient(HttpClient httpClient, IOptions<RaOptions> optio
         {
             var pageQuery = new Dictionary<string, string>(query)
             {
-                ["y"] = _options.ApiKey,
+                ["y"] = key,
                 ["c"] = pageSize.ToString(),
                 ["o"] = offset.ToString()
             };
 
-            var page = await GetWithRetryAsync<RaPagedResponse<T>>(endpoint, pageQuery, cancellationToken);
+            var page = await GetAsync<RaPagedResponse<T>>(endpoint, pageQuery, cancellationToken);
             if (page.Results.Count == 0)
             {
                 break;
@@ -107,35 +112,30 @@ public sealed class RaApiClient(HttpClient httpClient, IOptions<RaOptions> optio
         return results;
     }
 
-    private async Task<T> GetWithRetryAsync<T>(string endpoint, Dictionary<string, string> query, CancellationToken cancellationToken)
+    private async Task<T> GetAsync<T>(string endpoint, Dictionary<string, string> query, CancellationToken cancellationToken)
     {
-        const int maxAttempts = 5;
-        var delay = TimeSpan.FromSeconds(2);
+        var url = BuildUrl(endpoint, query);
+        using var response = await httpClient.GetAsync(url, cancellationToken);
 
-        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
         {
-            var url = BuildUrl(endpoint, query);
-            using var response = await httpClient.GetAsync(url, cancellationToken);
-
-            if (response.StatusCode == HttpStatusCode.TooManyRequests)
-            {
-                logger.LogWarning("RA rate limited on {Endpoint}, attempt {Attempt}/{Max}", endpoint, attempt, maxAttempts);
-                if (attempt == maxAttempts)
-                {
-                    response.EnsureSuccessStatusCode();
-                }
-
-                await Task.Delay(delay, cancellationToken);
-                delay = TimeSpan.FromSeconds(Math.Min(delay.TotalSeconds * 2, 60));
-                continue;
-            }
-
-            response.EnsureSuccessStatusCode();
-            var payload = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
-            return payload ?? throw new InvalidOperationException($"Empty response from RA endpoint {endpoint}");
+            throw new RaApiRateLimitedException($"RA rate limited on {endpoint}");
         }
 
-        throw new InvalidOperationException($"Failed to call RA endpoint {endpoint} after retries");
+        response.EnsureSuccessStatusCode();
+        var payload = await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
+        return payload ?? throw new InvalidOperationException($"Empty response from RA endpoint {endpoint}");
+    }
+
+    private string ResolveApiKey(string? apiKey)
+    {
+        var key = string.IsNullOrWhiteSpace(apiKey) ? _options.ApiKey : apiKey;
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new InvalidOperationException("RA API key is not configured");
+        }
+
+        return key;
     }
 
     private string BuildUrl(string endpoint, Dictionary<string, string> query)
@@ -143,13 +143,5 @@ public sealed class RaApiClient(HttpClient httpClient, IOptions<RaOptions> optio
         var baseUrl = _options.BaseUrl.TrimEnd('/');
         var qs = string.Join("&", query.Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
         return $"{baseUrl}/{endpoint}?{qs}";
-    }
-
-    private void EnsureConfigured()
-    {
-        if (string.IsNullOrWhiteSpace(_options.ApiKey))
-        {
-            throw new InvalidOperationException("RA__ApiKey is not configured");
-        }
     }
 }

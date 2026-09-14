@@ -62,6 +62,42 @@ describe("summarizeBoardWins", () => {
     expect(rows[0]).toMatchObject({ displayName: "Alice", friendRankOnes: 1, boardsWithScore: 1 });
     expect(rows[1]).toMatchObject({ displayName: "Bob", friendRankOnes: 1, boardsWithScore: 2 });
   });
+
+  it("carries avatarUrl from members into summary rows", () => {
+    // Arrange
+    const members: StandingMemberDto[] = [
+      {
+        id: "a",
+        raUsername: "alice",
+        displayName: "Alice",
+        avatarUrl: "https://cdn.discordapp.com/avatars/1/a.png",
+      },
+    ];
+    const leaderboards: GameLeaderboardDto[] = [
+      {
+        id: "1",
+        raLeaderboardId: 1,
+        title: "Board 1",
+        rankAsc: false,
+        standings: [
+          {
+            memberId: "a",
+            raUsername: "alice",
+            displayName: "Alice",
+            avatarUrl: "https://cdn.discordapp.com/avatars/1/a.png",
+            score: 10,
+            friendRank: 1,
+          },
+        ],
+      },
+    ];
+
+    // Act
+    const rows = summarizeBoardWins(leaderboards, members);
+
+    // Assert
+    expect(rows[0].avatarUrl).toBe("https://cdn.discordapp.com/avatars/1/a.png");
+  });
 });
 
 describe("recentlyUpdatedBoards", () => {

@@ -20,10 +20,13 @@ public interface ILeaderboardSyncService
 public sealed class LeaderboardSyncService(
     AppDbContext db,
     IRaApiClient raApiClient,
+    IRaApiKeyPool apiKeyPool,
     IDiscordNotificationService notificationService,
+    IOptions<RaOptions> raOptions,
     IOptions<SyncOptions> syncOptions,
     ILogger<LeaderboardSyncService> logger) : ILeaderboardSyncService
 {
+    private readonly RaOptions _raOptions = raOptions.Value;
     private readonly SyncOptions _syncOptions = syncOptions.Value;
 
     public bool IsManualCooldownActive(out DateTimeOffset? availableAt)
@@ -154,7 +157,10 @@ public sealed class LeaderboardSyncService(
 
     private async Task SyncGameCatalogAsync(Game game, CancellationToken cancellationToken)
     {
-        var boards = await raApiClient.GetGameLeaderboardsAsync(game.RaGameId, cancellationToken);
+        var boards = await apiKeyPool.ExecuteAsync(
+            [_raOptions.ApiKey],
+            (key, ct) => raApiClient.GetGameLeaderboardsAsync(game.RaGameId, key, ct),
+            cancellationToken);
 
         foreach (var board in boards)
         {
@@ -188,8 +194,16 @@ public sealed class LeaderboardSyncService(
 
     private async Task SyncMemberGameAsync(Member member, Game game, DateTimeOffset syncedAt, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(member.RaApiKey))
+        {
+            return;
+        }
+
         var identity = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername;
-        var boards = await raApiClient.GetUserGameLeaderboardsAsync(game.RaGameId, identity, cancellationToken);
+        var boards = await apiKeyPool.ExecuteAsync(
+            [member.RaApiKey],
+            (key, ct) => raApiClient.GetUserGameLeaderboardsAsync(game.RaGameId, identity, key, ct),
+            cancellationToken);
 
         if (boards.Count == 0)
         {

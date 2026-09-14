@@ -31,6 +31,7 @@ public static class GetLeaderboardEndpoint
                     m.Id,
                     m.RaUsername,
                     m.DisplayName ?? m.RaUsername,
+                    m.AvatarUrl,
                     entry?.Score,
                     entry?.FormattedScore,
                     entry?.GlobalRank,

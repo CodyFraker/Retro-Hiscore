@@ -19,10 +19,13 @@ public interface IGameMetadataSyncService
 public sealed class GameMetadataSyncService(
     AppDbContext db,
     IRaApiClient raApiClient,
+    IRaApiKeyPool apiKeyPool,
     IConsoleIconSyncService consoleIconSync,
+    IOptions<RaOptions> raOptions,
     IOptions<GameMetadataSyncOptions> options,
     ILogger<GameMetadataSyncService> logger) : IGameMetadataSyncService
 {
+    private readonly RaOptions _raOptions = raOptions.Value;
     private readonly GameMetadataSyncOptions _options = options.Value;
 
     public bool IsManualCooldownActive(out DateTimeOffset? availableAt)
@@ -133,7 +136,10 @@ public sealed class GameMetadataSyncService(
 
     private async Task SyncGameMetadataAsync(Game game, DateTimeOffset syncedAt, CancellationToken cancellationToken)
     {
-        var payload = await raApiClient.GetGameAsync(game.RaGameId, cancellationToken);
+        var payload = await apiKeyPool.ExecuteAsync(
+            [_raOptions.ApiKey],
+            (key, ct) => raApiClient.GetGameAsync(game.RaGameId, key, ct),
+            cancellationToken);
         ApplyMetadata(game, payload, syncedAt);
         await db.SaveChangesAsync(cancellationToken);
     }

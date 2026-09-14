@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FriendRank } from "@/components/friend-rank";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import {
   Table,
   TableBody,
@@ -38,8 +39,9 @@ export function LeaderboardHistorySection({ items }: Props) {
                 <TableCell>
                   <Link
                     href={`/members/${encodeURIComponent(item.raUsername)}`}
-                    className="hover:text-[var(--accent-retro)]"
+                    className="flex items-center gap-2 hover:text-[var(--accent-retro)]"
                   >
+                    <MemberAvatar avatarUrl={item.avatarUrl} displayName={item.displayName} size={24} />
                     {item.displayName}
                   </Link>
                 </TableCell>
@@ -65,8 +67,9 @@ export function LeaderboardHistorySection({ items }: Props) {
             <div className="flex items-start justify-between gap-3">
               <Link
                 href={`/members/${encodeURIComponent(item.raUsername)}`}
-                className="font-medium hover:text-[var(--accent-retro)]"
+                className="flex items-center gap-2 font-medium hover:text-[var(--accent-retro)]"
               >
+                <MemberAvatar avatarUrl={item.avatarUrl} displayName={item.displayName} size={24} />
                 {item.displayName}
               </Link>
               <span className="font-mono text-lg">{item.formattedScore}</span>

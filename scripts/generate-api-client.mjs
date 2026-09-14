@@ -89,7 +89,28 @@ export function createApiClient(options: ApiClientOptions) {
   const baseUrl = options.baseUrl;
 
   return {
+    getDashboard: () => request<DashboardResponse>(baseUrl, "/api/dashboard", undefined, fetchImpl),
+    getRivalry: (usernameA: string, usernameB: string) =>
+      request<RivalryResponse>(
+        baseUrl,
+        \`/api/rivalry/\${encodeURIComponent(usernameA)}/\${encodeURIComponent(usernameB)}\`,
+        undefined,
+        fetchImpl,
+      ),
     getMembers: () => request<MemberDto[]>(baseUrl, "/api/members", undefined, fetchImpl),
+    getCurrentMember: () => request<MemberDto>(baseUrl, "/api/members/me", undefined, fetchImpl),
+    putMemberApiKey: (raApiKey: string) =>
+      request<void>(baseUrl, "/api/members/me/api-key", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raApiKey }),
+      }, fetchImpl),
+    putMemberProfile: (avatarUrl: string | null) =>
+      request<void>(baseUrl, "/api/members/me/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarUrl }),
+      }, fetchImpl),
     getMember: (raUsername: string) =>
       request<MemberDetailDto>(
         baseUrl,

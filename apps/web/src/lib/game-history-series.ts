@@ -9,6 +9,7 @@ export type MemberLeadPoint = {
 export type MemberLeadSeries = {
   memberId: string;
   displayName: string;
+  avatarUrl?: string | null;
   points: MemberLeadPoint[];
 };
 
@@ -17,6 +18,7 @@ export type BoardRankSeries = {
   leaderboardTitle: string;
   memberId: string;
   displayName: string;
+  avatarUrl?: string | null;
   points: { syncedAt: string; friendRank: number | null }[];
 };
 
@@ -47,6 +49,7 @@ export function toMemberLeadSeries(items: GameHistoryItemDto[]): MemberLeadSerie
       series = {
         memberId: item.memberId,
         displayName: item.displayName,
+        avatarUrl: item.avatarUrl,
         points: [],
       };
       byMember.set(item.memberId, series);
@@ -89,6 +92,7 @@ export function toBoardRankSeries(items: GameHistoryItemDto[]): BoardRankSeries[
         leaderboardTitle: item.leaderboardTitle,
         memberId: item.memberId,
         displayName: item.displayName,
+        avatarUrl: item.avatarUrl,
         points: [],
       };
       byBoardMember.set(key, series);
@@ -144,6 +148,7 @@ export function toBoardScoreSeries(items: GameHistoryItemDto[]): BoardScoreSerie
           memberId: item.memberId,
           raUsername: item.raUsername,
           displayName: item.displayName,
+          avatarUrl: item.avatarUrl,
           score: item.score,
           formattedScore: item.formattedScore,
           globalRank: item.globalRank,

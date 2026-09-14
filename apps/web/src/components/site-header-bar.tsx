@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { RefreshButton } from "@/components/refresh-button";
 import { RefreshMetadataButton } from "@/components/refresh-metadata-button";
+import { SettingsLinkButton } from "@/components/settings-link-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,7 @@ const NAV_LINKS = [
   { href: "/", label: "Games" },
   { href: "/members", label: "Members" },
   { href: "/members#head-to-head", label: "Rivalry" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -73,7 +75,10 @@ export function SiteHeaderBar({ displayName, avatarUrl, syncLabel, metadataLabel
         </div>
 
         <div className="hidden items-start gap-3 md:flex">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Link
+            href="/settings"
+            className="flex items-center gap-2 rounded-lg text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
             {avatarUrl && (
               <Image
                 src={avatarUrl}
@@ -84,9 +89,10 @@ export function SiteHeaderBar({ displayName, avatarUrl, syncLabel, metadataLabel
               />
             )}
             <span>{displayName}</span>
-          </div>
+          </Link>
           <RefreshMetadataButton />
           <RefreshButton />
+          <SettingsLinkButton />
           <SignOutButton />
         </div>
 
@@ -113,7 +119,11 @@ export function SiteHeaderBar({ displayName, avatarUrl, syncLabel, metadataLabel
                 <p>{syncLabel}</p>
                 {metadataLabel && <p className="text-xs">{metadataLabel}</p>}
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Link
+                href="/settings"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
                 {avatarUrl && (
                   <Image
                     src={avatarUrl}
@@ -124,8 +134,9 @@ export function SiteHeaderBar({ displayName, avatarUrl, syncLabel, metadataLabel
                   />
                 )}
                 <span>{displayName}</span>
-              </div>
+              </Link>
               <div className="flex flex-col gap-3 border-t border-border pt-4">
+                <SettingsLinkButton onNavigate={() => setOpen(false)} />
                 <RefreshMetadataButton />
                 <RefreshButton />
                 <SignOutButton />

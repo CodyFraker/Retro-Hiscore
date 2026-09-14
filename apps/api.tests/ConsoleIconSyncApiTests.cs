@@ -34,7 +34,7 @@ public class ConsoleIconSyncApiTests : IAsyncLifetime
         _factory.ConsoleIconDownloader.ClearReceivedCalls();
 
         _factory.RaApiClient
-            .GetConsoleIdsAsync(Arg.Any<CancellationToken>())
+            .GetConsoleIdsAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<RaConsoleIdDto>>(
             [
                 new RaConsoleIdDto
@@ -86,7 +86,7 @@ public class ConsoleIconSyncApiTests : IAsyncLifetime
         run.Status.ShouldBe(SyncRunStatus.Succeeded);
         run.Kind.ShouldBe(SyncKind.ConsoleIcons);
 
-        await _factory.RaApiClient.Received(1).GetConsoleIdsAsync(Arg.Any<CancellationToken>());
+        await _factory.RaApiClient.Received(1).GetConsoleIdsAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>());
         await _factory.ConsoleIconDownloader.Received(1)
             .DownloadAsync("https://static.retroachievements.org/assets/images/system/md.png", Arg.Any<CancellationToken>());
 
@@ -127,7 +127,7 @@ public class ConsoleIconSyncApiTests : IAsyncLifetime
         _factory.RaApiClient.ClearReceivedCalls();
 
         _factory.RaApiClient
-            .GetConsoleIdsAsync(Arg.Any<CancellationToken>())
+            .GetConsoleIdsAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<RaConsoleIdDto>>(
             [
                 new RaConsoleIdDto

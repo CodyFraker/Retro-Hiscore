@@ -5,6 +5,43 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/api/dashboard": {
+      "get": {
+        "operationId": "getDashboard",
+        "tags": ["Dashboard"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DashboardResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rivalry/{usernameA}/{usernameB}": {
+      "get": {
+        "operationId": "getRivalry",
+        "tags": ["Rivalry"],
+        "parameters": [
+          { "name": "usernameA", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "usernameB", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RivalryResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
     "/api/members": {
       "get": {
         "operationId": "getMembers",
@@ -21,6 +58,59 @@
               }
             }
           }
+        }
+      }
+    },
+    "/api/members/me": {
+      "get": {
+        "operationId": "getCurrentMember",
+        "tags": ["Members"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberDto" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/api-key": {
+      "put": {
+        "operationId": "putMemberApiKey",
+        "tags": ["Members"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PutMemberApiKeyRequest" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "No Content" },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/profile": {
+      "put": {
+        "operationId": "putMemberProfile",
+        "tags": ["Members"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PutMemberProfileRequest" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "No Content" },
+          "404": { "description": "Not Found" }
         }
       }
     },
@@ -400,14 +490,31 @@
           "raGameId": { "type": "integer" }
         }
       },
+      "PutMemberApiKeyRequest": {
+        "type": "object",
+        "required": ["raApiKey"],
+        "properties": {
+          "raApiKey": { "type": "string" }
+        }
+      },
+      "PutMemberProfileRequest": {
+        "type": "object",
+        "properties": {
+          "avatarUrl": { "type": "string", "nullable": true }
+        }
+      },
       "MemberDto": {
         "type": "object",
-        "required": ["id", "raUsername", "displayName"],
+        "required": ["id", "raUsername", "displayName", "boardsWithScore", "friendRankOnes"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "raUsername": { "type": "string" },
           "raUlid": { "type": "string", "nullable": true },
-          "displayName": { "type": "string" }
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "boardsWithScore": { "type": "integer" },
+          "friendRankOnes": { "type": "integer" },
+          "hasApiKey": { "type": "boolean" }
         }
       },
       "MemberStandingDto": {
@@ -432,6 +539,7 @@
           "raUsername": { "type": "string" },
           "raUlid": { "type": "string", "nullable": true },
           "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
           "boardsWithScore": { "type": "integer" },
           "friendRankOnes": { "type": "integer" },
           "standings": {
@@ -492,7 +600,8 @@
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "raUsername": { "type": "string" },
-          "displayName": { "type": "string" }
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true }
         }
       },
       "FriendStandingDto": {
@@ -502,6 +611,7 @@
           "memberId": { "type": "string", "format": "uuid" },
           "raUsername": { "type": "string" },
           "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
           "score": { "type": "integer", "format": "int64", "nullable": true },
           "formattedScore": { "type": "string", "nullable": true },
           "globalRank": { "type": "integer", "nullable": true },
@@ -561,6 +671,7 @@
           "memberId": { "type": "string", "format": "uuid" },
           "raUsername": { "type": "string" },
           "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
           "raLeaderboardId": { "type": "integer", "format": "int64" },
           "leaderboardTitle": { "type": "string" },
           "format": { "type": "string", "nullable": true },
@@ -610,6 +721,7 @@
           "memberId": { "type": "string", "format": "uuid" },
           "raUsername": { "type": "string" },
           "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
           "score": { "type": "integer", "format": "int64" },
           "formattedScore": { "type": "string" },
           "globalRank": { "type": "integer", "nullable": true },
@@ -654,6 +766,137 @@
           "startedAt": { "type": "string", "format": "date-time", "nullable": true },
           "finishedAt": { "type": "string", "format": "date-time", "nullable": true },
           "error": { "type": "string", "nullable": true }
+        }
+      },
+      "ChampionshipRowDto": {
+        "type": "object",
+        "required": ["memberId", "raUsername", "displayName", "friendRankOnes", "boardsWithScore"],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "friendRankOnes": { "type": "integer" },
+          "boardsWithScore": { "type": "integer" }
+        }
+      },
+      "ActivityItemDto": {
+        "type": "object",
+        "required": ["memberId", "raUsername", "displayName", "raGameId", "gameTitle", "raLeaderboardId", "leaderboardTitle"],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "raLeaderboardId": { "type": "integer", "format": "int64" },
+          "leaderboardTitle": { "type": "string" },
+          "scoreDelta": { "type": "integer", "format": "int64", "nullable": true },
+          "friendRankDelta": { "type": "integer", "nullable": true },
+          "formattedScore": { "type": "string", "nullable": true }
+        }
+      },
+      "DashboardGameLeaderDto": {
+        "type": "object",
+        "required": ["displayName", "raUsername", "friendRankOnes"],
+        "properties": {
+          "displayName": { "type": "string" },
+          "raUsername": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "friendRankOnes": { "type": "integer" }
+        }
+      },
+      "DashboardGameDto": {
+        "type": "object",
+        "required": ["id", "raGameId", "title", "leaderboardCount"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "consoleName": { "type": "string", "nullable": true },
+          "consoleIconUrl": { "type": "string", "nullable": true },
+          "imageBoxArtUrl": { "type": "string", "nullable": true },
+          "imageIconUrl": { "type": "string", "nullable": true },
+          "imageTitleUrl": { "type": "string", "nullable": true },
+          "imageIngameUrl": { "type": "string", "nullable": true },
+          "leaderboardCount": { "type": "integer" },
+          "friendRankOneLeader": { "$ref": "#/components/schemas/DashboardGameLeaderDto", "nullable": true },
+          "lastActivityAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "required": ["championship", "activity", "games"],
+        "properties": {
+          "championship": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ChampionshipRowDto" }
+          },
+          "activity": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ActivityItemDto" }
+          },
+          "games": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DashboardGameDto" }
+          }
+        }
+      },
+      "MemberSummaryDto": {
+        "type": "object",
+        "required": ["id", "raUsername", "displayName", "boardsWithScore", "friendRankOnes"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "boardsWithScore": { "type": "integer" },
+          "friendRankOnes": { "type": "integer" }
+        }
+      },
+      "RivalryBoardDto": {
+        "type": "object",
+        "required": ["raLeaderboardId", "title", "raGameId", "gameTitle"],
+        "properties": {
+          "raLeaderboardId": { "type": "integer", "format": "int64" },
+          "title": { "type": "string" },
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "memberAScore": { "type": "integer", "format": "int64", "nullable": true },
+          "memberAFormattedScore": { "type": "string", "nullable": true },
+          "memberAFriendRank": { "type": "integer", "nullable": true },
+          "memberBScore": { "type": "integer", "format": "int64", "nullable": true },
+          "memberBFormattedScore": { "type": "string", "nullable": true },
+          "memberBFriendRank": { "type": "integer", "nullable": true },
+          "leaderUsername": { "type": "string", "nullable": true }
+        }
+      },
+      "RivalryGameDto": {
+        "type": "object",
+        "required": ["raGameId", "gameTitle", "boards"],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "boards": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RivalryBoardDto" }
+          }
+        }
+      },
+      "RivalryResponse": {
+        "type": "object",
+        "required": ["memberA", "memberB", "memberALeads", "memberBLeads", "tiedBoards", "games"],
+        "properties": {
+          "memberA": { "$ref": "#/components/schemas/MemberSummaryDto" },
+          "memberB": { "$ref": "#/components/schemas/MemberSummaryDto" },
+          "memberALeads": { "type": "integer" },
+          "memberBLeads": { "type": "integer" },
+          "tiedBoards": { "type": "integer" },
+          "games": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RivalryGameDto" }
+          }
         }
       }
     }

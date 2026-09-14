@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FormatBadge } from "@/components/format-badge";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import { FriendRank } from "@/components/friend-rank";
 import {
   Table,
@@ -29,8 +30,9 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
                 <TableHead key={member.id} className="min-w-36 text-right">
                   <Link
                     href={`/members/${encodeURIComponent(member.raUsername)}`}
-                    className="hover:text-[var(--accent-retro)]"
+                    className="inline-flex items-center justify-end gap-2 hover:text-[var(--accent-retro)]"
                   >
+                    <MemberAvatar avatarUrl={member.avatarUrl} displayName={member.displayName} size={20} />
                     {member.displayName}
                   </Link>
                 </TableHead>
@@ -108,8 +110,9 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
                   >
                     <Link
                       href={`/members/${encodeURIComponent(member.raUsername)}`}
-                      className="font-medium hover:text-[var(--accent-retro)]"
+                      className="flex items-center gap-2 font-medium hover:text-[var(--accent-retro)]"
                     >
+                      <MemberAvatar avatarUrl={member.avatarUrl} displayName={member.displayName} size={24} />
                       {member.displayName}
                     </Link>
                     <div className="text-right font-mono text-sm">

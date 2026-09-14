@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { ChartEmptyState } from "@/components/charts/chart-empty-state";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import type { GameHistoryItemDto } from "@/generated/api-client";
 import {
   countDistinctSyncTimestampsForBoardRanks,
@@ -110,6 +111,15 @@ export function GameTrendCharts({ items }: Props) {
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Board leads over time</h2>
         {hasLeadTrend ? (
+          <div className="space-y-2">
+          <ul className="flex flex-wrap gap-3 px-1 text-xs text-muted-foreground">
+            {memberLeadSeries.map((member, index) => (
+              <li key={member.memberId} className="inline-flex items-center gap-1.5">
+                <MemberAvatar avatarUrl={member.avatarUrl} displayName={member.displayName} size={18} />
+                <span style={{ color: CHART_COLORS[index % CHART_COLORS.length] }}>{member.displayName}</span>
+              </li>
+            ))}
+          </ul>
           <div className="h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={leadChartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
@@ -164,6 +174,7 @@ export function GameTrendCharts({ items }: Props) {
               </LineChart>
             </ResponsiveContainer>
           </div>
+          </div>
         ) : (
           <ChartEmptyState />
         )}
@@ -172,6 +183,17 @@ export function GameTrendCharts({ items }: Props) {
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Friend rank by board</h2>
         {hasRankTrend ? (
+          <div className="space-y-2">
+          <ul className="flex flex-wrap gap-3 px-1 text-xs text-muted-foreground">
+            {boardRankSeries.map((board, index) => (
+              <li key={`${board.raLeaderboardId}-${board.memberId}`} className="inline-flex items-center gap-1.5">
+                <MemberAvatar avatarUrl={board.avatarUrl} displayName={board.displayName} size={18} />
+                <span style={{ color: CHART_COLORS[index % CHART_COLORS.length] }}>
+                  {board.displayName} — {board.leaderboardTitle}
+                </span>
+              </li>
+            ))}
+          </ul>
           <div className="h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={rankChartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
@@ -236,6 +258,7 @@ export function GameTrendCharts({ items }: Props) {
                 })}
               </LineChart>
             </ResponsiveContainer>
+          </div>
           </div>
         ) : (
           <ChartEmptyState />

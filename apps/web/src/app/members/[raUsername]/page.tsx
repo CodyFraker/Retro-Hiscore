@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import { MemberStandingsSection } from "@/components/members/member-standings-section";
 import { MemberTrendCharts } from "@/components/members/member-trend-charts";
 import { getServerApiClient } from "@/lib/api";
@@ -37,9 +38,12 @@ export default async function MemberProfilePage({ params }: Props) {
           <ArrowLeft className="size-4 shrink-0" />
           All members
         </Link>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl text-[var(--accent-retro)]">
-          {detail.displayName}
-        </h1>
+        <div className="flex items-center gap-4">
+          <MemberAvatar avatarUrl={detail.avatarUrl} displayName={detail.displayName} size={56} />
+          <h1 className="font-[family-name:var(--font-display)] text-3xl text-[var(--accent-retro)]">
+            {detail.displayName}
+          </h1>
+        </div>
         <p className="font-mono text-sm text-muted-foreground">@{detail.raUsername}</p>
         <p className="text-sm text-muted-foreground">
           Leading <span className="font-mono text-foreground">{detail.friendRankOnes}</span> board

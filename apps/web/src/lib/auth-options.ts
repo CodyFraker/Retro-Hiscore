@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { createApiAccessToken } from "@/lib/api-access-token";
 import { isDiscordUserAllowlisted } from "@/lib/allowed-discord-users";
+import { syncMemberProfileOnLogin } from "@/lib/sync-member-profile";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
@@ -28,9 +29,15 @@ export const authOptions: NextAuthOptions = {
           typeof profile.username === "string"
             ? profile.username
             : profile.name ?? "discord-user";
+        const avatarUrl =
+          typeof profile.image === "string" ? profile.image : token.picture?.toString() ?? null;
         token.apiAccessToken = await createApiAccessToken(discordId, username);
         token.discordId = discordId;
         token.discordUsername = username;
+        token.picture = avatarUrl;
+        if (token.apiAccessToken) {
+          await syncMemberProfileOnLogin(token.apiAccessToken, avatarUrl);
+        }
       }
 
       return token;

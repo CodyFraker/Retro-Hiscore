@@ -10,7 +10,7 @@ Friend RetroAchievements leaderboard tracker: C# API + Next.js dashboard.
 
 ## Quick start (Docker, hot reload)
 
-1. Copy `.env.example` to `.env` and set `RA__Username` / `RA__ApiKey`.
+1. Copy `.env.example` to `.env` and set `RA__ApiKey` (shared catalog key), `RA__MemberLinks__*` (Discord ID ↔ RA username), and Discord OAuth vars.
 2. `docker compose --profile dev up --build` (or `mise run docker:up`)
 3. Open http://localhost:18321 (frontend) and http://localhost:18943 (API / Scalar at `/scalar`).
 
@@ -74,3 +74,9 @@ Requires Docker Desktop (or Docker Engine). The API job mounts `/var/run/docker.
 - Games: `38130`, `2291`, `789`
 - Members: `ShrimpPoboy`, `beefboybilly`, `xXScubXx`
 - Sync every 15 minutes + manual refresh (60s cooldown)
+
+## Member API keys and Discord avatars
+
+- Admin links each friend's Discord ID to their RA username via `RA__MemberLinks__N__*` in `.env`.
+- Each user submits their own RetroAchievements API key under **Settings** in the web app. Score sync uses that member's key; catalog/metadata uses the shared `RA__ApiKey` with pool failover across all configured keys.
+- Discord avatars refresh on login and appear across the dashboard, standings, and member pages.

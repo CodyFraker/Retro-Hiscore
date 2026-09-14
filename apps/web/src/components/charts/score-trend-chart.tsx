@@ -14,6 +14,7 @@ import {
 import type { MemberSeries } from "@/lib/history-series";
 import { countDistinctSyncTimestamps } from "@/lib/history-series";
 import { ChartEmptyState } from "@/components/charts/chart-empty-state";
+import { MemberAvatar } from "@/components/members/member-avatar";
 
 const CHART_COLORS = [
   "var(--chart-1)",
@@ -59,7 +60,16 @@ export function ScoreTrendChart({ series }: Props) {
   }
 
   return (
-    <div className="h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
+    <div className="space-y-2">
+      <ul className="flex flex-wrap gap-3 px-1 text-xs text-muted-foreground">
+        {series.map((member, index) => (
+          <li key={member.memberId} className="inline-flex items-center gap-1.5">
+            <MemberAvatar avatarUrl={member.avatarUrl} displayName={member.displayName} size={18} />
+            <span style={{ color: CHART_COLORS[index % CHART_COLORS.length] }}>{member.displayName}</span>
+          </li>
+        ))}
+      </ul>
+      <div className="h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
           <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
@@ -103,6 +113,7 @@ export function ScoreTrendChart({ series }: Props) {
           ))}
         </LineChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }

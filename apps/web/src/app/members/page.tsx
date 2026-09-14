@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import { RivalryPicker } from "@/components/rivalry/rivalry-picker";
 import type { MemberDto } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
@@ -51,9 +52,12 @@ export default async function MembersPage() {
               href={`/members/${encodeURIComponent(member.raUsername)}`}
               className="flex flex-col gap-2 py-5 transition-colors hover:bg-secondary/40 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
-              <div>
+              <div className="flex items-center gap-3">
+                <MemberAvatar avatarUrl={member.avatarUrl} displayName={member.displayName} size={40} />
+                <div>
                 <h2 className="text-xl font-medium">{member.displayName}</h2>
                 <p className="mt-1 font-mono text-xs text-muted-foreground">@{member.raUsername}</p>
+                </div>
               </div>
               <div className="font-mono text-xs text-muted-foreground sm:text-right">
                 <span className="text-foreground">{member.friendRankOnes}</span> lead

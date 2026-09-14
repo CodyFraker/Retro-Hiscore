@@ -3,98 +3,23 @@ export interface AddGameRequest {
   raGameId: number;
 }
 
+export interface PutMemberApiKeyRequest {
+  raApiKey: string;
+}
+
+export interface PutMemberProfileRequest {
+  avatarUrl?: string | null;
+}
+
 export interface MemberDto {
   id: string;
   raUsername: string;
   raUlid?: string | null;
   displayName: string;
+  avatarUrl?: string | null;
   boardsWithScore: number;
   friendRankOnes: number;
-}
-
-export interface ChampionshipRowDto {
-  memberId: string;
-  raUsername: string;
-  displayName: string;
-  friendRankOnes: number;
-  boardsWithScore: number;
-}
-
-export interface ActivityItemDto {
-  memberId: string;
-  raUsername: string;
-  displayName: string;
-  raGameId: number;
-  gameTitle: string;
-  raLeaderboardId: number;
-  leaderboardTitle: string;
-  scoreDelta?: number | null;
-  friendRankDelta?: number | null;
-  formattedScore?: string | null;
-}
-
-export interface DashboardGameLeaderDto {
-  displayName: string;
-  raUsername: string;
-  friendRankOnes: number;
-}
-
-export interface DashboardGameDto {
-  id: string;
-  raGameId: number;
-  title: string;
-  consoleName?: string | null;
-  consoleIconUrl?: string | null;
-  imageBoxArtUrl?: string | null;
-  imageIconUrl?: string | null;
-  imageTitleUrl?: string | null;
-  imageIngameUrl?: string | null;
-  leaderboardCount: number;
-  friendRankOneLeader?: DashboardGameLeaderDto | null;
-  lastActivityAt?: string | null;
-}
-
-export interface DashboardResponse {
-  championship: ChampionshipRowDto[];
-  activity: ActivityItemDto[];
-  games: DashboardGameDto[];
-}
-
-export interface MemberSummaryDto {
-  id: string;
-  raUsername: string;
-  displayName: string;
-  boardsWithScore: number;
-  friendRankOnes: number;
-}
-
-export interface RivalryBoardDto {
-  raLeaderboardId: number;
-  title: string;
-  raGameId: number;
-  gameTitle: string;
-  memberAScore?: number | null;
-  memberAFormattedScore?: string | null;
-  memberAFriendRank?: number | null;
-  memberBScore?: number | null;
-  memberBFormattedScore?: string | null;
-  memberBFriendRank?: number | null;
-  leaderUsername?: string | null;
-}
-
-export interface RivalryGameDto {
-  raGameId: number;
-  gameTitle: string;
-  boards: RivalryBoardDto[];
-}
-
-export interface RivalryResponse {
-  memberA: MemberSummaryDto;
-  memberB: MemberSummaryDto;
-  memberALeads: number;
-  memberBLeads: number;
-  tiedBoards: number;
-  games: RivalryGameDto[];
+  hasApiKey?: boolean;
 }
 
 export interface MemberStandingDto {
@@ -113,6 +38,7 @@ export interface MemberDetailDto {
   raUsername: string;
   raUlid?: string | null;
   displayName: string;
+  avatarUrl?: string | null;
   boardsWithScore: number;
   friendRankOnes: number;
   standings: MemberStandingDto[];
@@ -156,12 +82,14 @@ export interface StandingMemberDto {
   id: string;
   raUsername: string;
   displayName: string;
+  avatarUrl?: string | null;
 }
 
 export interface FriendStandingDto {
   memberId: string;
   raUsername: string;
   displayName: string;
+  avatarUrl?: string | null;
   score?: number | null;
   formattedScore?: string | null;
   globalRank?: number | null;
@@ -203,6 +131,7 @@ export interface GameHistoryItemDto {
   memberId: string;
   raUsername: string;
   displayName: string;
+  avatarUrl?: string | null;
   raLeaderboardId: number;
   leaderboardTitle: string;
   format?: string | null;
@@ -237,6 +166,7 @@ export interface LeaderboardHistoryItemDto {
   memberId: string;
   raUsername: string;
   displayName: string;
+  avatarUrl?: string | null;
   score: number;
   formattedScore: string;
   globalRank?: number | null;
@@ -267,6 +197,95 @@ export interface SyncStatusDto {
   startedAt?: string | null;
   finishedAt?: string | null;
   error?: string | null;
+}
+
+export interface ChampionshipRowDto {
+  memberId: string;
+  raUsername: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  friendRankOnes: number;
+  boardsWithScore: number;
+}
+
+export interface ActivityItemDto {
+  memberId: string;
+  raUsername: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  raGameId: number;
+  gameTitle: string;
+  raLeaderboardId: number;
+  leaderboardTitle: string;
+  scoreDelta?: number | null;
+  friendRankDelta?: number | null;
+  formattedScore?: string | null;
+}
+
+export interface DashboardGameLeaderDto {
+  displayName: string;
+  raUsername: string;
+  avatarUrl?: string | null;
+  friendRankOnes: number;
+}
+
+export interface DashboardGameDto {
+  id: string;
+  raGameId: number;
+  title: string;
+  consoleName?: string | null;
+  consoleIconUrl?: string | null;
+  imageBoxArtUrl?: string | null;
+  imageIconUrl?: string | null;
+  imageTitleUrl?: string | null;
+  imageIngameUrl?: string | null;
+  leaderboardCount: number;
+  friendRankOneLeader?: DashboardGameLeaderDto | null;
+  lastActivityAt?: string | null;
+}
+
+export interface DashboardResponse {
+  championship: ChampionshipRowDto[];
+  activity: ActivityItemDto[];
+  games: DashboardGameDto[];
+}
+
+export interface MemberSummaryDto {
+  id: string;
+  raUsername: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  boardsWithScore: number;
+  friendRankOnes: number;
+}
+
+export interface RivalryBoardDto {
+  raLeaderboardId: number;
+  title: string;
+  raGameId: number;
+  gameTitle: string;
+  memberAScore?: number | null;
+  memberAFormattedScore?: string | null;
+  memberAFriendRank?: number | null;
+  memberBScore?: number | null;
+  memberBFormattedScore?: string | null;
+  memberBFriendRank?: number | null;
+  leaderUsername?: string | null;
+}
+
+export interface RivalryGameDto {
+  raGameId: number;
+  gameTitle: string;
+  boards: RivalryBoardDto[];
+}
+
+export interface RivalryResponse {
+  memberA: MemberSummaryDto;
+  memberB: MemberSummaryDto;
+  memberALeads: number;
+  memberBLeads: number;
+  tiedBoards: number;
+  games: RivalryGameDto[];
 }
 
 export type ApiClientOptions = {
@@ -301,7 +320,6 @@ export function createApiClient(options: ApiClientOptions) {
 
   return {
     getDashboard: () => request<DashboardResponse>(baseUrl, "/api/dashboard", undefined, fetchImpl),
-    getMembers: () => request<MemberDto[]>(baseUrl, "/api/members", undefined, fetchImpl),
     getRivalry: (usernameA: string, usernameB: string) =>
       request<RivalryResponse>(
         baseUrl,
@@ -309,6 +327,20 @@ export function createApiClient(options: ApiClientOptions) {
         undefined,
         fetchImpl,
       ),
+    getMembers: () => request<MemberDto[]>(baseUrl, "/api/members", undefined, fetchImpl),
+    getCurrentMember: () => request<MemberDto>(baseUrl, "/api/members/me", undefined, fetchImpl),
+    putMemberApiKey: (raApiKey: string) =>
+      request<void>(baseUrl, "/api/members/me/api-key", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raApiKey }),
+      }, fetchImpl),
+    putMemberProfile: (avatarUrl: string | null) =>
+      request<void>(baseUrl, "/api/members/me/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarUrl }),
+      }, fetchImpl),
     getMember: (raUsername: string) =>
       request<MemberDetailDto>(
         baseUrl,
@@ -334,10 +366,6 @@ export function createApiClient(options: ApiClientOptions) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ raGameId }),
-      }, fetchImpl),
-    deleteGame: (raGameId: number) =>
-      request<void>(baseUrl, `/api/games/${raGameId}`, {
-        method: "DELETE",
       }, fetchImpl),
     getGameLeaderboards: (raGameId: number) =>
       request<GameLeaderboardsResponse>(baseUrl, `/api/games/${raGameId}/leaderboards`, undefined, fetchImpl),

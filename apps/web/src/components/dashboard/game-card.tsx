@@ -2,10 +2,11 @@ import { ChevronRight, ImageOff, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ConsoleName } from "@/components/console-name";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { DashboardGameDto } from "@/generated/api-client";
-import { formatSyncTime } from "@/lib/format";
+import { FormattedSyncTime } from "@/components/formatted-sync-time";
 
 type Props = {
   game: DashboardGameDto;
@@ -57,7 +58,7 @@ export function GameCard({ game, recentChangeCount = 0, onDelete, deleting }: Pr
             </p>
             {game.lastActivityAt && (
               <p className="mt-0.5 text-xs text-muted-foreground">
-                Last activity {formatSyncTime(game.lastActivityAt)}
+                Last activity <FormattedSyncTime value={game.lastActivityAt} />
               </p>
             )}
           </div>
@@ -93,8 +94,13 @@ export function GameCard({ game, recentChangeCount = 0, onDelete, deleting }: Pr
         <p className="px-4 pb-4 text-xs text-muted-foreground">
           <Link
             href={`/members/${encodeURIComponent(game.friendRankOneLeader.raUsername)}`}
-            className="font-medium text-foreground hover:text-[var(--accent-retro)]"
+            className="inline-flex items-center gap-1.5 font-medium text-foreground hover:text-[var(--accent-retro)]"
           >
+            <MemberAvatar
+              avatarUrl={game.friendRankOneLeader.avatarUrl}
+              displayName={game.friendRankOneLeader.displayName}
+              size={20}
+            />
             {game.friendRankOneLeader.displayName}
           </Link>{" "}
           leads {game.friendRankOneLeader.friendRankOnes} board

@@ -9,6 +9,7 @@ export type HistoryPoint = {
 export type MemberSeries = {
   memberId: string;
   displayName: string;
+  avatarUrl?: string | null;
   points: HistoryPoint[];
 };
 
@@ -32,6 +33,7 @@ export function toChartSeries(items: LeaderboardHistoryItemDto[]): MemberSeries[
       series = {
         memberId: item.memberId,
         displayName: item.displayName,
+        avatarUrl: item.avatarUrl,
         points: [],
       };
       byMember.set(item.memberId, series);

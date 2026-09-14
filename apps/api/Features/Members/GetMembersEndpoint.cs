@@ -16,6 +16,7 @@ public static class GetMembersEndpoint
                     m.RaUsername,
                     m.RaUlid,
                     DisplayName = m.DisplayName ?? m.RaUsername,
+                    m.AvatarUrl,
                     BoardsWithScore = m.Entries.Count,
                     FriendRankOnes = m.Entries.Count(e => e.FriendRank == 1)
                 })
@@ -26,6 +27,7 @@ public static class GetMembersEndpoint
                     m.RaUsername,
                     m.RaUlid,
                     m.DisplayName,
+                    m.AvatarUrl,
                     m.BoardsWithScore,
                     m.FriendRankOnes))
                 .ToListAsync(ct);
@@ -43,5 +45,7 @@ public sealed record MemberDto(
     string RaUsername,
     string? RaUlid,
     string DisplayName,
+    string? AvatarUrl,
     int BoardsWithScore,
-    int FriendRankOnes);
+    int FriendRankOnes,
+    bool HasApiKey = false);

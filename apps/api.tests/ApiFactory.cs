@@ -121,12 +121,21 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         ConsoleIconDownloader.ClearSubstitute();
 
         RaApiClient
-            .GetConsoleIdsAsync(Arg.Any<CancellationToken>())
+            .GetConsoleIdsAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<RaConsoleIdDto>>([]));
 
         ConsoleIconDownloader
             .DownloadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }));
+    }
+
+    public async Task SetMemberApiKeyAsync(string raUsername, string? apiKey)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var member = await db.Members.SingleAsync(m => m.RaUsername == raUsername);
+        member.RaApiKey = apiKey;
+        await db.SaveChangesAsync();
     }
 
     public async Task ResetDatabaseAsync()

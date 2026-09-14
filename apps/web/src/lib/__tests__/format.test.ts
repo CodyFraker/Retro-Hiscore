@@ -1,4 +1,4 @@
-import { formatFriendRank, formatStandingScore } from "../format";
+import { formatFriendRank, formatStandingScore, formatSyncTimeUtc } from "../format";
 
 describe("formatStandingScore", () => {
   it("returns em dash when score is missing", () => {
@@ -21,6 +21,30 @@ describe("formatStandingScore", () => {
 
     // Assert
     expect(result).toBe("352,750");
+  });
+});
+
+describe("formatSyncTimeUtc", () => {
+  it("returns Never when value is missing", () => {
+    // Arrange / Act / Assert
+    expect(formatSyncTimeUtc(null)).toBe("Never");
+  });
+
+  it("formats using UTC regardless of runtime timezone", () => {
+    // Arrange
+    const value = "2026-09-13T19:09:00.000Z";
+
+    // Act
+    const result = formatSyncTimeUtc(value);
+
+    // Assert
+    expect(result).toBe(
+      new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "UTC",
+      }).format(new Date(value)),
+    );
   });
 });
 

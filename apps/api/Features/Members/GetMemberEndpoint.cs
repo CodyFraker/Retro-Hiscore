@@ -43,6 +43,7 @@ public static class GetMemberEndpoint
                 member.RaUsername,
                 member.RaUlid,
                 member.DisplayName ?? member.RaUsername,
+                member.AvatarUrl,
                 boardsWithScore,
                 friendRankOnes,
                 standings));
@@ -67,6 +68,7 @@ public sealed record MemberDetailDto(
     string RaUsername,
     string? RaUlid,
     string DisplayName,
+    string? AvatarUrl,
     int BoardsWithScore,
     int FriendRankOnes,
     IReadOnlyList<MemberStandingDto> Standings);

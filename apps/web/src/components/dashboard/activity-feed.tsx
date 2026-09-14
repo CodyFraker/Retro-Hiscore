@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { ActivityItemDto } from "@/generated/api-client";
@@ -22,7 +23,8 @@ function formatSigned(value: number) {
 function ActivityItemRow({ item }: { item: ActivityItemDto }) {
   return (
     <li className="flex flex-col gap-2 py-3 text-sm">
-      <div>
+      <div className="flex items-center gap-2">
+        <MemberAvatar avatarUrl={item.avatarUrl} displayName={item.displayName} size={24} />
         <span className="font-medium">{item.displayName}</span>
         <span className="text-muted-foreground">
           {" "}

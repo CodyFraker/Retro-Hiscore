@@ -97,6 +97,7 @@ public static class GetRivalryEndpoint
                 memberA.Id,
                 memberA.RaUsername,
                 memberA.DisplayName ?? memberA.RaUsername,
+                memberA.AvatarUrl,
                 entries.Count(e => e.MemberId == memberA.Id),
                 entries.Count(e => e.MemberId == memberA.Id && e.FriendRank == 1));
 
@@ -104,6 +105,7 @@ public static class GetRivalryEndpoint
                 memberB.Id,
                 memberB.RaUsername,
                 memberB.DisplayName ?? memberB.RaUsername,
+                memberB.AvatarUrl,
                 entries.Count(e => e.MemberId == memberB.Id),
                 entries.Count(e => e.MemberId == memberB.Id && e.FriendRank == 1));
 
@@ -125,6 +127,7 @@ public sealed record MemberSummaryDto(
     Guid Id,
     string RaUsername,
     string DisplayName,
+    string? AvatarUrl,
     int BoardsWithScore,
     int FriendRankOnes);
 

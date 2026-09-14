@@ -1,5 +1,6 @@
 import { Crown } from "lucide-react";
 import Link from "next/link";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ChampionshipRowDto } from "@/generated/api-client";
 
@@ -34,8 +35,9 @@ export function ChampionshipStandings({ rows, limit = 5 }: Props) {
                 )}
                 <Link
                   href={`/members/${encodeURIComponent(row.raUsername)}`}
-                  className={`font-medium hover:text-[var(--accent-retro)] ${index === 0 && row.friendRankOnes > 0 ? "text-[var(--accent-retro)]" : ""}`}
+                  className={`flex items-center gap-2 font-medium hover:text-[var(--accent-retro)] ${index === 0 && row.friendRankOnes > 0 ? "text-[var(--accent-retro)]" : ""}`}
                 >
+                  <MemberAvatar avatarUrl={row.avatarUrl} displayName={row.displayName} size={24} />
                   {row.displayName}
                 </Link>
               </div>

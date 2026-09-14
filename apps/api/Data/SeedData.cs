@@ -55,5 +55,44 @@ public static class SeedData
         {
             await db.SaveChangesAsync(cancellationToken);
         }
+
+        await ApplyMemberLinksAsync(db, options, cancellationToken);
+    }
+
+    private static async Task ApplyMemberLinksAsync(
+        AppDbContext db,
+        RaOptions options,
+        CancellationToken cancellationToken)
+    {
+        if (options.MemberLinks is not { Count: > 0 })
+        {
+            return;
+        }
+
+        var members = await db.Members.ToListAsync(cancellationToken);
+        var byUsername = members.ToDictionary(m => m.RaUsername, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var link in options.MemberLinks)
+        {
+            if (string.IsNullOrWhiteSpace(link.DiscordId) || string.IsNullOrWhiteSpace(link.RaUsername))
+            {
+                continue;
+            }
+
+            if (!byUsername.TryGetValue(link.RaUsername, out var member))
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(member.DiscordId))
+            {
+                member.DiscordId = link.DiscordId.Trim();
+            }
+        }
+
+        if (db.ChangeTracker.HasChanges())
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 }

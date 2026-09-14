@@ -40,7 +40,7 @@ public class GameMetadataApiTests : IAsyncLifetime
     {
         // Arrange
         _factory.RaApiClient
-            .GetGameAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .GetGameAsync(Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(call =>
             {
                 var gameId = call.ArgAt<int>(0);

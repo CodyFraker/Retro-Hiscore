@@ -23,10 +23,14 @@ public static class GetGameLeaderboardsEndpoint
                 return Results.NotFound();
             }
 
-            var members = await db.Members
+            var memberRows = await db.Members
                 .OrderBy(m => m.RaUsername)
-                .Select(m => new StandingMemberDto(m.Id, m.RaUsername, m.DisplayName ?? m.RaUsername))
+                .Select(m => new { m.Id, m.RaUsername, DisplayName = m.DisplayName ?? m.RaUsername, m.AvatarUrl })
                 .ToListAsync(ct);
+
+            var members = memberRows
+                .Select(m => new StandingMemberDto(m.Id, m.RaUsername, m.DisplayName, m.AvatarUrl))
+                .ToList();
 
             var leaderboards = await db.Leaderboards
                 .Include(l => l.Entries)
@@ -43,6 +47,7 @@ public static class GetGameLeaderboardsEndpoint
                         m.Id,
                         m.RaUsername,
                         m.DisplayName,
+                        m.AvatarUrl,
                         entry?.Score,
                         entry?.FormattedScore,
                         entry?.GlobalRank,
@@ -89,12 +94,13 @@ public static class GetGameLeaderboardsEndpoint
         .RequireApiAuth();
 }
 
-public sealed record StandingMemberDto(Guid Id, string RaUsername, string DisplayName);
+public sealed record StandingMemberDto(Guid Id, string RaUsername, string DisplayName, string? AvatarUrl);
 
 public sealed record FriendStandingDto(
     Guid MemberId,
     string RaUsername,
     string DisplayName,
+    string? AvatarUrl,
     long? Score,
     string? FormattedScore,
     int? GlobalRank,

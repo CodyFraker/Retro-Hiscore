@@ -17,13 +17,26 @@ export function formatFriendRank(rank: number | null | undefined) {
   return `#${rank}`;
 }
 
-export function formatSyncTime(value: string | null | undefined) {
+const syncTimeFormatOptions: Intl.DateTimeFormatOptions = {
+  dateStyle: "medium",
+  timeStyle: "short",
+};
+
+export function formatSyncTimeUtc(value: string | null | undefined) {
   if (!value) {
     return "Never";
   }
 
   return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    ...syncTimeFormatOptions,
+    timeZone: "UTC",
   }).format(new Date(value));
+}
+
+export function formatSyncTime(value: string | null | undefined) {
+  if (!value) {
+    return "Never";
+  }
+
+  return new Intl.DateTimeFormat(undefined, syncTimeFormatOptions).format(new Date(value));
 }

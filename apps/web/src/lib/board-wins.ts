@@ -4,6 +4,7 @@ export type BoardWinSummaryRow = {
   memberId: string;
   raUsername: string;
   displayName: string;
+  avatarUrl?: string | null;
   friendRankOnes: number;
   boardsWithScore: number;
 };
@@ -33,6 +34,7 @@ export function summarizeBoardWins(
         memberId: member.id,
         raUsername: member.raUsername,
         displayName: member.displayName,
+        avatarUrl: member.avatarUrl,
         friendRankOnes,
         boardsWithScore,
       };

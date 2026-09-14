@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MemberAvatar } from "@/components/members/member-avatar";
 import type { BoardWinSummaryRow } from "@/lib/board-wins";
 
 type Props = {
@@ -18,8 +19,9 @@ export function BoardWinSummary({ rows }: Props) {
           <li key={row.memberId} className="flex items-center justify-between gap-4 py-3 text-sm">
             <Link
               href={`/members/${encodeURIComponent(row.raUsername)}`}
-              className="font-medium hover:text-[var(--accent-retro)]"
+              className="flex items-center gap-2 font-medium hover:text-[var(--accent-retro)]"
             >
+              <MemberAvatar avatarUrl={row.avatarUrl} displayName={row.displayName} size={24} />
               {row.displayName}
             </Link>
             <div className="font-mono text-xs text-muted-foreground">

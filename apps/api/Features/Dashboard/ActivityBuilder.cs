@@ -59,6 +59,7 @@ public static class ActivityBuilder
                     delta.MemberId,
                     currentSnapshot?.Member.RaUsername ?? "",
                     delta.DisplayName,
+                    currentSnapshot?.Member.AvatarUrl,
                     first.Leaderboard.Game.RaGameId,
                     first.Leaderboard.Game.Title,
                     first.Leaderboard.RaLeaderboardId,

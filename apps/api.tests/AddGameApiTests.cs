@@ -39,6 +39,7 @@ public class AddGameApiTests : IAsyncLifetime
     {
         // Arrange
         const int raGameId = 99999;
+        await _factory.SetMemberApiKeyAsync("ShrimpPoboy", "shrimp-test-key");
         SetupRaMocks(raGameId, includeMemberScore: true);
         var client = _factory.CreateAuthenticatedClient();
 
@@ -80,7 +81,7 @@ public class AddGameApiTests : IAsyncLifetime
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
-        await _factory.RaApiClient.DidNotReceiveWithAnyArgs().GetGameAsync(default, default);
+        await _factory.RaApiClient.DidNotReceiveWithAnyArgs().GetGameAsync(default, default, default);
     }
 
     [Fact]
@@ -89,7 +90,7 @@ public class AddGameApiTests : IAsyncLifetime
         // Arrange
         const int raGameId = 40404;
         _factory.RaApiClient
-            .GetGameAsync(raGameId, Arg.Any<CancellationToken>())
+            .GetGameAsync(raGameId, Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new RaGameDto { Title = "" }));
         var client = _factory.CreateAuthenticatedClient();
 
@@ -128,7 +129,7 @@ public class AddGameApiTests : IAsyncLifetime
     private void SetupRaMocks(int raGameId, bool includeMemberScore)
     {
         _factory.RaApiClient
-            .GetGameAsync(raGameId, Arg.Any<CancellationToken>())
+            .GetGameAsync(raGameId, Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new RaGameDto
             {
                 Title = "New Adventure",
@@ -143,7 +144,7 @@ public class AddGameApiTests : IAsyncLifetime
             }));
 
         _factory.RaApiClient
-            .GetGameLeaderboardsAsync(raGameId, Arg.Any<CancellationToken>())
+            .GetGameLeaderboardsAsync(raGameId, Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<RaGameLeaderboardDto>>(
             [
                 new RaGameLeaderboardDto
@@ -157,7 +158,7 @@ public class AddGameApiTests : IAsyncLifetime
             ]));
 
         _factory.RaApiClient
-            .GetUserGameLeaderboardsAsync(raGameId, Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .GetUserGameLeaderboardsAsync(raGameId, Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(call =>
             {
                 var user = call.ArgAt<string>(1);
@@ -189,7 +190,7 @@ public class AddGameApiTests : IAsyncLifetime
             });
 
         _factory.RaApiClient
-            .GetConsoleIdsAsync(Arg.Any<CancellationToken>())
+            .GetConsoleIdsAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<RaConsoleIdDto>>(
             [
                 new RaConsoleIdDto

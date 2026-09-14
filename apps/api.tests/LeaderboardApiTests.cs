@@ -69,8 +69,9 @@ public class LeaderboardApiTests : IAsyncLifetime
     public async Task Sync_PersistsScores_AndLeavesMissingMembersEmpty()
     {
         // Arrange
+        await _factory.SetMemberApiKeyAsync("ShrimpPoboy", "shrimp-test-key");
         _factory.RaApiClient
-            .GetGameLeaderboardsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .GetGameLeaderboardsAsync(Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(call =>
             {
                 var gameId = call.ArgAt<int>(0);
@@ -88,7 +89,7 @@ public class LeaderboardApiTests : IAsyncLifetime
             });
 
         _factory.RaApiClient
-            .GetUserGameLeaderboardsAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .GetUserGameLeaderboardsAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(call =>
             {
                 var gameId = call.ArgAt<int>(0);
