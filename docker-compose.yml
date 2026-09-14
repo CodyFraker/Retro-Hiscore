@@ -17,10 +17,9 @@ x-api-environment: &api-environment
   Notifications__DiscordWebhookUrl: ${Notifications__DiscordWebhookUrl:-}
   Notifications__NotifyOnRankChange: ${Notifications__NotifyOnRankChange:-true}
   Notifications__NotifyOnNewLead: ${Notifications__NotifyOnNewLead:-true}
-  Auth__JwtSigningKey: ${AUTH_SECRET:-}
-  Auth__WebOrigin: ${AUTH_URL:-http://localhost:18321}
+  AUTH_SECRET: ${AUTH_SECRET:-}
+  AUTH_URL: ${AUTH_URL:-http://localhost:18321}
   AUTH_ADMIN_DISCORD_USER_IDS: ${AUTH_ADMIN_DISCORD_USER_IDS:-}
-  AUTH_SIGN_IN_SERVICE_KEY: ${AUTH_SIGN_IN_SERVICE_KEY:-${AUTH_SECRET:-}}
 
 x-web-environment: &web-environment
   NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:18943}
@@ -30,7 +29,6 @@ x-web-environment: &web-environment
   AUTH_DISCORD_ID: ${AUTH_DISCORD_ID:-}
   AUTH_DISCORD_SECRET: ${AUTH_DISCORD_SECRET:-}
   AUTH_ADMIN_DISCORD_USER_IDS: ${AUTH_ADMIN_DISCORD_USER_IDS:-}
-  AUTH_SIGN_IN_SERVICE_KEY: ${AUTH_SIGN_IN_SERVICE_KEY:-${AUTH_SECRET:-}}
   NEXTAUTH_URL: ${AUTH_URL:-http://localhost:18321}
   NEXTAUTH_SECRET: ${AUTH_SECRET:-}
 
@@ -38,16 +36,17 @@ services:
   postgres:
     container_name: RetroHiscore-postgres
     image: postgres:16-alpine
+    # Must match Database/Username/Password in ConnectionStrings__Default
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-retrohiscore}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-retrohiscore}
-      POSTGRES_DB: ${POSTGRES_DB:-retrohiscore}
+      POSTGRES_USER: retrohiscore
+      POSTGRES_PASSWORD: retrohiscore
+      POSTGRES_DB: retrohiscore
     ports:
-      - "${POSTGRES_HOST_PORT:-15432}:5432"
+      - "15432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-retrohiscore} -d ${POSTGRES_DB:-retrohiscore}"]
+      test: ["CMD-SHELL", "pg_isready -U retrohiscore -d retrohiscore"]
       interval: 5s
       timeout: 5s
       retries: 10

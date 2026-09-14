@@ -50,6 +50,42 @@ public class AuthOptionsConfigurationTests
     }
 
     [Fact]
+    public void ResolveJwtSigningKey_FallsBackToAuthSecret()
+    {
+        // Arrange
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AUTH_SECRET"] = "auth-secret",
+            })
+            .Build();
+
+        // Act
+        var key = AuthExtensions.ResolveJwtSigningKey(configuration);
+
+        // Assert
+        key.ShouldBe("auth-secret");
+    }
+
+    [Fact]
+    public void ResolveWebOrigin_FallsBackToAuthUrl()
+    {
+        // Arrange
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AUTH_URL"] = "https://hiscore.example.com",
+            })
+            .Build();
+
+        // Act
+        var origin = AuthExtensions.ResolveWebOrigin(configuration);
+
+        // Assert
+        origin.ShouldBe("https://hiscore.example.com");
+    }
+
+    [Fact]
     public void ApplySignInServiceKey_FallsBackToAuthSecret()
     {
         // Arrange

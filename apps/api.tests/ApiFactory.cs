@@ -195,8 +195,27 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             END $$;
             """);
 
-        await SeedData.EnsureSeededAsync(db, new RaOptions());
+        await EnsureDefaultTestGamesAsync(db);
         await EnsureDefaultTestMembersAsync(db);
+    }
+
+    private static async Task EnsureDefaultTestGamesAsync(AppDbContext db)
+    {
+        int[] raGameIds = [38130, 2291, 789];
+        var existing = await db.Games.Select(g => g.RaGameId).ToListAsync();
+        foreach (var raGameId in raGameIds.Except(existing))
+        {
+            db.Games.Add(new Game
+            {
+                RaGameId = raGameId,
+                Title = $"Game {raGameId}",
+            });
+        }
+
+        if (db.ChangeTracker.HasChanges())
+        {
+            await db.SaveChangesAsync();
+        }
     }
 
     private static async Task EnsureDefaultTestMembersAsync(AppDbContext db)

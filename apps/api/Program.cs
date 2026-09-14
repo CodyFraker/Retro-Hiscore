@@ -95,8 +95,6 @@ if (!isTesting)
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
-    var raOptions = scope.ServiceProvider.GetRequiredService<IOptions<RaOptions>>().Value;
-    await SeedData.EnsureSeededAsync(db, raOptions);
 }
 
 app.UseCors();

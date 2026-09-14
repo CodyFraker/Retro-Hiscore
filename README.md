@@ -69,10 +69,11 @@ pwsh ./scripts/ci-local.ps1 -Job all
 
 Requires Docker Desktop (or Docker Engine). The API job mounts `/var/run/docker.sock` so Testcontainers can start Postgres, matching the [CI workflow](.github/workflows/ci.yml).
 
-## Default tracked games (optional)
+## Tracked games
 
-- When `RA__TrackedGameIds__*` is unset, the API seeds games `38130`, `2291`, and `789` on first startup.
-- Sync every 15 minutes + manual refresh (60s cooldown)
+Games are added when members link RA accounts and sync runs (recent games → track queue → admin approval), or when an admin adds a game manually. No default game list is seeded at startup.
+
+Sync every 15 minutes + manual refresh (60s cooldown)
 
 ## Admin sync metrics
 

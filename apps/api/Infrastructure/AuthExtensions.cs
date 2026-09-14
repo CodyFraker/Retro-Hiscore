@@ -20,15 +20,16 @@ public static class AuthExtensions
         services.Configure<AuthOptions>(options =>
         {
             configuration.GetSection(AuthOptions.SectionName).Bind(options);
+            ApplyWebOrigin(configuration, options);
             ApplySharedAdminDiscordAllowlist(configuration, options);
             ApplySignInServiceKey(configuration, options);
         });
 
-        var signingKey = configuration[$"{AuthOptions.SectionName}:JwtSigningKey"];
+        var signingKey = ResolveJwtSigningKey(configuration);
         if (!isTesting && string.IsNullOrWhiteSpace(signingKey))
         {
             throw new InvalidOperationException(
-                $"{AuthOptions.SectionName}:JwtSigningKey is required outside the Testing environment.");
+                "AUTH_SECRET (or Auth:JwtSigningKey) is required outside the Testing environment.");
         }
 
         if (!isTesting)
@@ -88,8 +89,7 @@ public static class AuthExtensions
         {
             options.AddDefaultPolicy(policy =>
             {
-                var webOrigin = configuration[$"{AuthOptions.SectionName}:WebOrigin"]
-                    ?? "http://localhost:18321";
+                var webOrigin = ResolveWebOrigin(configuration);
                 policy
                     .WithOrigins(webOrigin)
                     .AllowAnyHeader()
@@ -105,6 +105,43 @@ public static class AuthExtensions
 
     public static RouteHandlerBuilder RequireAdmin(this RouteHandlerBuilder builder)
         => builder.RequireAuthorization(AdminDiscordUserPolicy);
+
+    public static string? ResolveJwtSigningKey(IConfiguration configuration)
+    {
+        var fromSection = configuration[$"{AuthOptions.SectionName}:JwtSigningKey"];
+        if (!string.IsNullOrWhiteSpace(fromSection))
+        {
+            return fromSection;
+        }
+
+        return configuration["AUTH_SECRET"];
+    }
+
+    public static string ResolveWebOrigin(IConfiguration configuration)
+    {
+        var fromSection = configuration[$"{AuthOptions.SectionName}:WebOrigin"];
+        if (!string.IsNullOrWhiteSpace(fromSection))
+        {
+            return fromSection;
+        }
+
+        var authUrl = configuration["AUTH_URL"];
+        if (!string.IsNullOrWhiteSpace(authUrl))
+        {
+            return authUrl;
+        }
+
+        return "http://localhost:18321";
+    }
+
+    public static void ApplyWebOrigin(IConfiguration configuration, AuthOptions options)
+    {
+        var resolved = ResolveWebOrigin(configuration);
+        if (!string.IsNullOrWhiteSpace(resolved))
+        {
+            options.WebOrigin = resolved;
+        }
+    }
 
     public static void ApplySharedAdminDiscordAllowlist(IConfiguration configuration, AuthOptions options)
     {
