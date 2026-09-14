@@ -1,11 +1,12 @@
+const DEFAULT_SERVER_API_URL = "http://localhost:18943";
+
 export function getApiBaseUrl() {
   if (typeof window === "undefined") {
     return (
       process.env.API_URL?.replace(/\/$/, "") ||
-      process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
-      "http://localhost:18943"
+      DEFAULT_SERVER_API_URL
     );
   }
 
-  return process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
+  return "";
 }

@@ -40,8 +40,6 @@ jobs:
       - name: Build
         working-directory: apps/web
         run: npm run build
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost
 
   docker:
     needs: [test-api, test-web]
@@ -89,5 +87,3 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta-web.outputs.tags }}
           labels: ${{ steps.meta-web.outputs.labels }}
-          build-args: |
-            NEXT_PUBLIC_API_URL=http://localhost:18943

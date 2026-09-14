@@ -22,7 +22,6 @@ x-api-environment: &api-environment
   AUTH_ADMIN_DISCORD_USER_IDS: ${AUTH_ADMIN_DISCORD_USER_IDS:-}
 
 x-web-environment: &web-environment
-  NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:18943}
   API_URL: ${API_URL:-http://api:8080}
   AUTH_SECRET: ${AUTH_SECRET:-}
   AUTH_URL: ${AUTH_URL:-http://localhost:18321}
@@ -121,8 +120,6 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-      args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:18943}
     ports:
       - "18321:3000"
     environment:

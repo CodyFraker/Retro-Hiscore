@@ -10,8 +10,7 @@ function resolveHangfireHref(pathOrUrl: string) {
   if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
     return pathOrUrl;
   }
-  const base = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:18943").replace(/\/$/, "");
-  return `${base}${pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`}`;
+  return pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
 }
 
 export default async function AdminPage() {

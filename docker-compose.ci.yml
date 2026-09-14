@@ -26,6 +26,4 @@ services:
     working_dir: /src
     volumes:
       - .:/src
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost
     command: bash -c "cd apps/web && npm ci && npm test && npm run build"
