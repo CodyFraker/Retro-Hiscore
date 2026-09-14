@@ -125,7 +125,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-x-clip;
     background-image: linear-gradient(
       180deg,
       color-mix(in oklab, var(--steam-olive), black 6%) 0%,

@@ -64,7 +64,7 @@ export function MemberProfileHero({ detail, raSummary }: Props) {
               size={56}
             />
             <div className="flex min-w-0 flex-wrap items-center gap-3">
-              <h1 className="font-[family-name:var(--font-display)] text-3xl text-[var(--accent-retro)]">
+              <h1 className="font-[family-name:var(--font-display)] text-2xl text-[var(--accent-retro)] sm:text-3xl">
                 {detail.displayName}
               </h1>
               {raStatus ? (

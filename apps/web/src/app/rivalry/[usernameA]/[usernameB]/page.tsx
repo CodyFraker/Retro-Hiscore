@@ -82,7 +82,7 @@ export default async function RivalryPage({ params }: Props) {
           <ArrowLeft className="size-4 shrink-0" />
           All members
         </Link>
-        <h1 className="flex flex-wrap items-center gap-3 font-[family-name:var(--font-display)] text-3xl text-[var(--accent-retro)]">
+        <h1 className="flex flex-wrap items-center gap-3 font-[family-name:var(--font-display)] text-2xl text-[var(--accent-retro)] sm:text-3xl">
           <span className="inline-flex items-center gap-2">
             <MemberAvatar
               avatarUrl={rivalry.memberA.avatarUrl}

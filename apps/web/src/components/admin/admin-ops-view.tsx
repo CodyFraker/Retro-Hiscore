@@ -1,15 +1,11 @@
 import Link from "next/link";
 import type { AdminOpsDto } from "@/generated/api-client";
+import { DataFieldList } from "@/components/layout/data-field-list";
+import { PageHero } from "@/components/layout/page-hero";
+import { ResponsiveTable } from "@/components/layout/responsive-table";
 import { formatSyncTime } from "@/lib/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 type Props = {
   ops: AdminOpsDto;
@@ -80,19 +76,28 @@ function truncateError(error: string | null | undefined, max = 80) {
   return `${error.slice(0, max)}…`;
 }
 
+function RunErrorCell({ error }: { error: string | null | undefined }) {
+  if (!error) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  return (
+    <details>
+      <summary className="cursor-pointer text-xs">{truncateError(error)}</summary>
+      <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">{error}</p>
+    </details>
+  );
+}
+
 export function AdminOpsView({ ops, hangfireDashboardHref }: Props) {
   const { health, recentRuns, memberCoverageSummary, members, scheduler, config } = ops;
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <section className="space-y-2">
-        <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-tight text-[var(--accent-retro)]">
-          Admin · Sync & jobs
-        </h1>
-        <p className="text-muted-foreground">
-          Health, run history, member API key coverage, and scheduler context.
-        </p>
-      </section>
+      <PageHero
+        title="Admin · Sync & jobs"
+        description="Health, run history, member API key coverage, and scheduler context."
+      />
 
       <Card>
         <CardHeader>
@@ -112,9 +117,7 @@ export function AdminOpsView({ ops, hangfireDashboardHref }: Props) {
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Last full success</p>
-            <p className="font-medium">
-              {formatSyncTime(health.lastSuccessfulLeaderboardSyncAt)}
-            </p>
+            <p className="font-medium">{formatSyncTime(health.lastSuccessfulLeaderboardSyncAt)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Interval</p>
@@ -141,54 +144,58 @@ export function AdminOpsView({ ops, hangfireDashboardHref }: Props) {
           <CardDescription>Last 15 runs · manual refreshes run inline, not via Hangfire</CardDescription>
         </CardHeader>
         <CardContent>
-          {recentRuns.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No sync runs yet.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Kind</TableHead>
-                  <TableHead>Trigger</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Started</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Error</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentRuns.map((run) => (
-                  <TableRow
-                    key={run.id}
-                    className={
-                      run.status === "Failed" || run.status === "PartialSuccess"
-                        ? "bg-destructive/5"
-                        : undefined
-                    }
-                  >
-                    <TableCell>{formatKind(run.kind)}</TableCell>
-                    <TableCell>{run.trigger}</TableCell>
-                    <TableCell className={statusBadgeClass(run.status)}>{run.status}</TableCell>
-                    <TableCell>{formatSyncTime(run.startedAt)}</TableCell>
-                    <TableCell>{formatDuration(run.startedAt, run.finishedAt)}</TableCell>
-                    <TableCell className="max-w-xs">
-                      {run.error ? (
-                        <details>
-                          <summary className="cursor-pointer text-xs">
-                            {truncateError(run.error)}
-                          </summary>
-                          <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">
-                            {run.error}
-                          </p>
-                        </details>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <ResponsiveTable
+            rows={recentRuns}
+            rowKey={(run) => run.id}
+            emptyMessage={<p className="text-sm text-muted-foreground">No sync runs yet.</p>}
+            columns={[
+              { header: "Kind", render: (run) => formatKind(run.kind) },
+              { header: "Trigger", render: (run) => run.trigger },
+              {
+                header: "Status",
+                render: (run) => (
+                  <span className={statusBadgeClass(run.status)}>{run.status}</span>
+                ),
+              },
+              { header: "Started", render: (run) => formatSyncTime(run.startedAt) },
+              {
+                header: "Duration",
+                render: (run) => formatDuration(run.startedAt, run.finishedAt),
+              },
+              {
+                header: "Error",
+                cellClassName: "max-w-xs",
+                render: (run) => <RunErrorCell error={run.error} />,
+              },
+            ]}
+            renderMobileCard={(run) => (
+              <li
+                key={run.id}
+                className={cn(
+                  "rounded border border-border bg-card p-4 text-sm",
+                  (run.status === "Failed" || run.status === "PartialSuccess") && "bg-destructive/5",
+                )}
+              >
+                <p className="font-medium">{formatKind(run.kind)}</p>
+                <DataFieldList
+                  className="mt-2"
+                  fields={[
+                    { label: "Trigger", value: run.trigger },
+                    { label: "Status", value: run.status },
+                    { label: "Started", value: formatSyncTime(run.startedAt) },
+                    {
+                      label: "Duration",
+                      value: formatDuration(run.startedAt, run.finishedAt),
+                    },
+                  ]}
+                />
+                <div className="mt-2">
+                  <p className="text-xs text-muted-foreground">Error</p>
+                  <RunErrorCell error={run.error} />
+                </div>
+              </li>
+            )}
+          />
         </CardContent>
       </Card>
 
@@ -196,36 +203,57 @@ export function AdminOpsView({ ops, hangfireDashboardHref }: Props) {
         <CardHeader>
           <CardTitle>Member sync coverage</CardTitle>
           <CardDescription>
-            {memberCoverageSummary.membersWithApiKey} of {memberCoverageSummary.totalMembers}{" "}
-            members have an API key configured
+            {memberCoverageSummary.membersWithApiKey} of {memberCoverageSummary.totalMembers} members
+            have an API key configured
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>API key</TableHead>
-                <TableHead>Boards</TableHead>
-                <TableHead>Last entry sync</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((member) => (
-                <TableRow key={member.raUsername} className={!member.hasApiKey ? "bg-amber-500/5" : undefined}>
-                  <TableCell>
+          <ResponsiveTable
+            rows={members}
+            rowKey={(member) => member.raUsername}
+            columns={[
+              {
+                header: "Member",
+                render: (member) => (
+                  <>
                     <span className="font-medium">{member.displayName}</span>
                     <span className="block font-mono text-xs text-muted-foreground">
                       @{member.raUsername}
                     </span>
-                  </TableCell>
-                  <TableCell>{member.hasApiKey ? "Yes" : "No"}</TableCell>
-                  <TableCell>{member.boardsWithScore}</TableCell>
-                  <TableCell>{formatSyncTime(member.lastEntrySyncedAt)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                  </>
+                ),
+              },
+              { header: "API key", render: (member) => (member.hasApiKey ? "Yes" : "No") },
+              { header: "Boards", render: (member) => member.boardsWithScore },
+              {
+                header: "Last entry sync",
+                render: (member) => formatSyncTime(member.lastEntrySyncedAt),
+              },
+            ]}
+            renderMobileCard={(member) => (
+              <li
+                key={member.raUsername}
+                className={cn(
+                  "rounded border border-border bg-card p-4 text-sm",
+                  !member.hasApiKey && "bg-amber-500/5",
+                )}
+              >
+                <p className="font-medium">{member.displayName}</p>
+                <p className="font-mono text-xs text-muted-foreground">@{member.raUsername}</p>
+                <DataFieldList
+                  className="mt-2"
+                  fields={[
+                    { label: "API key", value: member.hasApiKey ? "Yes" : "No" },
+                    { label: "Boards", value: member.boardsWithScore },
+                    {
+                      label: "Last entry sync",
+                      value: formatSyncTime(member.lastEntrySyncedAt),
+                    },
+                  ]}
+                />
+              </li>
+            )}
+          />
         </CardContent>
       </Card>
 
@@ -251,28 +279,39 @@ export function AdminOpsView({ ops, hangfireDashboardHref }: Props) {
           </div>
 
           {scheduler.recurringJobs.length > 0 && (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Job</TableHead>
-                  <TableHead>Cron</TableHead>
-                  <TableHead>Last run</TableHead>
-                  <TableHead>Next run</TableHead>
-                  <TableHead>Last state</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {scheduler.recurringJobs.map((job) => (
-                  <TableRow key={job.jobId}>
-                    <TableCell className="font-mono text-xs">{job.jobId}</TableCell>
-                    <TableCell className="text-xs">{job.cron ?? "—"}</TableCell>
-                    <TableCell>{formatSyncTime(job.lastExecution)}</TableCell>
-                    <TableCell>{formatSyncTime(job.nextExecution)}</TableCell>
-                    <TableCell>{job.lastJobState ?? "—"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ResponsiveTable
+              rows={scheduler.recurringJobs}
+              rowKey={(job) => job.jobId}
+              columns={[
+                {
+                  header: "Job",
+                  cellClassName: "font-mono text-xs",
+                  render: (job) => job.jobId,
+                },
+                {
+                  header: "Cron",
+                  cellClassName: "text-xs",
+                  render: (job) => job.cron ?? "—",
+                },
+                { header: "Last run", render: (job) => formatSyncTime(job.lastExecution) },
+                { header: "Next run", render: (job) => formatSyncTime(job.nextExecution) },
+                { header: "Last state", render: (job) => job.lastJobState ?? "—" },
+              ]}
+              renderMobileCard={(job) => (
+                <li key={job.jobId} className="rounded border border-border bg-card p-4 text-sm">
+                  <p className="break-all font-mono text-xs">{job.jobId}</p>
+                  <DataFieldList
+                    className="mt-2"
+                    fields={[
+                      { label: "Cron", value: job.cron ?? "—" },
+                      { label: "Last run", value: formatSyncTime(job.lastExecution) },
+                      { label: "Next run", value: formatSyncTime(job.nextExecution) },
+                      { label: "Last state", value: job.lastJobState ?? "—" },
+                    ]}
+                  />
+                </li>
+              )}
+            />
           )}
 
           <p>

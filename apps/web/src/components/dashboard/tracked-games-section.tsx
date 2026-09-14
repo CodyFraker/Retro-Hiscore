@@ -64,7 +64,7 @@ export function TrackedGamesSection({ games }: Props) {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Title or platform"
-              className="h-8 w-full min-w-[12rem] rounded-md bg-input px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-48"
+              className="h-8 w-full min-w-0 rounded-md bg-input px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-48"
             />
           </label>
           <label className="flex flex-col gap-1">

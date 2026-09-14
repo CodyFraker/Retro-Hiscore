@@ -2,6 +2,7 @@ import { AlertCircle } from "lucide-react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { SignInButton } from "@/components/sign-in-button";
+import { PageHero } from "@/components/layout/page-hero";
 import { authOptions } from "@/lib/auth-options";
 
 type Props = {
@@ -25,14 +26,12 @@ export default async function LoginPage({ searchParams }: Props) {
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 py-16">
-      <div className="space-y-2 text-center">
-        <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-tight text-[var(--accent-retro)]">
-          Sign in
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Use Discord to sign in. Only invited Discord accounts can access this site.
-        </p>
-      </div>
+      <PageHero
+        title="Sign in"
+        titleClassName="text-center sm:text-left"
+        className="text-center sm:text-left"
+        description="Use Discord to sign in. Only invited Discord accounts can access this site."
+      />
 
       {errorMessage && (
         <p className="flex items-center gap-2 rounded border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">

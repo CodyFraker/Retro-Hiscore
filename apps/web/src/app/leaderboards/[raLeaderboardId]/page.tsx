@@ -48,7 +48,7 @@ export default async function LeaderboardPage({ params }: Props) {
           <ArrowLeft className="size-4 shrink-0" />
           {detail.gameTitle}
         </Link>
-        <h1 className="font-[family-name:var(--font-display)] text-3xl text-[var(--accent-retro)]">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl text-[var(--accent-retro)] sm:text-3xl">
           {detail.title}
         </h1>
         {detail.description && <p className="text-muted-foreground">{detail.description}</p>}
@@ -74,7 +74,7 @@ export default async function LeaderboardPage({ params }: Props) {
 
       <section className="space-y-3">
         <h2 className="steam-section-heading">Friend standings</h2>
-        <div className="rounded border border-border p-3 md:p-0 md:overflow-x-auto">
+        <div className="md:overflow-x-auto">
           <LeaderboardStandingsSection
             standings={detail.standings}
             globalEntryCount={detail.globalEntryCount}
@@ -97,7 +97,7 @@ export default async function LeaderboardPage({ params }: Props) {
             No snapshots yet.
           </p>
         ) : (
-          <div className="rounded border border-border p-3 md:p-0 md:overflow-x-auto">
+          <div className="md:overflow-x-auto">
             <LeaderboardHistorySection items={history.items} />
           </div>
         )}

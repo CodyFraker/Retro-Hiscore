@@ -89,7 +89,7 @@ export default async function GamePage({ params }: Props) {
               )}
             </div>
             <div className="space-y-2">
-              <h1 className="font-[family-name:var(--font-display)] text-3xl text-[var(--accent-retro)]">
+              <h1 className="font-[family-name:var(--font-display)] text-2xl text-[var(--accent-retro)] sm:text-3xl">
                 {data.title}
               </h1>
               {data.consoleName && (
@@ -118,7 +118,7 @@ export default async function GamePage({ params }: Props) {
         <>
           <GameStatsStrip stats={stats} />
 
-          <div className="rounded border border-border p-3 md:p-0 md:overflow-x-auto">
+          <div className="md:overflow-x-auto">
             <GameStandingsSection leaderboards={data.leaderboards} members={data.members} />
           </div>
 

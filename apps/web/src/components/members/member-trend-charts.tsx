@@ -98,7 +98,7 @@ export function MemberTrendCharts({ items }: Props) {
       <section className="space-y-3">
         <h2 className="steam-section-heading">Board leads over time</h2>
         {hasLeadTrend ? (
-          <div className="h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
+          <div className="min-w-0 h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={leadChartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
@@ -145,7 +145,7 @@ export function MemberTrendCharts({ items }: Props) {
       <section className="space-y-3">
         <h2 className="steam-section-heading">Friend rank by board</h2>
         {hasRankTrend ? (
-          <div className="h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
+          <div className="min-w-0 h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={rankChartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />

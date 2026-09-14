@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MemberAvatar } from "@/components/members/member-avatar";
+import { PageHero } from "@/components/layout/page-hero";
 import { RivalryPicker } from "@/components/rivalry/rivalry-picker";
 import type { MemberDto } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
@@ -19,14 +20,10 @@ export default async function MembersPage() {
 
   return (
     <div className="space-y-8">
-      <section className="space-y-2">
-        <h1 className="font-[family-name:var(--font-display)] text-4xl tracking-tight text-[var(--accent-retro)]">
-          Members
-        </h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Tracked friends on Retro Hiscore. Open a profile for board leads and standings.
-        </p>
-      </section>
+      <PageHero
+        title="Members"
+        description="Tracked friends on Retro Hiscore. Open a profile for board leads and standings."
+      />
 
       {error && (
         <p className="rounded border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">
@@ -53,8 +50,8 @@ export default async function MembersPage() {
             <>
               <div className="flex items-center gap-3">
                 <MemberAvatar avatarUrl={member.avatarUrl} displayName={member.displayName} size={40} />
-                <div>
-                  <h2 className="text-xl font-medium">{member.displayName}</h2>
+                <div className="min-w-0">
+                  <h2 className="truncate text-xl font-medium">{member.displayName}</h2>
                   {member.raUsername ? (
                     <p className="mt-1 font-mono text-xs text-muted-foreground">@{member.raUsername}</p>
                   ) : null}

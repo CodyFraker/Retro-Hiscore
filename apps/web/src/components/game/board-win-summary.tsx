@@ -16,15 +16,15 @@ export function BoardWinSummary({ rows }: Props) {
       <h2 className="steam-section-heading">Board leads</h2>
       <ul className="divide-y divide-border border-y border-border">
         {rows.map((row) => (
-          <li key={row.memberId} className="flex items-center justify-between gap-4 py-3 text-sm">
+            <li key={row.memberId} className="flex min-w-0 flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <Link
               href={`/members/${encodeURIComponent(row.raUsername)}`}
-              className="flex items-center gap-2 font-medium hover:text-[var(--accent-retro)]"
+              className="flex min-w-0 items-center gap-2 font-medium hover:text-[var(--accent-retro)]"
             >
               <MemberAvatar avatarUrl={row.avatarUrl} displayName={row.displayName} size={24} />
-              {row.displayName}
+              <span className="truncate">{row.displayName}</span>
             </Link>
-            <div className="font-mono text-xs text-muted-foreground">
+            <div className="shrink-0 font-mono text-xs text-muted-foreground sm:text-right">
               <span className="text-foreground">{row.friendRankOnes}</span> lead
               {row.friendRankOnes === 1 ? "" : "s"}
               <span className="mx-2 text-border">·</span>

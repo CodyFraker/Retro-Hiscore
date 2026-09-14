@@ -1,5 +1,6 @@
 import { ApiKeyForm } from "@/components/settings/api-key-form";
 import { RaAccountForm } from "@/components/settings/ra-account-form";
+import { PageHero } from "@/components/layout/page-hero";
 import { getServerApiClient } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -26,14 +27,10 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-lg space-y-8">
-      <section className="space-y-2">
-        <h1 className="font-[family-name:var(--font-display)] text-3xl tracking-tight text-[var(--accent-retro)]">
-          Settings
-        </h1>
-        <p className="text-muted-foreground">
-          Link your RetroAchievements account so your leaderboard scores stay in sync.
-        </p>
-      </section>
+      <PageHero
+        title="Settings"
+        description="Link your RetroAchievements account so your leaderboard scores stay in sync."
+      />
 
       {error && (
         <p className="rounded border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">

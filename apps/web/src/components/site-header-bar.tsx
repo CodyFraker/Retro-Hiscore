@@ -124,8 +124,14 @@ export function SiteHeaderBar({
             <div className="flex flex-col gap-6 overflow-y-auto px-4 pb-6">
               <NavLinks onNavigate={() => setOpen(false)} showAdminNav={showAdminNav} />
               <div className="space-y-1 border-t border-border pt-4 text-sm text-muted-foreground">
-                <p>{syncLabel}</p>
-                {metadataLabel && <p className="text-xs">{metadataLabel}</p>}
+                <p className="truncate" title={syncLabel}>
+                  {syncLabel}
+                </p>
+                {metadataLabel ? (
+                  <p className="truncate text-xs" title={metadataLabel}>
+                    {metadataLabel}
+                  </p>
+                ) : null}
               </div>
               <Link
                 href="/settings"

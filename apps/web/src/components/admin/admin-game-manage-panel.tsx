@@ -75,10 +75,11 @@ export function AdminGameManagePanel({ game, initialSources }: Props) {
             Open public game page
           </Link>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
           <Button
             type="button"
             variant="outline"
+            className="w-full sm:w-auto"
             disabled={pending}
             onClick={() => {
               startTransition(async () => {
@@ -98,6 +99,7 @@ export function AdminGameManagePanel({ game, initialSources }: Props) {
           <Button
             type="button"
             variant="destructive"
+            className="w-full sm:w-auto"
             disabled={pending}
             onClick={() => {
               if (!window.confirm(`Stop tracking ${game.title}? This removes leaderboard data and mirrors.`)) {

@@ -18,42 +18,48 @@ export function GameCard({ game, onDelete, deleting }: Props) {
 
   return (
     <li>
-      <div className="flex items-center gap-2 pr-2">
+      <div className="flex items-stretch gap-2 pr-2">
         <Link
           href={`/games/${game.raGameId}`}
-          className="flex min-w-0 flex-1 items-center gap-4 py-5 pl-4 transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="flex min-w-0 flex-1 flex-col gap-3 py-5 pl-4 transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:flex-row sm:items-center"
         >
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-secondary/40 steam-bevel-inset">
-            {artUrl ? (
-              <Image
-                src={artUrl}
-                alt={game.title}
-                fill
-                className="object-cover"
-                sizes="64px"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-muted-foreground">
-                <ImageOff className="size-5" />
-              </div>
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xl font-medium">{game.title}</p>
-            <p className="mt-1">
-              <ConsoleName
-                name={game.consoleName}
-                iconUrl={game.consoleIconUrl}
-                fallback={`RA #${game.raGameId}`}
-              />
-            </p>
-            {game.lastActivityAt && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Last activity <FormattedSyncTime value={game.lastActivityAt} />
+          <div className="flex min-w-0 flex-1 items-start gap-4">
+            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-secondary/40 steam-bevel-inset">
+              {artUrl ? (
+                <Image
+                  src={artUrl}
+                  alt={game.title}
+                  fill
+                  className="object-cover"
+                  sizes="64px"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  <ImageOff className="size-5" />
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xl font-medium">{game.title}</p>
+              <p className="mt-1">
+                <ConsoleName
+                  name={game.consoleName}
+                  iconUrl={game.consoleIconUrl}
+                  fallback={`RA #${game.raGameId}`}
+                />
               </p>
-            )}
+              {game.lastActivityAt && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Last activity <FormattedSyncTime value={game.lastActivityAt} />
+                </p>
+              )}
+            </div>
+            <ChevronRight
+              className="hidden size-4 shrink-0 text-muted-foreground sm:block"
+              aria-hidden
+            />
           </div>
-          <div className="flex max-sm:w-full max-sm:items-start max-sm:pt-1 shrink-0 flex-wrap flex-col items-end gap-1.5 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap items-center gap-1.5 max-sm:pl-0 pl-20 sm:shrink-0 sm:justify-end sm:pl-0">
             <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
               {game.leaderboardCount === 0
                 ? "Waiting for first sync"
@@ -65,7 +71,6 @@ export function GameCard({ game, onDelete, deleting }: Props) {
               </span>
             )}
           </div>
-          <ChevronRight className="hidden size-4 shrink-0 text-muted-foreground sm:block" aria-hidden />
         </Link>
         {onDelete && (
           <Button

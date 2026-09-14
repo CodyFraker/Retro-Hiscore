@@ -35,7 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <AppSessionProvider>
           <SiteHeader />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:py-8">{children}</main>
+          <main className="mx-auto min-w-0 w-full max-w-6xl flex-1 px-4 py-6 md:py-8">{children}</main>
         </AppSessionProvider>
       </body>
     </html>

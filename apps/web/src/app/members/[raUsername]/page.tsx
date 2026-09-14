@@ -75,7 +75,7 @@ export default async function MemberProfilePage({ params }: Props) {
         {detail.standings.length === 0 ? (
           <p className="text-muted-foreground">No scores synced yet.</p>
         ) : (
-          <div className="rounded border border-border p-3 md:p-0 md:overflow-x-auto">
+          <div className="md:overflow-x-auto">
             <MemberStandingsSection standings={detail.standings} />
           </div>
         )}

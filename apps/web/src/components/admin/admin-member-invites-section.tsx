@@ -3,15 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { AdminMemberInviteDto } from "@/generated/api-client";
+import { DataFieldList } from "@/components/layout/data-field-list";
+import { ResponsiveTable } from "@/components/layout/responsive-table";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   deleteAdminMemberInviteAction,
   postAdminMemberInviteAction,
@@ -68,7 +62,7 @@ export function AdminMemberInvitesSection({ initialInvites }: Props) {
             className="w-full rounded-md bg-input px-3 py-2 font-mono text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
           />
         </div>
-        <Button type="submit" disabled={pending}>
+        <Button type="submit" className="w-full sm:w-auto" disabled={pending}>
           {pending ? "Adding…" : "Add invite"}
         </Button>
       </form>
@@ -77,60 +71,98 @@ export function AdminMemberInvitesSection({ initialInvites }: Props) {
         <p className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">{error}</p>
       )}
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Discord ID</TableHead>
-            <TableHead>Label</TableHead>
-            <TableHead>RA linked</TableHead>
-            <TableHead>API key</TableHead>
-            <TableHead>Admin</TableHead>
-            <TableHead className="w-[100px]" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {initialInvites.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-muted-foreground">
-                No invites yet.
-              </TableCell>
-            </TableRow>
-          ) : (
-            initialInvites.map((invite) => (
-              <TableRow key={invite.discordId}>
-                <TableCell className="font-mono text-xs">{invite.discordId}</TableCell>
-                <TableCell>{invite.displayName ?? "—"}</TableCell>
-                <TableCell>{invite.hasRaAccount ? "Yes" : "Pending"}</TableCell>
-                <TableCell>{invite.hasApiKey ? "Yes" : "No"}</TableCell>
-                <TableCell>{invite.isAdmin ? "Yes" : "No"}</TableCell>
-                <TableCell>
-                  {!invite.hasRaAccount && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={pending}
-                      onClick={() => {
-                        startTransition(async () => {
-                          setError(null);
-                          const result = await deleteAdminMemberInviteAction(invite.discordId);
-                          if (!result.ok) {
-                            setError(result.error);
-                            return;
-                          }
-                          router.refresh();
-                        });
-                      }}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+      <ResponsiveTable
+        rows={initialInvites}
+        rowKey={(invite) => invite.discordId}
+        emptyMessage={
+          <p className="text-sm text-muted-foreground">No invites yet.</p>
+        }
+        columns={[
+          {
+            header: "Discord ID",
+            cellClassName: "font-mono text-xs",
+            render: (invite) => invite.discordId,
+          },
+          {
+            header: "Label",
+            render: (invite) => invite.displayName ?? "—",
+          },
+          {
+            header: "RA linked",
+            render: (invite) => (invite.hasRaAccount ? "Yes" : "Pending"),
+          },
+          {
+            header: "API key",
+            render: (invite) => (invite.hasApiKey ? "Yes" : "No"),
+          },
+          {
+            header: "Admin",
+            render: (invite) => (invite.isAdmin ? "Yes" : "No"),
+          },
+          {
+            header: "",
+            headerClassName: "w-[100px]",
+            render: (invite) =>
+              !invite.hasRaAccount ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={pending}
+                  onClick={() => {
+                    startTransition(async () => {
+                      setError(null);
+                      const result = await deleteAdminMemberInviteAction(invite.discordId);
+                      if (!result.ok) {
+                        setError(result.error);
+                        return;
+                      }
+                      router.refresh();
+                    });
+                  }}
+                >
+                  Remove
+                </Button>
+              ) : null,
+          },
+        ]}
+        renderMobileCard={(invite) => (
+          <li key={invite.discordId} className="rounded border border-border bg-card p-4 text-sm">
+            <p className="font-mono text-xs">{invite.discordId}</p>
+            <p className="mt-1 font-medium">{invite.displayName ?? "—"}</p>
+            <DataFieldList
+              className="mt-2"
+              fields={[
+                { label: "RA linked", value: invite.hasRaAccount ? "Yes" : "Pending" },
+                { label: "API key", value: invite.hasApiKey ? "Yes" : "No" },
+                { label: "Admin", value: invite.isAdmin ? "Yes" : "No" },
+              ]}
+            />
+            {!invite.hasRaAccount ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3 w-full"
+                disabled={pending}
+                onClick={() => {
+                  startTransition(async () => {
+                    setError(null);
+                    const result = await deleteAdminMemberInviteAction(invite.discordId);
+                    if (!result.ok) {
+                      setError(result.error);
+                      return;
+                    }
+                    router.refresh();
+                  });
+                }}
+              >
+                Remove
+              </Button>
+            ) : null}
+          </li>
+        )}
+      />
     </section>
   );
 }

@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { AddGameForm } from "@/components/add-game-form";
 import { AdminGameTrackQueueSection } from "@/components/admin/admin-game-track-queue-section";
 import { AdminGamesSection } from "@/components/admin/admin-games-section";
+import { PageHero } from "@/components/layout/page-hero";
 import { authOptions } from "@/lib/auth-options";
 import { getServerApiClient } from "@/lib/api";
 
@@ -30,14 +31,11 @@ export default async function AdminGamesPage() {
 
     return (
       <div className="space-y-10">
-        <div className="space-y-2">
-          <h1 className="font-[family-name:var(--font-display)] text-2xl text-[var(--accent-retro)]">
-            Manage games
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Track RetroAchievements titles, add download mirrors, and refresh metadata for your group.
-          </p>
-        </div>
+        <PageHero
+          title="Manage games"
+          titleClassName="text-2xl sm:text-3xl md:text-4xl"
+          description="Track RetroAchievements titles, add download mirrors, and refresh metadata for your group."
+        />
 
         <AdminGameTrackQueueSection items={queue} />
 

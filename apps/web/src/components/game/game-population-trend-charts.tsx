@@ -92,7 +92,7 @@ export function GamePopulationTrendCharts({ data }: Props) {
             boards is counted more than once).
           </p>
         </div>
-        <div className="h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
+        <div className="min-w-0 h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={totalSeries} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
               <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
@@ -140,7 +140,7 @@ export function GamePopulationTrendCharts({ data }: Props) {
       {boardsWithPoints.length > 0 && (
         <section className="space-y-3">
           <h2 className="steam-section-heading">By leaderboard</h2>
-          <div className="h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
+          <div className="min-w-0 h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={perBoardChartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
