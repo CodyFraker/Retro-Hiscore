@@ -479,6 +479,25 @@
           }
         }
       }
+    },
+    "/api/admin/ops": {
+      "get": {
+        "operationId": "getAdminOps",
+        "tags": ["Admin"],
+        "summary": "Returns sync health, run history, member coverage, and scheduler context for administrators.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminOpsDto" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      }
     }
   },
   "components": {
@@ -897,6 +916,99 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/RivalryGameDto" }
           }
+        }
+      },
+      "AdminOpsDto": {
+        "type": "object",
+        "required": ["health", "recentRuns", "memberCoverageSummary", "members", "scheduler", "config"],
+        "properties": {
+          "health": { "$ref": "#/components/schemas/AdminOpsHealthDto" },
+          "recentRuns": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AdminSyncRunDto" }
+          },
+          "memberCoverageSummary": { "$ref": "#/components/schemas/AdminMemberCoverageSummaryDto" },
+          "members": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AdminMemberCoverageDto" }
+          },
+          "scheduler": { "$ref": "#/components/schemas/AdminSchedulerDto" },
+          "config": { "$ref": "#/components/schemas/AdminOpsConfigDto" }
+        }
+      },
+      "AdminOpsHealthDto": {
+        "type": "object",
+        "required": ["overallStatus", "leaderboardSyncInProgress", "intervalMinutes"],
+        "properties": {
+          "overallStatus": { "type": "string" },
+          "leaderboardSyncInProgress": { "type": "boolean" },
+          "lastSuccessfulLeaderboardSyncAt": { "type": "string", "format": "date-time", "nullable": true },
+          "intervalMinutes": { "type": "integer" },
+          "estimatedNextScheduledSyncAt": { "type": "string", "format": "date-time", "nullable": true },
+          "manualCooldownUntil": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "AdminSyncRunDto": {
+        "type": "object",
+        "required": ["id", "kind", "trigger", "status", "startedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "kind": { "type": "string" },
+          "trigger": { "type": "string" },
+          "status": { "type": "string" },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "finishedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "error": { "type": "string", "nullable": true }
+        }
+      },
+      "AdminMemberCoverageSummaryDto": {
+        "type": "object",
+        "required": ["membersWithApiKey", "totalMembers"],
+        "properties": {
+          "membersWithApiKey": { "type": "integer" },
+          "totalMembers": { "type": "integer" }
+        }
+      },
+      "AdminMemberCoverageDto": {
+        "type": "object",
+        "required": ["raUsername", "displayName", "hasApiKey", "boardsWithScore"],
+        "properties": {
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "hasApiKey": { "type": "boolean" },
+          "boardsWithScore": { "type": "integer" },
+          "lastEntrySyncedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "AdminSchedulerDto": {
+        "type": "object",
+        "required": ["recurringJobs"],
+        "properties": {
+          "recurringJobs": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/RecurringJobSnapshotDto" }
+          }
+        }
+      },
+      "RecurringJobSnapshotDto": {
+        "type": "object",
+        "required": ["jobId"],
+        "properties": {
+          "jobId": { "type": "string" },
+          "cron": { "type": "string", "nullable": true },
+          "lastExecution": { "type": "string", "format": "date-time", "nullable": true },
+          "nextExecution": { "type": "string", "format": "date-time", "nullable": true },
+          "lastJobState": { "type": "string", "nullable": true }
+        }
+      },
+      "AdminOpsConfigDto": {
+        "type": "object",
+        "required": ["sharedCatalogKeyConfigured", "distinctMemberApiKeys", "keysInPool", "hangfireDashboardUrl"],
+        "properties": {
+          "sharedCatalogKeyConfigured": { "type": "boolean" },
+          "distinctMemberApiKeys": { "type": "integer" },
+          "keysInPool": { "type": "integer" },
+          "hangfireDashboardUrl": { "type": "string" }
         }
       }
     }

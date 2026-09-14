@@ -22,19 +22,30 @@ type Props = {
   avatarUrl?: string | null;
   syncLabel: string;
   metadataLabel: string;
+  showAdminNav?: boolean;
 };
 
-const NAV_LINKS = [
+const BASE_NAV_LINKS = [
   { href: "/", label: "Games" },
   { href: "/members", label: "Members" },
   { href: "/members#head-to-head", label: "Rivalry" },
   { href: "/settings", label: "Settings" },
 ] as const;
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function NavLinks({
+  onNavigate,
+  showAdminNav,
+}: {
+  onNavigate?: () => void;
+  showAdminNav?: boolean;
+}) {
+  const links = showAdminNav
+    ? [...BASE_NAV_LINKS, { href: "/admin", label: "Admin" }]
+    : BASE_NAV_LINKS;
+
   return (
     <nav className="flex flex-col gap-1 md:mt-2 md:flex-row md:gap-4">
-      {NAV_LINKS.map((link) => (
+      {links.map((link) => (
         <Link
           key={link.href}
           href={link.href}
@@ -48,7 +59,13 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-export function SiteHeaderBar({ displayName, avatarUrl, syncLabel, metadataLabel }: Props) {
+export function SiteHeaderBar({
+  displayName,
+  avatarUrl,
+  syncLabel,
+  metadataLabel,
+  showAdminNav,
+}: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -62,7 +79,7 @@ export function SiteHeaderBar({ displayName, avatarUrl, syncLabel, metadataLabel
             Retro Hiscore
           </Link>
           <div className="hidden md:block">
-            <NavLinks />
+            <NavLinks showAdminNav={showAdminNav} />
             <p className="mt-2 truncate text-sm text-muted-foreground" title={syncLabel}>
               {syncLabel}
             </p>
@@ -114,7 +131,7 @@ export function SiteHeaderBar({ displayName, avatarUrl, syncLabel, metadataLabel
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <div className="flex flex-col gap-6 overflow-y-auto px-4 pb-6">
-              <NavLinks onNavigate={() => setOpen(false)} />
+              <NavLinks onNavigate={() => setOpen(false)} showAdminNav={showAdminNav} />
               <div className="space-y-1 border-t border-border pt-4 text-sm text-muted-foreground">
                 <p>{syncLabel}</p>
                 {metadataLabel && <p className="text-xs">{metadataLabel}</p>}

@@ -67,6 +67,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ["RA:MediaBaseUrl"] = "https://media.retroachievements.org",
                 ["Auth:JwtSigningKey"] = AuthTestHelper.TestSigningKey,
                 ["Auth:AllowedDiscordUserIds:0"] = AuthTestHelper.AllowedDiscordUserId,
+                ["Auth:AllowedDiscordUserIds:1"] = AuthTestHelper.SecondAllowedDiscordUserId,
+                ["Auth:AdminDiscordUserIds:0"] = AuthTestHelper.AdminDiscordUserId,
                 ["Auth:WebOrigin"] = "http://localhost",
             });
         });
@@ -80,7 +82,12 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             {
                 options.JwtSigningKey = AuthTestHelper.TestSigningKey;
                 options.WebOrigin = "http://localhost";
-                options.AllowedDiscordUserIds = [AuthTestHelper.AllowedDiscordUserId];
+                options.AllowedDiscordUserIds =
+                [
+                    AuthTestHelper.AllowedDiscordUserId,
+                    AuthTestHelper.SecondAllowedDiscordUserId
+                ];
+                options.AdminDiscordUserIds = [AuthTestHelper.AdminDiscordUserId];
             });
 
             services.PostConfigure<RaOptions>(options =>

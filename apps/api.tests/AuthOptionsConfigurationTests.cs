@@ -45,4 +45,26 @@ public class AuthOptionsConfigurationTests
         // Assert
         options.AllowedDiscordUserIds.ShouldBe(["legacy-id"]);
     }
+
+    [Fact]
+    public void ApplySharedAdminDiscordAllowlist_ParsesCommaSeparatedIds()
+    {
+        // Arrange
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AUTH_ADMIN_DISCORD_USER_IDS"] = " 444 , 555 ",
+            })
+            .Build();
+        var options = new AuthOptions
+        {
+            AdminDiscordUserIds = ["legacy-admin"],
+        };
+
+        // Act
+        AuthExtensions.ApplySharedAdminDiscordAllowlist(configuration, options);
+
+        // Assert
+        options.AdminDiscordUserIds.ShouldBe(["444", "555"]);
+    }
 }

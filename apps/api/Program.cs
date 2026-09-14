@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
+using RetroHiscore.Api.Features.Admin;
 using RetroHiscore.Api.Features.Dashboard;
 using RetroHiscore.Api.Features.Games;
 using RetroHiscore.Api.Features.Leaderboards;
@@ -49,6 +50,15 @@ builder.Services.AddScoped<ILeaderboardSyncService, LeaderboardSyncService>();
 builder.Services.AddScoped<IGameMetadataSyncService, GameMetadataSyncService>();
 builder.Services.AddScoped<IConsoleIconSyncService, ConsoleIconSyncService>();
 builder.Services.AddScoped<IDiscordNotificationService, DiscordNotificationService>();
+builder.Services.AddScoped<AdminOpsBuilder>();
+if (isTesting)
+{
+    builder.Services.AddSingleton<IAdminSchedulerReader, NullAdminSchedulerReader>();
+}
+else
+{
+    builder.Services.AddSingleton<IAdminSchedulerReader, HangfireAdminSchedulerReader>();
+}
 builder.Services.AddTransient<SyncJob>();
 builder.Services.AddTransient<GameMetadataSyncJob>();
 
@@ -170,6 +180,7 @@ app.MapTriggerMetadataSync();
 app.MapGetMetadataSyncStatus();
 app.MapTriggerConsoleIconSync();
 app.MapGetConsoleIconSyncStatus();
+app.MapGetAdminOps();
 
 app.Run();
 

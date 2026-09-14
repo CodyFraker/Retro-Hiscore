@@ -75,6 +75,11 @@ Requires Docker Desktop (or Docker Engine). The API job mounts `/var/run/docker.
 - Members: `ShrimpPoboy`, `beefboybilly`, `xXScubXx`
 - Sync every 15 minutes + manual refresh (60s cooldown)
 
+## Admin sync metrics
+
+- Set `AUTH_ADMIN_DISCORD_USER_IDS` to a comma-separated list of Discord user IDs (must also appear in `AUTH_ALLOWED_DISCORD_USER_IDS`).
+- Admins see an **Admin** nav link and `/admin` with sync health, run history, member API key coverage, and Hangfire recurring job context (`GET /api/admin/ops`).
+
 ## Member API keys and Discord avatars
 
 - Admin links each friend's Discord ID to their RA username via `RA__MemberLinks__N__*` in `.env`.

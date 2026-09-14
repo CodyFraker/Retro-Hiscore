@@ -3,6 +3,7 @@ import { SiteHeaderBar } from "@/components/site-header-bar";
 import { authOptions } from "@/lib/auth-options";
 import { formatSyncTime } from "@/lib/format";
 import { getServerApiClient } from "@/lib/api";
+import { isDiscordUserAdmin } from "@/lib/allowed-discord-users";
 
 export async function SiteHeader() {
   const session = await getServerSession(authOptions);
@@ -32,6 +33,7 @@ export async function SiteHeader() {
   }
 
   const displayName = session.user.discordUsername ?? session.user.name ?? "Signed in";
+  const showAdminNav = isDiscordUserAdmin(session.user.discordId);
 
   return (
     <SiteHeaderBar
@@ -39,6 +41,7 @@ export async function SiteHeader() {
       avatarUrl={session.user.image}
       syncLabel={syncLabel}
       metadataLabel={metadataLabel}
+      showAdminNav={showAdminNav}
     />
   );
 }

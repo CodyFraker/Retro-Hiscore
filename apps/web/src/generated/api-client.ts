@@ -288,6 +288,66 @@ export interface RivalryResponse {
   games: RivalryGameDto[];
 }
 
+export interface AdminOpsDto {
+  health: AdminOpsHealthDto;
+  recentRuns: AdminSyncRunDto[];
+  memberCoverageSummary: AdminMemberCoverageSummaryDto;
+  members: AdminMemberCoverageDto[];
+  scheduler: AdminSchedulerDto;
+  config: AdminOpsConfigDto;
+}
+
+export interface AdminOpsHealthDto {
+  overallStatus: string;
+  leaderboardSyncInProgress: boolean;
+  lastSuccessfulLeaderboardSyncAt?: string | null;
+  intervalMinutes: number;
+  estimatedNextScheduledSyncAt?: string | null;
+  manualCooldownUntil?: string | null;
+}
+
+export interface AdminSyncRunDto {
+  id: string;
+  kind: string;
+  trigger: string;
+  status: string;
+  startedAt: string;
+  finishedAt?: string | null;
+  error?: string | null;
+}
+
+export interface AdminMemberCoverageSummaryDto {
+  membersWithApiKey: number;
+  totalMembers: number;
+}
+
+export interface AdminMemberCoverageDto {
+  raUsername: string;
+  displayName: string;
+  hasApiKey: boolean;
+  boardsWithScore: number;
+  lastEntrySyncedAt?: string | null;
+}
+
+export interface AdminSchedulerDto {
+  recurringJobs: RecurringJobSnapshotDto[];
+}
+
+export interface RecurringJobSnapshotDto {
+  jobId: string;
+  cron?: string | null;
+  lastExecution?: string | null;
+  nextExecution?: string | null;
+  lastJobState?: string | null;
+}
+
+export interface AdminOpsConfigDto {
+  sharedCatalogKeyConfigured: boolean;
+  distinctMemberApiKeys: number;
+  keysInPool: number;
+  hangfireDashboardUrl: string;
+}
+
 export type ApiClientOptions = {
   baseUrl: string;
   fetch?: typeof fetch;
@@ -436,6 +496,7 @@ export function createApiClient(options: ApiClientOptions) {
     },
     getConsoleIconSyncStatus: () =>
       request<SyncStatusDto>(baseUrl, "/api/sync/console-icons/status", undefined, fetchImpl),
+    getAdminOps: () => request<AdminOpsDto>(baseUrl, "/api/admin/ops", undefined, fetchImpl),
   };
 }
 

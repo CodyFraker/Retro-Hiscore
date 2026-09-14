@@ -206,6 +206,7 @@ export function createApiClient(options: ApiClientOptions) {
     },
     getConsoleIconSyncStatus: () =>
       request<SyncStatusDto>(baseUrl, "/api/sync/console-icons/status", undefined, fetchImpl),
+    getAdminOps: () => request<AdminOpsDto>(baseUrl, "/api/admin/ops", undefined, fetchImpl),
   };
 }
 

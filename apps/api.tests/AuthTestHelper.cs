@@ -9,6 +9,8 @@ public static class AuthTestHelper
 {
     public const string TestSigningKey = "test-signing-key-for-integration-tests-only";
     public const string AllowedDiscordUserId = "123456789012345678";
+    public const string SecondAllowedDiscordUserId = "111111111111111111";
+    public const string AdminDiscordUserId = AllowedDiscordUserId;
     public const string DeniedDiscordUserId = "987654321098765432";
 
     public static string CreateToken(string discordUserId, string username = "testuser")

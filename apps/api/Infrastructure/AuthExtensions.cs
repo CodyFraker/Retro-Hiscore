@@ -10,6 +10,7 @@ namespace RetroHiscore.Api.Infrastructure;
 public static class AuthExtensions
 {
     public const string AllowlistedDiscordUserPolicy = "AllowlistedDiscordUser";
+    public const string AdminDiscordUserPolicy = "AdminDiscordUser";
 
     public static IServiceCollection AddRetroHiscoreAuth(
         this IServiceCollection services,
@@ -20,6 +21,7 @@ public static class AuthExtensions
         {
             configuration.GetSection(AuthOptions.SectionName).Bind(options);
             ApplySharedDiscordAllowlist(configuration, options);
+            ApplySharedAdminDiscordAllowlist(configuration, options);
         });
 
         var signingKey = configuration[$"{AuthOptions.SectionName}:JwtSigningKey"];
@@ -52,12 +54,18 @@ public static class AuthExtensions
             });
 
         services.AddSingleton<IAuthorizationHandler, AllowlistedDiscordUserAuthorizationHandler>();
+        services.AddSingleton<IAuthorizationHandler, AdminDiscordUserAuthorizationHandler>();
         services.AddAuthorization(options =>
         {
             options.AddPolicy(AllowlistedDiscordUserPolicy, policy =>
                 policy
                     .RequireAuthenticatedUser()
                     .AddRequirements(new AllowlistedDiscordUserRequirement()));
+
+            options.AddPolicy(AdminDiscordUserPolicy, policy =>
+                policy
+                    .RequireAuthenticatedUser()
+                    .AddRequirements(new AllowlistedDiscordUserRequirement(), new AdminDiscordUserRequirement()));
         });
 
         return services;
@@ -86,6 +94,9 @@ public static class AuthExtensions
     public static RouteHandlerBuilder RequireApiAuth(this RouteHandlerBuilder builder)
         => builder.RequireAuthorization(AllowlistedDiscordUserPolicy);
 
+    public static RouteHandlerBuilder RequireAdmin(this RouteHandlerBuilder builder)
+        => builder.RequireAuthorization(AdminDiscordUserPolicy);
+
     public static void ApplySharedDiscordAllowlist(IConfiguration configuration, AuthOptions options)
     {
         var sharedAllowlist = configuration["AUTH_ALLOWED_DISCORD_USER_IDS"];
@@ -95,6 +106,19 @@ public static class AuthExtensions
         }
 
         options.AllowedDiscordUserIds = sharedAllowlist
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+    }
+
+    public static void ApplySharedAdminDiscordAllowlist(IConfiguration configuration, AuthOptions options)
+    {
+        var sharedAdmins = configuration["AUTH_ADMIN_DISCORD_USER_IDS"];
+        if (string.IsNullOrWhiteSpace(sharedAdmins))
+        {
+            return;
+        }
+
+        options.AdminDiscordUserIds = sharedAdmins
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
     }
