@@ -21,6 +21,7 @@ public static class GetLeaderboardEndpoint
             }
 
             var members = await db.Members
+                .Where(m => m.RaUsername != null)
                 .OrderBy(m => m.RaUsername)
                 .ToListAsync(ct);
 
@@ -29,8 +30,8 @@ public static class GetLeaderboardEndpoint
                 var entry = leaderboard.Entries.FirstOrDefault(e => e.MemberId == m.Id);
                 return new FriendStandingDto(
                     m.Id,
-                    m.RaUsername,
-                    m.DisplayName ?? m.RaUsername,
+                    m.RaUsername!,
+                    MemberAuthHelper.DisplayLabel(m),
                     m.AvatarUrl,
                     entry?.Score,
                     entry?.FormattedScore,

@@ -9,12 +9,4 @@ public class RaOptions
     public string BaseUrl { get; set; } = "https://retroachievements.org/API";
     public string MediaBaseUrl { get; set; } = "https://media.retroachievements.org";
     public List<int> TrackedGameIds { get; set; } = [];
-    public List<string> TrackedUsernames { get; set; } = [];
-    public List<MemberLinkOptions> MemberLinks { get; set; } = [];
-}
-
-public class MemberLinkOptions
-{
-    public string DiscordId { get; set; } = string.Empty;
-    public string RaUsername { get; set; } = string.Empty;
 }

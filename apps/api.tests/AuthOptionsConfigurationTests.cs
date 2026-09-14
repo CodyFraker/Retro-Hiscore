@@ -8,45 +8,6 @@ namespace RetroHiscore.Api.Tests;
 public class AuthOptionsConfigurationTests
 {
     [Fact]
-    public void ApplySharedDiscordAllowlist_ParsesCommaSeparatedIds()
-    {
-        // Arrange
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["AUTH_ALLOWED_DISCORD_USER_IDS"] = " 111 , 222 ,333 ",
-            })
-            .Build();
-        var options = new AuthOptions
-        {
-            AllowedDiscordUserIds = ["legacy-id"],
-        };
-
-        // Act
-        AuthExtensions.ApplySharedDiscordAllowlist(configuration, options);
-
-        // Assert
-        options.AllowedDiscordUserIds.ShouldBe(["111", "222", "333"]);
-    }
-
-    [Fact]
-    public void ApplySharedDiscordAllowlist_LeavesSectionValuesWhenEnvMissing()
-    {
-        // Arrange
-        var configuration = new ConfigurationBuilder().Build();
-        var options = new AuthOptions
-        {
-            AllowedDiscordUserIds = ["legacy-id"],
-        };
-
-        // Act
-        AuthExtensions.ApplySharedDiscordAllowlist(configuration, options);
-
-        // Assert
-        options.AllowedDiscordUserIds.ShouldBe(["legacy-id"]);
-    }
-
-    [Fact]
     public void ApplySharedAdminDiscordAllowlist_ParsesCommaSeparatedIds()
     {
         // Arrange
@@ -66,5 +27,44 @@ public class AuthOptionsConfigurationTests
 
         // Assert
         options.AdminDiscordUserIds.ShouldBe(["444", "555"]);
+    }
+
+    [Fact]
+    public void ApplySignInServiceKey_UsesDedicatedEnvWhenPresent()
+    {
+        // Arrange
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AUTH_SIGN_IN_SERVICE_KEY"] = "sign-in-key",
+                ["AUTH_SECRET"] = "auth-secret",
+            })
+            .Build();
+        var options = new AuthOptions();
+
+        // Act
+        AuthExtensions.ApplySignInServiceKey(configuration, options);
+
+        // Assert
+        options.SignInServiceKey.ShouldBe("sign-in-key");
+    }
+
+    [Fact]
+    public void ApplySignInServiceKey_FallsBackToAuthSecret()
+    {
+        // Arrange
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AUTH_SECRET"] = "auth-secret",
+            })
+            .Build();
+        var options = new AuthOptions();
+
+        // Act
+        AuthExtensions.ApplySignInServiceKey(configuration, options);
+
+        // Assert
+        options.SignInServiceKey.ShouldBe("auth-secret");
     }
 }

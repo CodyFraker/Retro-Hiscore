@@ -11,9 +11,43 @@ export interface PutMemberProfileRequest {
   avatarUrl?: string | null;
 }
 
+export interface CurrentMemberDto {
+  id: string;
+  raUsername?: string | null;
+  raUlid?: string | null;
+  displayName: string;
+  avatarUrl?: string | null;
+  boardsWithScore: number;
+  friendRankOnes: number;
+  hasApiKey: boolean;
+  needsOnboarding: boolean;
+  isAdmin: boolean;
+}
+
+export interface PutMemberRaAccountRequest {
+  raUsername: string;
+  raApiKey: string;
+}
+
+export interface PostAdminMemberInviteRequest {
+  discordId: string;
+}
+
+export interface PatchAdminMemberIsAdminRequest {
+  isAdmin: boolean;
+}
+
+export interface AdminMemberInviteDto {
+  discordId: string;
+  displayName?: string | null;
+  hasRaAccount: boolean;
+  hasApiKey: boolean;
+  isAdmin: boolean;
+}
+
 export interface MemberDto {
   id: string;
-  raUsername: string;
+  raUsername?: string | null;
   raUlid?: string | null;
   displayName: string;
   avatarUrl?: string | null;
@@ -31,6 +65,114 @@ export interface MemberStandingDto {
   friendRank?: number | null;
   score: number;
   formattedScore: string;
+}
+
+export interface MemberRaRankHistoryResponse {
+  items: MemberRaRankHistoryItemDto[];
+}
+
+export interface MemberRaRankHistoryItemDto {
+  syncedAt: string;
+  rank?: number | null;
+  totalRanked?: number | null;
+  totalPoints?: number | null;
+  totalTruePoints?: number | null;
+  totalSoftcorePoints?: number | null;
+}
+
+export interface MemberRaAchievementHistoryResponse {
+  items: MemberRaAchievementHistoryItemDto[];
+}
+
+export interface MemberRaAchievementHistoryItemDto {
+  earnedAt: string;
+  cumulativeUnlocks: number;
+  cumulativePoints: number;
+  cumulativeTruePoints: number;
+}
+
+export interface MemberRaUnlockedAchievementDto {
+  raAchievementId: number;
+  title: string;
+  description?: string | null;
+  points: number;
+  badgeUrl?: string | null;
+  dateEarned?: string | null;
+  hardcoreAchieved: boolean;
+}
+
+export interface MemberRaSummaryResponse {
+  available: boolean;
+  unavailableReason?: string | null;
+  summary?: MemberRaSummaryDto | null;
+}
+
+export interface MemberRaSummaryDto {
+  raUsername: string;
+  raUlid?: string | null;
+  motto?: string | null;
+  userPicUrl?: string | null;
+  memberSince?: string | null;
+  status?: string | null;
+  rank?: number | null;
+  totalRanked?: number | null;
+  totalPoints?: number | null;
+  totalSoftcorePoints?: number | null;
+  totalTruePoints?: number | null;
+  presence?: MemberRaPresenceGameDto | null;
+  recentlyPlayed: MemberRaRecentGameDto[];
+  recentAchievements: MemberRaRecentAchievementDto[];
+}
+
+export interface MemberRaPresenceGameDto {
+  raGameId: number;
+  title: string;
+  consoleId: number;
+  consoleName?: string | null;
+  consoleIconUrl?: string | null;
+  imageBoxArtUrl?: string | null;
+  imageIconUrl?: string | null;
+  isTracked: boolean;
+  richPresenceMsg?: string | null;
+  richPresenceAt?: string | null;
+  progress?: MemberRaGameProgressDto | null;
+  unlockedAchievements: MemberRaUnlockedAchievementDto[];
+}
+
+export interface MemberRaRecentGameDto {
+  raGameId: number;
+  title: string;
+  consoleId: number;
+  consoleName?: string | null;
+  consoleIconUrl?: string | null;
+  imageBoxArtUrl?: string | null;
+  imageIconUrl?: string | null;
+  isTracked: boolean;
+  lastPlayedAt?: string | null;
+  progress?: MemberRaGameProgressDto | null;
+  unlockedAchievements: MemberRaUnlockedAchievementDto[];
+}
+
+export interface MemberRaGameProgressDto {
+  achievementsEarned: number;
+  achievementsTotal: number;
+  pointsEarned: number;
+  pointsPossible?: number | null;
+  achievementsEarnedHardcore?: number | null;
+  pointsEarnedHardcore?: number | null;
+}
+
+export interface MemberRaRecentAchievementDto {
+  raAchievementId: number;
+  raGameId: number;
+  gameTitle: string;
+  title: string;
+  description?: string | null;
+  points: number;
+  badgeUrl?: string | null;
+  dateAwarded?: string | null;
+  hardcoreAchieved: boolean;
+  isTracked: boolean;
 }
 
 export interface MemberDetailDto {
@@ -388,7 +530,13 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       ),
     getMembers: () => request<MemberDto[]>(baseUrl, "/api/members", undefined, fetchImpl),
-    getCurrentMember: () => request<MemberDto>(baseUrl, "/api/members/me", undefined, fetchImpl),
+    getCurrentMember: () => request<CurrentMemberDto>(baseUrl, "/api/members/me", undefined, fetchImpl),
+    putMemberRaAccount: (raUsername: string, raApiKey: string) =>
+      request<void>(baseUrl, "/api/members/me/ra-account", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raUsername, raApiKey }),
+      }, fetchImpl),
     putMemberApiKey: (raApiKey: string) =>
       request<void>(baseUrl, "/api/members/me/api-key", {
         method: "PUT",
@@ -408,6 +556,24 @@ export function createApiClient(options: ApiClientOptions) {
         undefined,
         fetchImpl,
       ),
+    getMemberRaSummary: (raUsername: string) =>
+      request<MemberRaSummaryResponse>(
+        baseUrl,
+        `/api/members/${encodeURIComponent(raUsername)}/ra-summary`,
+        undefined,
+        fetchImpl,
+      ),
+    getMemberRaRankHistory: (raUsername: string, limit?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<MemberRaRankHistoryResponse>(
+        baseUrl,
+        `/api/members/${encodeURIComponent(raUsername)}/ra-rank-history${qs ? `?${qs}` : ""}`,
+        undefined,
+        fetchImpl,
+      );
+    },
     getMemberHistory: (raUsername: string, limit?: number, offset?: number) => {
       const params = new URLSearchParams();
       if (limit != null) params.set("limit", String(limit));
@@ -497,6 +663,32 @@ export function createApiClient(options: ApiClientOptions) {
     getConsoleIconSyncStatus: () =>
       request<SyncStatusDto>(baseUrl, "/api/sync/console-icons/status", undefined, fetchImpl),
     getAdminOps: () => request<AdminOpsDto>(baseUrl, "/api/admin/ops", undefined, fetchImpl),
+    getAdminMemberInvites: () =>
+      request<AdminMemberInviteDto[]>(baseUrl, "/api/admin/member-invites", undefined, fetchImpl),
+    postAdminMemberInvite: (discordId: string) =>
+      request<AdminMemberInviteDto>(baseUrl, "/api/admin/member-invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discordId }),
+      }, fetchImpl),
+    deleteAdminMemberInvite: (discordId: string) =>
+      request<void>(
+        baseUrl,
+        `/api/admin/member-invites/${encodeURIComponent(discordId)}`,
+        { method: "DELETE" },
+        fetchImpl,
+      ),
+    patchAdminMemberIsAdmin: (discordId: string, isAdmin: boolean) =>
+      request<void>(
+        baseUrl,
+        `/api/admin/member-invites/${encodeURIComponent(discordId)}/is-admin`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isAdmin }),
+        },
+        fetchImpl,
+      ),
   };
 }
 

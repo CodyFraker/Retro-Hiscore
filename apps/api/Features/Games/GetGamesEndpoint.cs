@@ -11,13 +11,11 @@ public static class GetGamesEndpoint
 {
     public static RouteHandlerBuilder MapGetGames(this IEndpointRouteBuilder routes)
         => routes.MapGet("/api/games", async (
-            HttpRequest httpRequest,
             AppDbContext db,
             IOptions<RaOptions> raOptions,
             CancellationToken ct) =>
         {
             var mediaBaseUrl = raOptions.Value.MediaBaseUrl;
-            var requestBase = $"{httpRequest.Scheme}://{httpRequest.Host}{httpRequest.PathBase}";
 
             var games = await db.Games
                 .OrderBy(g => g.Title)
@@ -33,9 +31,13 @@ public static class GetGamesEndpoint
                     g.ImageTitle,
                     g.ImageIngame,
                     LeaderboardCount = g.Leaderboards.Count,
-                    IconFileName = db.Consoles
+                    ConsoleIconData = db.Consoles
                         .Where(c => c.RaConsoleId == g.ConsoleId)
-                        .Select(c => c.IconFileName)
+                        .Select(c => c.IconData)
+                        .FirstOrDefault(),
+                    ConsoleIconContentType = db.Consoles
+                        .Where(c => c.RaConsoleId == g.ConsoleId)
+                        .Select(c => c.IconContentType)
                         .FirstOrDefault()
                 })
                 .ToListAsync(ct);
@@ -45,7 +47,7 @@ public static class GetGamesEndpoint
                 g.RaGameId,
                 g.Title,
                 g.ConsoleName,
-                ConsoleIconSyncService.ToAbsoluteUrl(g.ConsoleId, g.IconFileName, requestBase),
+                ConsoleIconSyncService.ToDataUrl(g.ConsoleIconData, g.ConsoleIconContentType),
                 RaMediaUrl.ToAbsolute(g.ImageBoxArt, mediaBaseUrl),
                 RaMediaUrl.ToAbsolute(g.ImageIcon, mediaBaseUrl),
                 RaMediaUrl.ToAbsolute(g.ImageTitle, mediaBaseUrl),

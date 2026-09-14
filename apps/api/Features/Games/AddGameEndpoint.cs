@@ -13,7 +13,6 @@ public static class AddGameEndpoint
     public static RouteHandlerBuilder MapAddGame(this IEndpointRouteBuilder routes)
         => routes.MapPost("/api/games", async (
             AddGameRequest request,
-            HttpRequest httpRequest,
             AppDbContext db,
             IRaApiClient raApiClient,
             IRaApiKeyPool apiKeyPool,
@@ -68,14 +67,12 @@ public static class AddGameEndpoint
             var console = game.ConsoleId is null
                 ? null
                 : await db.Consoles.AsNoTracking().FirstOrDefaultAsync(c => c.RaConsoleId == game.ConsoleId, ct);
-            var requestBase = $"{httpRequest.Scheme}://{httpRequest.Host}{httpRequest.PathBase}";
-
             return Results.Created($"/api/games/{game.RaGameId}/leaderboards", new GameDto(
                 game.Id,
                 game.RaGameId,
                 game.Title,
                 game.ConsoleName,
-                ConsoleIconSyncService.ToAbsoluteUrl(game.ConsoleId, console?.IconFileName, requestBase),
+                ConsoleIconSyncService.ToDataUrl(console?.IconData, console?.IconContentType),
                 images.ImageBoxArtUrl,
                 images.ImageIconUrl,
                 images.ImageTitleUrl,

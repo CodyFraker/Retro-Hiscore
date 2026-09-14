@@ -9,7 +9,6 @@ x-api-environment: &api-environment
   Sync__IntervalMinutes: ${Sync__IntervalMinutes:-15}
   Sync__ManualCooldownSeconds: ${Sync__ManualCooldownSeconds:-60}
   GameMetadataSync__ManualCooldownSeconds: ${GameMetadataSync__ManualCooldownSeconds:-300}
-  ConsoleIconSync__StoragePath: ${ConsoleIconSync__StoragePath:-/data/system-icons}
   ConsoleIconSync__ManualCooldownSeconds: ${ConsoleIconSync__ManualCooldownSeconds:-300}
   ConsoleIconSync__ForceRefresh: ${ConsoleIconSync__ForceRefresh:-false}
   RA__MediaBaseUrl: ${RA__MediaBaseUrl:-https://media.retroachievements.org}
@@ -20,8 +19,8 @@ x-api-environment: &api-environment
   Notifications__NotifyOnNewLead: ${Notifications__NotifyOnNewLead:-true}
   Auth__JwtSigningKey: ${AUTH_SECRET:-}
   Auth__WebOrigin: ${AUTH_URL:-http://localhost:18321}
-  AUTH_ALLOWED_DISCORD_USER_IDS: ${AUTH_ALLOWED_DISCORD_USER_IDS:-}
   AUTH_ADMIN_DISCORD_USER_IDS: ${AUTH_ADMIN_DISCORD_USER_IDS:-}
+  AUTH_SIGN_IN_SERVICE_KEY: ${AUTH_SIGN_IN_SERVICE_KEY:-${AUTH_SECRET:-}}
 
 x-web-environment: &web-environment
   NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:18943}
@@ -30,8 +29,8 @@ x-web-environment: &web-environment
   AUTH_URL: ${AUTH_URL:-http://localhost:18321}
   AUTH_DISCORD_ID: ${AUTH_DISCORD_ID:-}
   AUTH_DISCORD_SECRET: ${AUTH_DISCORD_SECRET:-}
-  AUTH_ALLOWED_DISCORD_USER_IDS: ${AUTH_ALLOWED_DISCORD_USER_IDS:-}
   AUTH_ADMIN_DISCORD_USER_IDS: ${AUTH_ADMIN_DISCORD_USER_IDS:-}
+  AUTH_SIGN_IN_SERVICE_KEY: ${AUTH_SIGN_IN_SERVICE_KEY:-${AUTH_SECRET:-}}
   NEXTAUTH_URL: ${AUTH_URL:-http://localhost:18321}
   NEXTAUTH_SECRET: ${AUTH_SECRET:-}
 
@@ -43,6 +42,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-retrohiscore}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-retrohiscore}
       POSTGRES_DB: ${POSTGRES_DB:-retrohiscore}
+    ports:
+      - "${POSTGRES_HOST_PORT:-15432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -67,7 +68,6 @@ services:
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
       DOTNET_WATCH_SUPPRESS_BROWSER_REFRESH: "1"
     volumes:
-      - system_icons_data:/data/system-icons
       - ./apps/api:/src/apps/api
       - api_bin:/src/apps/api/bin
       - api_obj:/src/apps/api/obj
@@ -88,8 +88,6 @@ services:
         required: false
     environment:
       <<: *api-environment
-    volumes:
-      - system_icons_data:/data/system-icons
     depends_on:
       postgres:
         condition: service_healthy
@@ -154,8 +152,6 @@ services:
 volumes:
   postgres_data:
     name: RetroHiscore_postgres_data
-  system_icons_data:
-    name: RetroHiscore_system_icons_data
   api_bin:
   api_obj:
   web_node_modules:

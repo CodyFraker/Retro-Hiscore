@@ -1,7 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using RetroHiscore.Api.Options;
 
@@ -11,6 +10,7 @@ public static class AuthExtensions
 {
     public const string AllowlistedDiscordUserPolicy = "AllowlistedDiscordUser";
     public const string AdminDiscordUserPolicy = "AdminDiscordUser";
+    public const string SignInServiceKeyHeader = "X-SignIn-Service-Key";
 
     public static IServiceCollection AddRetroHiscoreAuth(
         this IServiceCollection services,
@@ -20,8 +20,8 @@ public static class AuthExtensions
         services.Configure<AuthOptions>(options =>
         {
             configuration.GetSection(AuthOptions.SectionName).Bind(options);
-            ApplySharedDiscordAllowlist(configuration, options);
             ApplySharedAdminDiscordAllowlist(configuration, options);
+            ApplySignInServiceKey(configuration, options);
         });
 
         var signingKey = configuration[$"{AuthOptions.SectionName}:JwtSigningKey"];
@@ -29,6 +29,15 @@ public static class AuthExtensions
         {
             throw new InvalidOperationException(
                 $"{AuthOptions.SectionName}:JwtSigningKey is required outside the Testing environment.");
+        }
+
+        if (!isTesting)
+        {
+            var adminIds = configuration["AUTH_ADMIN_DISCORD_USER_IDS"];
+            if (string.IsNullOrWhiteSpace(adminIds))
+            {
+                throw new InvalidOperationException("AUTH_ADMIN_DISCORD_USER_IDS must contain at least one Discord user ID.");
+            }
         }
 
         if (string.IsNullOrWhiteSpace(signingKey))
@@ -97,19 +106,6 @@ public static class AuthExtensions
     public static RouteHandlerBuilder RequireAdmin(this RouteHandlerBuilder builder)
         => builder.RequireAuthorization(AdminDiscordUserPolicy);
 
-    public static void ApplySharedDiscordAllowlist(IConfiguration configuration, AuthOptions options)
-    {
-        var sharedAllowlist = configuration["AUTH_ALLOWED_DISCORD_USER_IDS"];
-        if (string.IsNullOrWhiteSpace(sharedAllowlist))
-        {
-            return;
-        }
-
-        options.AllowedDiscordUserIds = sharedAllowlist
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
-    }
-
     public static void ApplySharedAdminDiscordAllowlist(IConfiguration configuration, AuthOptions options)
     {
         var sharedAdmins = configuration["AUTH_ADMIN_DISCORD_USER_IDS"];
@@ -121,5 +117,32 @@ public static class AuthExtensions
         options.AdminDiscordUserIds = sharedAdmins
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
+    }
+
+    public static void ApplySignInServiceKey(IConfiguration configuration, AuthOptions options)
+    {
+        var key = configuration["AUTH_SIGN_IN_SERVICE_KEY"];
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            options.SignInServiceKey = key;
+            return;
+        }
+
+        var authSecret = configuration["AUTH_SECRET"];
+        if (!string.IsNullOrWhiteSpace(authSecret))
+        {
+            options.SignInServiceKey = authSecret;
+        }
+    }
+
+    public static bool IsSignInServiceAuthorized(HttpRequest request, AuthOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(options.SignInServiceKey))
+        {
+            return false;
+        }
+
+        return request.Headers.TryGetValue(SignInServiceKeyHeader, out var header)
+            && string.Equals(header.ToString(), options.SignInServiceKey, StringComparison.Ordinal);
     }
 }

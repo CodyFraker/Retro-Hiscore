@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using NSubstitute;
 using NSubstitute.ClearExtensions;
 using RetroHiscore.Api.Data;
+using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Ra;
 using RetroHiscore.Api.Features.Sync;
 using RetroHiscore.Api.Options;
@@ -20,15 +21,14 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine")
         .Build();
 
-    private readonly string _systemIconStoragePath =
-        Path.Combine(Path.GetTempPath(), "retro-hiscore-system-icons", Guid.NewGuid().ToString("N"));
-
     private string? _connectionString;
 
     public IRaApiClient RaApiClient { get; } = Substitute.For<IRaApiClient>();
     public IConsoleIconDownloader ConsoleIconDownloader { get; } = Substitute.For<IConsoleIconDownloader>();
 
-    public string SystemIconStoragePath => _systemIconStoragePath;
+    public static readonly byte[] SamplePngBytes = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+
+    public const string SignInServiceKey = "test-sign-in-service-key";
 
     public async Task InitializeAsync()
     {
@@ -40,10 +40,6 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         await _postgres.DisposeAsync();
         await base.DisposeAsync();
-        if (Directory.Exists(_systemIconStoragePath))
-        {
-            Directory.Delete(_systemIconStoragePath, recursive: true);
-        }
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -59,16 +55,16 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ["ConnectionStrings:Default"] = connectionString,
                 ["Sync:ManualCooldownSeconds"] = "60",
                 ["GameMetadataSync:ManualCooldownSeconds"] = "300",
-                ["ConsoleIconSync:StoragePath"] = _systemIconStoragePath,
                 ["ConsoleIconSync:ManualCooldownSeconds"] = "300",
                 ["ConsoleIconSync:ForceRefresh"] = "false",
                 ["RA:ApiKey"] = "test-key",
                 ["RA:Username"] = "test-user",
                 ["RA:MediaBaseUrl"] = "https://media.retroachievements.org",
                 ["Auth:JwtSigningKey"] = AuthTestHelper.TestSigningKey,
-                ["Auth:AllowedDiscordUserIds:0"] = AuthTestHelper.AllowedDiscordUserId,
-                ["Auth:AllowedDiscordUserIds:1"] = AuthTestHelper.SecondAllowedDiscordUserId,
+                ["Auth:SignInServiceKey"] = SignInServiceKey,
                 ["Auth:AdminDiscordUserIds:0"] = AuthTestHelper.AdminDiscordUserId,
+                ["AUTH_ADMIN_DISCORD_USER_IDS"] = AuthTestHelper.AdminDiscordUserId,
+                ["AUTH_SIGN_IN_SERVICE_KEY"] = SignInServiceKey,
                 ["Auth:WebOrigin"] = "http://localhost",
             });
         });
@@ -82,11 +78,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             {
                 options.JwtSigningKey = AuthTestHelper.TestSigningKey;
                 options.WebOrigin = "http://localhost";
-                options.AllowedDiscordUserIds =
-                [
-                    AuthTestHelper.AllowedDiscordUserId,
-                    AuthTestHelper.SecondAllowedDiscordUserId
-                ];
+                options.SignInServiceKey = SignInServiceKey;
                 options.AdminDiscordUserIds = [AuthTestHelper.AdminDiscordUserId];
             });
 
@@ -101,7 +93,6 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.PostConfigure<GameMetadataSyncOptions>(options => options.ManualCooldownSeconds = 300);
             services.PostConfigure<ConsoleIconSyncOptions>(options =>
             {
-                options.StoragePath = _systemIconStoragePath;
                 options.ManualCooldownSeconds = 300;
                 options.ForceRefresh = false;
             });
@@ -122,6 +113,13 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         return client;
     }
 
+    public HttpClient CreateSignInCheckClient()
+    {
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Add("X-SignIn-Service-Key", SignInServiceKey);
+        return client;
+    }
+
     public void ResetMocks()
     {
         RaApiClient.ClearSubstitute();
@@ -131,9 +129,26 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             .GetConsoleIdsAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<RaConsoleIdDto>>([]));
 
+        RaApiClient
+            .GetUserSummaryAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<int>(),
+                Arg.Any<int>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var username = call.ArgAt<string>(0);
+                return Task.FromResult<RaUserSummaryDto?>(new RaUserSummaryDto
+                {
+                    User = username,
+                    Ulid = "test-ulid"
+                });
+            });
+
         ConsoleIconDownloader
             .DownloadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }));
+            .Returns(Task.FromResult(new ConsoleIconDownload(SamplePngBytes, "image/png")));
     }
 
     public async Task SetMemberApiKeyAsync(string raUsername, string? apiKey)
@@ -167,15 +182,29 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             END $$;
             """);
 
-        await SeedData.EnsureSeededAsync(db, new RaOptions());
+        var authOptions = new AuthOptions { AdminDiscordUserIds = [AuthTestHelper.AdminDiscordUserId] };
+        await SeedData.EnsureSeededAsync(db, new RaOptions(), authOptions);
+        await EnsureDefaultTestMembersAsync(db);
+    }
 
-        if (Directory.Exists(_systemIconStoragePath))
+    private static async Task EnsureDefaultTestMembersAsync(AppDbContext db)
+    {
+        var admin = await db.Members.SingleAsync(m => m.DiscordId == AuthTestHelper.AdminDiscordUserId);
+        admin.RaUsername = "ShrimpPoboy";
+        admin.DisplayName = "ShrimpPoboy";
+        admin.IsAdmin = true;
+
+        if (!await db.Members.AnyAsync(m => m.DiscordId == AuthTestHelper.SecondAllowedDiscordUserId))
         {
-            foreach (var file in Directory.GetFiles(_systemIconStoragePath))
+            db.Members.Add(new Member
             {
-                File.Delete(file);
-            }
+                DiscordId = AuthTestHelper.SecondAllowedDiscordUserId,
+                RaUsername = "beefboybilly",
+                DisplayName = "beefboybilly"
+            });
         }
+
+        await db.SaveChangesAsync();
     }
 
     private async Task EnsurePostgresStartedAsync()
@@ -187,6 +216,5 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
         await _postgres.StartAsync();
         _connectionString = _postgres.GetConnectionString();
-        Directory.CreateDirectory(_systemIconStoragePath);
     }
 }

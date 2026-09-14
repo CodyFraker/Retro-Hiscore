@@ -3,7 +3,8 @@ namespace RetroHiscore.Api.Domain;
 public class Member
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public required string RaUsername { get; set; }
+    public string? RaUsername { get; set; }
+    public bool IsAdmin { get; set; }
     public string? RaUlid { get; set; }
     public string? DisplayName { get; set; }
     public string? DiscordId { get; set; }

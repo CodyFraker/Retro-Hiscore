@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "@/lib/api";
+import { getApiBaseUrl } from "@/lib/api-base-url";
 
 export async function syncMemberProfileOnLogin(
   accessToken: string,

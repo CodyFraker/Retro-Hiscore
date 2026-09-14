@@ -10,12 +10,13 @@ public static class GetMembersEndpoint
         => routes.MapGet("/api/members", async (AppDbContext db, CancellationToken ct) =>
         {
             var members = await db.Members
+                .Where(m => m.RaUsername != null)
                 .Select(m => new
                 {
                     m.Id,
                     m.RaUsername,
                     m.RaUlid,
-                    DisplayName = m.DisplayName ?? m.RaUsername,
+                    DisplayName = m.DisplayName ?? m.RaUsername!,
                     m.AvatarUrl,
                     BoardsWithScore = m.Entries.Count,
                     FriendRankOnes = m.Entries.Count(e => e.FriendRank == 1)
@@ -42,7 +43,7 @@ public static class GetMembersEndpoint
 
 public sealed record MemberDto(
     Guid Id,
-    string RaUsername,
+    string? RaUsername,
     string? RaUlid,
     string DisplayName,
     string? AvatarUrl,

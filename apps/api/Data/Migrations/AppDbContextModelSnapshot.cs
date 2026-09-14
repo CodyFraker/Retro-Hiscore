@@ -85,28 +85,6 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.ToTable("Games");
                 });
 
-            modelBuilder.Entity("RetroHiscore.Api.Domain.RaConsole", b =>
-                {
-                    b.Property<int>("RaConsoleId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("IconFileName")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<DateTimeOffset?>("IconSyncedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.HasKey("RaConsoleId");
-
-                    b.ToTable("Consoles", (string)null);
-                });
-
             modelBuilder.Entity("RetroHiscore.Api.Domain.Leaderboard", b =>
                 {
                     b.Property<Guid>("Id")
@@ -243,6 +221,9 @@ namespace RetroHiscore.Api.Data.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("RaApiKey")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -252,7 +233,6 @@ namespace RetroHiscore.Api.Data.Migrations
                         .HasColumnType("character varying(64)");
 
                     b.Property<string>("RaUsername")
-                        .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
@@ -265,6 +245,149 @@ namespace RetroHiscore.Api.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Members");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.MemberRaAchievement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("DateEarned")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("DateEarnedHardcore")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("FirstDetectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RaAchievementId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RaAchievementId");
+
+                    b.HasIndex("MemberId", "DateEarned");
+
+                    b.HasIndex("MemberId", "RaAchievementId")
+                        .IsUnique();
+
+                    b.ToTable("MemberRaAchievements");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.MemberRaRankSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("Rank")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("SyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("TotalPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TotalRanked")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TotalSoftcorePoints")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TotalTruePoints")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemberId", "SyncedAt");
+
+                    b.ToTable("MemberRaRankSnapshots");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.RaAchievement", b =>
+                {
+                    b.Property<int>("RaAchievementId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BadgeContentType")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<byte[]>("BadgeData")
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("BadgeName")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RaGameId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("SyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("TrueRatio")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("RaAchievementId");
+
+                    b.HasIndex("RaGameId");
+
+                    b.ToTable("RaAchievements");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.RaConsole", b =>
+                {
+                    b.Property<int>("RaConsoleId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("IconContentType")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<byte[]>("IconData")
+                        .HasColumnType("bytea");
+
+                    b.Property<DateTimeOffset?>("IconSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("RaConsoleId");
+
+                    b.ToTable("Consoles", (string)null);
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.SyncRun", b =>
@@ -342,6 +465,36 @@ namespace RetroHiscore.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Leaderboard");
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.MemberRaAchievement", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RetroHiscore.Api.Domain.RaAchievement", "Achievement")
+                        .WithMany()
+                        .HasForeignKey("RaAchievementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Achievement");
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.MemberRaRankSnapshot", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Member");
                 });

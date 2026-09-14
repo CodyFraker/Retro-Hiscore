@@ -12,13 +12,11 @@ public static class GetDashboardEndpoint
 {
     public static RouteHandlerBuilder MapGetDashboard(this IEndpointRouteBuilder routes)
         => routes.MapGet("/api/dashboard", async (
-            HttpRequest httpRequest,
             AppDbContext db,
             IOptions<RaOptions> raOptions,
             CancellationToken ct) =>
         {
             var mediaBaseUrl = raOptions.Value.MediaBaseUrl;
-            var requestBase = $"{httpRequest.Scheme}://{httpRequest.Host}{httpRequest.PathBase}";
 
             var entries = await db.LeaderboardEntries
                 .Include(e => e.Member)
@@ -31,8 +29,8 @@ public static class GetDashboardEndpoint
                     var member = g.First().Member;
                     return new ChampionshipRowDto(
                         g.Key,
-                        member.RaUsername,
-                        member.DisplayName ?? member.RaUsername,
+                        member.RaUsername ?? string.Empty,
+                        MemberAuthHelper.DisplayLabel(member),
                         member.AvatarUrl,
                         g.Count(e => e.FriendRank == 1),
                         g.Count());
@@ -57,9 +55,13 @@ public static class GetDashboardEndpoint
                     g.ImageTitle,
                     g.ImageIngame,
                     LeaderboardCount = g.Leaderboards.Count,
-                    IconFileName = db.Consoles
+                    ConsoleIconData = db.Consoles
                         .Where(c => c.RaConsoleId == g.ConsoleId)
-                        .Select(c => c.IconFileName)
+                        .Select(c => c.IconData)
+                        .FirstOrDefault(),
+                    ConsoleIconContentType = db.Consoles
+                        .Where(c => c.RaConsoleId == g.ConsoleId)
+                        .Select(c => c.IconContentType)
                         .FirstOrDefault()
                 })
                 .ToListAsync(ct);
@@ -81,8 +83,8 @@ public static class GetDashboardEndpoint
                         var member = memberGroup.First().Member;
                         return new
                         {
-                            member.RaUsername,
-                            DisplayName = member.DisplayName ?? member.RaUsername,
+                            RaUsername = member.RaUsername ?? string.Empty,
+                            DisplayName = MemberAuthHelper.DisplayLabel(member),
                             member.AvatarUrl,
                             FriendRankOnes = memberGroup.Count(e => e.FriendRank == 1)
                         };
@@ -107,7 +109,7 @@ public static class GetDashboardEndpoint
                     g.RaGameId,
                     g.Title,
                     g.ConsoleName,
-                    ConsoleIconSyncService.ToAbsoluteUrl(g.ConsoleId, g.IconFileName, requestBase),
+                    ConsoleIconSyncService.ToDataUrl(g.ConsoleIconData, g.ConsoleIconContentType),
                     RaMediaUrl.ToAbsolute(g.ImageBoxArt, mediaBaseUrl),
                     RaMediaUrl.ToAbsolute(g.ImageIcon, mediaBaseUrl),
                     RaMediaUrl.ToAbsolute(g.ImageTitle, mediaBaseUrl),

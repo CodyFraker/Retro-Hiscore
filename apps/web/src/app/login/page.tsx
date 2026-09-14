@@ -18,7 +18,7 @@ export default async function LoginPage({ searchParams }: Props) {
 
   const errorMessage =
     params.error === "AccessDenied"
-      ? "Your Discord account is not on the allowlist for this site."
+      ? "Your Discord account has not been invited to this site yet."
       : params.error
         ? "Sign-in failed. Try again or contact the site owner."
         : null;
@@ -30,7 +30,7 @@ export default async function LoginPage({ searchParams }: Props) {
           Sign in
         </h1>
         <p className="text-sm text-muted-foreground">
-          Use Discord to access Retro Hiscore. Only allowlisted friends can sign in.
+          Use Discord to sign in. Only invited Discord accounts can access this site.
         </p>
       </div>
 

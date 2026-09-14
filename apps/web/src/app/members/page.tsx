@@ -40,7 +40,7 @@ export default async function MembersPage() {
 
       {!error && members.length >= 2 && (
         <section id="head-to-head" className="space-y-3">
-          <h2 className="text-lg font-medium">Head-to-head</h2>
+          <h2 className="steam-section-heading">Head-to-head</h2>
           <RivalryPicker members={members} />
         </section>
       )}

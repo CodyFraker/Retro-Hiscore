@@ -69,7 +69,7 @@ export function SiteHeaderBar({
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="border-b border-border/80 bg-[color-mix(in_oklab,var(--background)_88%,black)]">
+    <header className="border-b border-border bg-card">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 md:py-5">
         <div className="min-w-0 flex-1 md:flex-none">
           <Link

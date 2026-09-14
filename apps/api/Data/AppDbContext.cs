@@ -10,6 +10,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Leaderboard> Leaderboards => Set<Leaderboard>();
     public DbSet<LeaderboardEntry> LeaderboardEntries => Set<LeaderboardEntry>();
     public DbSet<LeaderboardEntrySnapshot> LeaderboardEntrySnapshots => Set<LeaderboardEntrySnapshot>();
+    public DbSet<MemberRaRankSnapshot> MemberRaRankSnapshots => Set<MemberRaRankSnapshot>();
+    public DbSet<RaAchievement> RaAchievements => Set<RaAchievement>();
+    public DbSet<MemberRaAchievement> MemberRaAchievements => Set<MemberRaAchievement>();
     public DbSet<SyncRun> SyncRuns => Set<SyncRun>();
     public DbSet<RaConsole> Consoles => Set<RaConsole>();
 
@@ -46,7 +49,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(x => x.RaConsoleId);
             e.Property(x => x.RaConsoleId).ValueGeneratedNever();
             e.Property(x => x.Name).HasMaxLength(128).IsRequired();
-            e.Property(x => x.IconFileName).HasMaxLength(64);
+            e.Property(x => x.IconContentType).HasMaxLength(64);
             e.ToTable("Consoles");
         });
 
@@ -73,6 +76,35 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.FormattedScore).HasMaxLength(64);
             e.HasOne(x => x.Leaderboard).WithMany(x => x.Snapshots).HasForeignKey(x => x.LeaderboardId);
             e.HasOne(x => x.Member).WithMany().HasForeignKey(x => x.MemberId);
+        });
+
+        modelBuilder.Entity<MemberRaRankSnapshot>(e =>
+        {
+            e.HasIndex(x => new { x.MemberId, x.SyncedAt });
+            e.HasOne(x => x.Member).WithMany().HasForeignKey(x => x.MemberId);
+        });
+
+        modelBuilder.Entity<RaAchievement>(e =>
+        {
+            e.HasKey(x => x.RaAchievementId);
+            e.Property(x => x.RaAchievementId).ValueGeneratedNever();
+            e.HasIndex(x => x.RaGameId);
+            e.Property(x => x.Title).HasMaxLength(256).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(1024);
+            e.Property(x => x.BadgeName).HasMaxLength(64);
+            e.Property(x => x.Type).HasMaxLength(64);
+            e.Property(x => x.BadgeContentType).HasMaxLength(64);
+        });
+
+        modelBuilder.Entity<MemberRaAchievement>(e =>
+        {
+            e.HasIndex(x => x.RaAchievementId);
+            e.HasIndex(x => new { x.MemberId, x.RaAchievementId }).IsUnique();
+            e.HasIndex(x => new { x.MemberId, x.DateEarned });
+            e.HasOne(x => x.Member).WithMany().HasForeignKey(x => x.MemberId);
+            e.HasOne(x => x.Achievement)
+                .WithMany()
+                .HasForeignKey(x => x.RaAchievementId);
         });
 
         modelBuilder.Entity<SyncRun>(e =>

@@ -7,6 +7,7 @@ using NSubstitute;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Features.Games;
 using RetroHiscore.Api.Features.Ra;
+using RetroHiscore.Api.Features.Sync;
 using Shouldly;
 
 namespace RetroHiscore.Api.Tests;
@@ -55,8 +56,8 @@ public class AddGameApiTests : IAsyncLifetime
         created.RaGameId.ShouldBe(raGameId);
         created.Title.ShouldBe("New Adventure");
         created.ConsoleName.ShouldBe("SNES");
-        created.ConsoleIconUrl.ShouldNotBeNull();
-        created.ConsoleIconUrl.ShouldEndWith("/system-icons/3.png");
+        created.ConsoleIconUrl.ShouldBe(
+            ConsoleIconSyncService.ToDataUrl(ApiFactory.SamplePngBytes, "image/png"));
         created.ImageBoxArtUrl.ShouldBe("https://media.retroachievements.org/Images/box-new.png");
         created.LeaderboardCount.ShouldBe(1);
 

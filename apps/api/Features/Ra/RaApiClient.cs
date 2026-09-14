@@ -74,6 +74,59 @@ public sealed class RaApiClient(HttpClient httpClient, IOptions<RaOptions> optio
         }
     }
 
+    public async Task<RaUserSummaryDto?> GetUserSummaryAsync(
+        string username,
+        string apiKey,
+        int recentGamesCount = 3,
+        int recentAchievementsCount = 8,
+        CancellationToken cancellationToken = default)
+    {
+        var key = ResolveApiKey(apiKey);
+        var query = new Dictionary<string, string>
+        {
+            ["y"] = key,
+            ["u"] = username,
+            ["g"] = recentGamesCount.ToString(),
+            ["a"] = recentAchievementsCount.ToString()
+        };
+
+        try
+        {
+            return await GetAsync<RaUserSummaryDto>("API_GetUserSummary.php", query, cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+    }
+
+    public async Task<RaGameInfoAndUserProgressDto?> GetGameInfoAndUserProgressAsync(
+        int gameId,
+        string usernameOrUlid,
+        string apiKey,
+        CancellationToken cancellationToken = default)
+    {
+        var key = ResolveApiKey(apiKey);
+        var query = new Dictionary<string, string>
+        {
+            ["y"] = key,
+            ["g"] = gameId.ToString(),
+            ["u"] = usernameOrUlid
+        };
+
+        try
+        {
+            return await GetAsync<RaGameInfoAndUserProgressDto>(
+                "API_GetGameInfoAndUserProgress.php",
+                query,
+                cancellationToken);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+    }
+
     private async Task<IReadOnlyList<T>> GetAllPagesAsync<T>(
         string endpoint,
         Dictionary<string, string> query,

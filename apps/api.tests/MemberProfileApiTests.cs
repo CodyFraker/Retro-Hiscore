@@ -98,7 +98,7 @@ public class MemberProfileApiTests : IAsyncLifetime
 
         // Act
         var response = await client.GetAsync("/api/members/me");
-        var member = await response.Content.ReadFromJsonAsync<MemberDto>();
+        var member = await response.Content.ReadFromJsonAsync<CurrentMemberDto>();
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -116,8 +116,9 @@ public class MemberProfileApiTests : IAsyncLifetime
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var member = await db.Members.SingleAsync(m => m.RaUsername == raUsername);
-        member.DiscordId = discordId;
+        var member = await db.Members.SingleAsync(m => m.DiscordId == discordId);
+        member.RaUsername = raUsername;
+        member.DisplayName = raUsername;
         member.AvatarUrl = avatarUrl;
         member.RaApiKey = apiKey;
         await db.SaveChangesAsync();

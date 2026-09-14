@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth";
+import { AdminMemberInvitesSection } from "@/components/admin/admin-member-invites-section";
 import { AdminOpsView } from "@/components/admin/admin-ops-view";
 import { authOptions } from "@/lib/auth-options";
 import { getServerApiClient } from "@/lib/api";
-import { isDiscordUserAdmin } from "@/lib/allowed-discord-users";
 
 export const dynamic = "force-dynamic";
 
@@ -16,26 +16,29 @@ function resolveHangfireHref(pathOrUrl: string) {
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions);
-  const discordId = session?.user?.discordId;
 
-  if (!isDiscordUserAdmin(discordId)) {
+  if (!session?.isAdmin) {
     return (
       <div className="mx-auto max-w-lg space-y-4 py-12">
         <h1 className="font-[family-name:var(--font-display)] text-2xl text-[var(--accent-retro)]">
           Not authorized
         </h1>
-        <p className="text-muted-foreground">
-          This page is only available to administrators configured in{" "}
-          <code className="text-sm">AUTH_ADMIN_DISCORD_USER_IDS</code>.
-        </p>
+        <p className="text-muted-foreground">This page is only available to site administrators.</p>
       </div>
     );
   }
 
   try {
     const api = await getServerApiClient();
-    const ops = await api.getAdminOps();
-    return <AdminOpsView ops={ops} hangfireDashboardHref={resolveHangfireHref(ops.config.hangfireDashboardUrl)} />;
+    const [ops, invites] = await Promise.all([api.getAdminOps(), api.getAdminMemberInvites()]);
+    return (
+      <div className="space-y-10">
+        <section className="rounded border border-border p-5">
+          <AdminMemberInvitesSection initialInvites={invites} />
+        </section>
+        <AdminOpsView ops={ops} hangfireDashboardHref={resolveHangfireHref(ops.config.hangfireDashboardUrl)} />
+      </div>
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load admin metrics";
     const forbidden = message.includes("403");
@@ -44,7 +47,9 @@ export default async function AdminPage() {
         <h1 className="font-[family-name:var(--font-display)] text-2xl text-[var(--accent-retro)]">
           {forbidden ? "Not authorized" : "Could not load admin metrics"}
         </h1>
-        <p className="text-muted-foreground">{forbidden ? "Your account is not in the admin list on the API." : message}</p>
+        <p className="text-muted-foreground">
+          {forbidden ? "Your account is not an administrator on the API." : message}
+        </p>
       </div>
     );
   }

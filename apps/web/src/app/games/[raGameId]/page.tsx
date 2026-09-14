@@ -115,7 +115,7 @@ export default async function GamePage({ params }: Props) {
 
             {recentBoards.length > 0 && (
               <section className="space-y-3">
-                <h2 className="text-lg font-medium">Recently updated</h2>
+                <h2 className="steam-section-heading">Recently updated</h2>
                 <ul className="divide-y divide-border border-y border-border">
                   {recentBoards.map((board) => (
                     <li

@@ -57,21 +57,21 @@ export default async function LeaderboardPage({ params }: Props) {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Friend standings</h2>
+        <h2 className="steam-section-heading">Friend standings</h2>
         <div className="rounded border border-border p-3 md:p-0 md:overflow-x-auto">
           <LeaderboardStandingsSection standings={detail.standings} />
         </div>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Score trend</h2>
+        <h2 className="steam-section-heading">Score trend</h2>
         <ScoreTrendChart series={series} />
       </section>
 
       <DeltaCallout deltas={deltas} />
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Recent history</h2>
+        <h2 className="steam-section-heading">Recent history</h2>
         {history.items.length === 0 ? (
           <p className="flex items-center gap-2 text-muted-foreground">
             <Clock className="size-4 shrink-0" />

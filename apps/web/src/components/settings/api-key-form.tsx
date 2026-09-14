@@ -54,7 +54,7 @@ export function ApiKeyForm({ hasApiKey, raUsername }: Props) {
           value={apiKey}
           onChange={(event) => setApiKey(event.target.value)}
           placeholder={hasApiKey ? "Enter a new key to replace the saved one" : "Paste your API key from RetroAchievements"}
-          className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+          className="w-full rounded-md bg-input px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         />
         <p className="text-xs text-muted-foreground">
           Copy your key from RetroAchievements profile settings. Your scores sync with your own key.

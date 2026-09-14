@@ -8,6 +8,8 @@ declare module "next-auth" {
 
   interface Session {
     apiAccessToken?: string;
+    needsOnboarding?: boolean;
+    isAdmin?: boolean;
     user: {
       name?: string | null;
       email?: string | null;
@@ -23,5 +25,7 @@ declare module "next-auth/jwt" {
     apiAccessToken?: string;
     discordId?: string;
     discordUsername?: string;
+    needsOnboarding?: boolean;
+    isAdmin?: boolean;
   }
 }

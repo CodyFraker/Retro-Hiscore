@@ -98,7 +98,13 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       ),
     getMembers: () => request<MemberDto[]>(baseUrl, "/api/members", undefined, fetchImpl),
-    getCurrentMember: () => request<MemberDto>(baseUrl, "/api/members/me", undefined, fetchImpl),
+    getCurrentMember: () => request<CurrentMemberDto>(baseUrl, "/api/members/me", undefined, fetchImpl),
+    putMemberRaAccount: (raUsername: string, raApiKey: string) =>
+      request<void>(baseUrl, "/api/members/me/ra-account", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raUsername, raApiKey }),
+      }, fetchImpl),
     putMemberApiKey: (raApiKey: string) =>
       request<void>(baseUrl, "/api/members/me/api-key", {
         method: "PUT",
@@ -118,6 +124,24 @@ export function createApiClient(options: ApiClientOptions) {
         undefined,
         fetchImpl,
       ),
+    getMemberRaSummary: (raUsername: string) =>
+      request<MemberRaSummaryResponse>(
+        baseUrl,
+        \`/api/members/\${encodeURIComponent(raUsername)}/ra-summary\`,
+        undefined,
+        fetchImpl,
+      ),
+    getMemberRaRankHistory: (raUsername: string, limit?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<MemberRaRankHistoryResponse>(
+        baseUrl,
+        \`/api/members/\${encodeURIComponent(raUsername)}/ra-rank-history\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
     getMemberHistory: (raUsername: string, limit?: number, offset?: number) => {
       const params = new URLSearchParams();
       if (limit != null) params.set("limit", String(limit));
@@ -207,6 +231,32 @@ export function createApiClient(options: ApiClientOptions) {
     getConsoleIconSyncStatus: () =>
       request<SyncStatusDto>(baseUrl, "/api/sync/console-icons/status", undefined, fetchImpl),
     getAdminOps: () => request<AdminOpsDto>(baseUrl, "/api/admin/ops", undefined, fetchImpl),
+    getAdminMemberInvites: () =>
+      request<AdminMemberInviteDto[]>(baseUrl, "/api/admin/member-invites", undefined, fetchImpl),
+    postAdminMemberInvite: (discordId: string) =>
+      request<AdminMemberInviteDto>(baseUrl, "/api/admin/member-invites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discordId }),
+      }, fetchImpl),
+    deleteAdminMemberInvite: (discordId: string) =>
+      request<void>(
+        baseUrl,
+        \`/api/admin/member-invites/\${encodeURIComponent(discordId)}\`,
+        { method: "DELETE" },
+        fetchImpl,
+      ),
+    patchAdminMemberIsAdmin: (discordId: string, isAdmin: boolean) =>
+      request<void>(
+        baseUrl,
+        \`/api/admin/member-invites/\${encodeURIComponent(discordId)}/is-admin\`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isAdmin }),
+        },
+        fetchImpl,
+      ),
   };
 }
 

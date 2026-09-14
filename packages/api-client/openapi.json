@@ -70,10 +70,28 @@
             "description": "OK",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/MemberDto" }
+                "schema": { "$ref": "#/components/schemas/CurrentMemberDto" }
               }
             }
           },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/ra-account": {
+      "put": {
+        "operationId": "putMemberRaAccount",
+        "tags": ["Members"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PutMemberRaAccountRequest" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "No Content" },
           "404": { "description": "Not Found" }
         }
       }
@@ -132,6 +150,91 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/MemberDetailDto" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/{raUsername}/ra-rank-history": {
+      "get": {
+        "operationId": "getMemberRaRankHistory",
+        "tags": ["Members"],
+        "parameters": [
+          {
+            "name": "raUsername",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberRaRankHistoryResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/{raUsername}/ra-achievement-history": {
+      "get": {
+        "operationId": "getMemberRaAchievementHistory",
+        "tags": ["Members"],
+        "parameters": [
+          {
+            "name": "raUsername",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberRaAchievementHistoryResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/{raUsername}/ra-summary": {
+      "get": {
+        "operationId": "getMemberRaSummary",
+        "tags": ["Members"],
+        "parameters": [
+          {
+            "name": "raUsername",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberRaSummaryResponse" }
               }
             }
           },
@@ -480,6 +583,73 @@
         }
       }
     },
+    "/api/admin/member-invites": {
+      "get": {
+        "operationId": "getAdminMemberInvites",
+        "tags": ["Admin"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AdminMemberInviteDto" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminMemberInvite",
+        "tags": ["Admin"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PostAdminMemberInviteRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created" }
+        }
+      }
+    },
+    "/api/admin/member-invites/{discordId}": {
+      "delete": {
+        "operationId": "deleteAdminMemberInvite",
+        "tags": ["Admin"],
+        "parameters": [
+          { "name": "discordId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "204": { "description": "No Content" },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/admin/member-invites/{discordId}/is-admin": {
+      "patch": {
+        "operationId": "patchAdminMemberIsAdmin",
+        "tags": ["Admin"],
+        "parameters": [
+          { "name": "discordId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PatchAdminMemberIsAdminRequest" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "No Content" }
+        }
+      }
+    },
     "/api/admin/ops": {
       "get": {
         "operationId": "getAdminOps",
@@ -522,12 +692,61 @@
           "avatarUrl": { "type": "string", "nullable": true }
         }
       },
-      "MemberDto": {
+      "CurrentMemberDto": {
         "type": "object",
-        "required": ["id", "raUsername", "displayName", "boardsWithScore", "friendRankOnes"],
+        "required": ["id", "displayName", "boardsWithScore", "friendRankOnes", "hasApiKey", "needsOnboarding", "isAdmin"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string", "nullable": true },
+          "raUlid": { "type": "string", "nullable": true },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "boardsWithScore": { "type": "integer" },
+          "friendRankOnes": { "type": "integer" },
+          "hasApiKey": { "type": "boolean" },
+          "needsOnboarding": { "type": "boolean" },
+          "isAdmin": { "type": "boolean" }
+        }
+      },
+      "PutMemberRaAccountRequest": {
+        "type": "object",
+        "required": ["raUsername", "raApiKey"],
+        "properties": {
           "raUsername": { "type": "string" },
+          "raApiKey": { "type": "string" }
+        }
+      },
+      "PostAdminMemberInviteRequest": {
+        "type": "object",
+        "required": ["discordId"],
+        "properties": {
+          "discordId": { "type": "string" }
+        }
+      },
+      "PatchAdminMemberIsAdminRequest": {
+        "type": "object",
+        "required": ["isAdmin"],
+        "properties": {
+          "isAdmin": { "type": "boolean" }
+        }
+      },
+      "AdminMemberInviteDto": {
+        "type": "object",
+        "required": ["discordId", "hasRaAccount", "hasApiKey", "isAdmin"],
+        "properties": {
+          "discordId": { "type": "string" },
+          "displayName": { "type": "string", "nullable": true },
+          "hasRaAccount": { "type": "boolean" },
+          "hasApiKey": { "type": "boolean" },
+          "isAdmin": { "type": "boolean" }
+        }
+      },
+      "MemberDto": {
+        "type": "object",
+        "required": ["id", "displayName", "boardsWithScore", "friendRankOnes"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string", "nullable": true },
           "raUlid": { "type": "string", "nullable": true },
           "displayName": { "type": "string" },
           "avatarUrl": { "type": "string", "nullable": true },
@@ -548,6 +767,165 @@
           "friendRank": { "type": "integer", "nullable": true },
           "score": { "type": "integer", "format": "int64" },
           "formattedScore": { "type": "string" }
+        }
+      },
+      "MemberRaRankHistoryResponse": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberRaRankHistoryItemDto" }
+          }
+        }
+      },
+      "MemberRaRankHistoryItemDto": {
+        "type": "object",
+        "required": ["syncedAt"],
+        "properties": {
+          "syncedAt": { "type": "string", "format": "date-time" },
+          "rank": { "type": "integer", "nullable": true },
+          "totalRanked": { "type": "integer", "nullable": true },
+          "totalPoints": { "type": "integer", "nullable": true },
+          "totalTruePoints": { "type": "integer", "nullable": true },
+          "totalSoftcorePoints": { "type": "integer", "nullable": true }
+        }
+      },
+      "MemberRaAchievementHistoryResponse": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberRaAchievementHistoryItemDto" }
+          }
+        }
+      },
+      "MemberRaAchievementHistoryItemDto": {
+        "type": "object",
+        "required": ["earnedAt", "cumulativeUnlocks", "cumulativePoints", "cumulativeTruePoints"],
+        "properties": {
+          "earnedAt": { "type": "string", "format": "date-time" },
+          "cumulativeUnlocks": { "type": "integer" },
+          "cumulativePoints": { "type": "integer" },
+          "cumulativeTruePoints": { "type": "integer" }
+        }
+      },
+      "MemberRaUnlockedAchievementDto": {
+        "type": "object",
+        "required": ["raAchievementId", "title", "points", "hardcoreAchieved"],
+        "properties": {
+          "raAchievementId": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "points": { "type": "integer" },
+          "badgeUrl": { "type": "string", "nullable": true },
+          "dateEarned": { "type": "string", "format": "date-time", "nullable": true },
+          "hardcoreAchieved": { "type": "boolean" }
+        }
+      },
+      "MemberRaSummaryResponse": {
+        "type": "object",
+        "required": ["available"],
+        "properties": {
+          "available": { "type": "boolean" },
+          "unavailableReason": { "type": "string", "nullable": true },
+          "summary": { "$ref": "#/components/schemas/MemberRaSummaryDto", "nullable": true }
+        }
+      },
+      "MemberRaSummaryDto": {
+        "type": "object",
+        "required": ["raUsername", "recentlyPlayed", "recentAchievements"],
+        "properties": {
+          "raUsername": { "type": "string" },
+          "raUlid": { "type": "string", "nullable": true },
+          "motto": { "type": "string", "nullable": true },
+          "userPicUrl": { "type": "string", "nullable": true },
+          "memberSince": { "type": "string", "format": "date-time", "nullable": true },
+          "status": { "type": "string", "nullable": true },
+          "rank": { "type": "integer", "nullable": true },
+          "totalRanked": { "type": "integer", "nullable": true },
+          "totalPoints": { "type": "integer", "nullable": true },
+          "totalSoftcorePoints": { "type": "integer", "nullable": true },
+          "totalTruePoints": { "type": "integer", "nullable": true },
+          "presence": { "$ref": "#/components/schemas/MemberRaPresenceGameDto", "nullable": true },
+          "recentlyPlayed": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberRaRecentGameDto" }
+          },
+          "recentAchievements": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberRaRecentAchievementDto" }
+          }
+        }
+      },
+      "MemberRaPresenceGameDto": {
+        "type": "object",
+        "required": ["raGameId", "title", "consoleId", "isTracked", "unlockedAchievements"],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "consoleId": { "type": "integer" },
+          "consoleName": { "type": "string", "nullable": true },
+          "consoleIconUrl": { "type": "string", "nullable": true },
+          "imageBoxArtUrl": { "type": "string", "nullable": true },
+          "imageIconUrl": { "type": "string", "nullable": true },
+          "isTracked": { "type": "boolean" },
+          "richPresenceMsg": { "type": "string", "nullable": true },
+          "richPresenceAt": { "type": "string", "format": "date-time", "nullable": true },
+          "progress": { "$ref": "#/components/schemas/MemberRaGameProgressDto", "nullable": true },
+          "unlockedAchievements": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberRaUnlockedAchievementDto" }
+          }
+        }
+      },
+      "MemberRaRecentGameDto": {
+        "type": "object",
+        "required": ["raGameId", "title", "consoleId", "isTracked", "unlockedAchievements"],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "consoleId": { "type": "integer" },
+          "consoleName": { "type": "string", "nullable": true },
+          "consoleIconUrl": { "type": "string", "nullable": true },
+          "imageBoxArtUrl": { "type": "string", "nullable": true },
+          "imageIconUrl": { "type": "string", "nullable": true },
+          "isTracked": { "type": "boolean" },
+          "lastPlayedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "progress": { "$ref": "#/components/schemas/MemberRaGameProgressDto", "nullable": true },
+          "unlockedAchievements": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberRaUnlockedAchievementDto" }
+          }
+        }
+      },
+      "MemberRaGameProgressDto": {
+        "type": "object",
+        "required": ["achievementsEarned", "achievementsTotal", "pointsEarned"],
+        "properties": {
+          "achievementsEarned": { "type": "integer" },
+          "achievementsTotal": { "type": "integer" },
+          "pointsEarned": { "type": "integer" },
+          "pointsPossible": { "type": "integer", "nullable": true },
+          "achievementsEarnedHardcore": { "type": "integer", "nullable": true },
+          "pointsEarnedHardcore": { "type": "integer", "nullable": true }
+        }
+      },
+      "MemberRaRecentAchievementDto": {
+        "type": "object",
+        "required": ["raAchievementId", "raGameId", "gameTitle", "title", "points", "hardcoreAchieved", "isTracked"],
+        "properties": {
+          "raAchievementId": { "type": "integer" },
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "points": { "type": "integer" },
+          "badgeUrl": { "type": "string", "nullable": true },
+          "dateAwarded": { "type": "string", "format": "date-time", "nullable": true },
+          "hardcoreAchieved": { "type": "boolean" },
+          "isTracked": { "type": "boolean" }
         }
       },
       "MemberDetailDto": {
@@ -605,7 +983,11 @@
           "raGameId": { "type": "integer" },
           "title": { "type": "string" },
           "consoleName": { "type": "string", "nullable": true },
-          "consoleIconUrl": { "type": "string", "nullable": true },
+          "consoleIconUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Console system icon as a data URL (image/png base64)."
+          },
           "imageBoxArtUrl": { "type": "string", "nullable": true },
           "imageIconUrl": { "type": "string", "nullable": true },
           "imageTitleUrl": { "type": "string", "nullable": true },
@@ -662,7 +1044,11 @@
           "raGameId": { "type": "integer" },
           "title": { "type": "string" },
           "consoleName": { "type": "string", "nullable": true },
-          "consoleIconUrl": { "type": "string", "nullable": true },
+          "consoleIconUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Console system icon as a data URL (image/png base64)."
+          },
           "imageBoxArtUrl": { "type": "string", "nullable": true },
           "imageIconUrl": { "type": "string", "nullable": true },
           "imageTitleUrl": { "type": "string", "nullable": true },
@@ -834,7 +1220,11 @@
           "raGameId": { "type": "integer" },
           "title": { "type": "string" },
           "consoleName": { "type": "string", "nullable": true },
-          "consoleIconUrl": { "type": "string", "nullable": true },
+          "consoleIconUrl": {
+            "type": "string",
+            "nullable": true,
+            "description": "Console system icon as a data URL (image/png base64)."
+          },
           "imageBoxArtUrl": { "type": "string", "nullable": true },
           "imageIconUrl": { "type": "string", "nullable": true },
           "imageTitleUrl": { "type": "string", "nullable": true },

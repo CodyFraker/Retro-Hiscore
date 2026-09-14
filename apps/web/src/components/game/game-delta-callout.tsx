@@ -18,7 +18,7 @@ export function GameDeltaCallout({ deltas }: Props) {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-medium">Since last sync</h2>
+      <h2 className="steam-section-heading">Since last sync</h2>
       <ul className="divide-y divide-border border-y border-border">
         {deltas.map((delta) => (
           <li

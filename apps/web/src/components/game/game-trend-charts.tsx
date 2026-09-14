@@ -109,7 +109,7 @@ export function GameTrendCharts({ items }: Props) {
   return (
     <div className="space-y-10">
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Board leads over time</h2>
+        <h2 className="steam-section-heading">Board leads over time</h2>
         {hasLeadTrend ? (
           <div className="space-y-2">
           <ul className="flex flex-wrap gap-3 px-1 text-xs text-muted-foreground">
@@ -181,7 +181,7 @@ export function GameTrendCharts({ items }: Props) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Friend rank by board</h2>
+        <h2 className="steam-section-heading">Friend rank by board</h2>
         {hasRankTrend ? (
           <div className="space-y-2">
           <ul className="flex flex-wrap gap-3 px-1 text-xs text-muted-foreground">

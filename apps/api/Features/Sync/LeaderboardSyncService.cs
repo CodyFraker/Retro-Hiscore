@@ -21,6 +21,7 @@ public sealed class LeaderboardSyncService(
     AppDbContext db,
     IRaApiClient raApiClient,
     IRaApiKeyPool apiKeyPool,
+    IMemberRaGameProgressSyncService memberRaGameProgressSync,
     IDiscordNotificationService notificationService,
     IOptions<RaOptions> raOptions,
     IOptions<SyncOptions> syncOptions,
@@ -70,7 +71,9 @@ public sealed class LeaderboardSyncService(
         try
         {
             var games = await db.Games.ToListAsync(cancellationToken);
-            var members = await db.Members.ToListAsync(cancellationToken);
+            var members = await db.Members
+                .Where(m => m.RaUsername != null)
+                .ToListAsync(cancellationToken);
 
             foreach (var game in games)
             {
@@ -98,6 +101,27 @@ public sealed class LeaderboardSyncService(
                         logger.LogError(ex, "Failed to sync member {Member} for game {GameId}", member.RaUsername, game.RaGameId);
                         errors.Add($"{member.RaUsername}/{game.RaGameId}: {ex.Message}");
                     }
+                }
+            }
+
+            foreach (var member in members)
+            {
+                try
+                {
+                    var summary = await SyncMemberRaRankSnapshotAsync(member, syncedAt, cancellationToken);
+                    if (summary is not null)
+                    {
+                        await memberRaGameProgressSync.SyncMemberGamesFromSummaryAsync(
+                            member,
+                            summary,
+                            syncedAt,
+                            cancellationToken);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to sync RA site rank for member {Member}", member.RaUsername);
+                    errors.Add($"{member.RaUsername} RA rank: {ex.Message}");
                 }
             }
 
@@ -129,7 +153,9 @@ public sealed class LeaderboardSyncService(
     public async Task SyncGameAsync(Game game, CancellationToken cancellationToken = default)
     {
         var syncedAt = DateTimeOffset.UtcNow;
-        var members = await db.Members.ToListAsync(cancellationToken);
+        var members = await db.Members
+            .Where(m => m.RaUsername != null)
+            .ToListAsync(cancellationToken);
 
         try
         {
@@ -194,12 +220,12 @@ public sealed class LeaderboardSyncService(
 
     private async Task SyncMemberGameAsync(Member member, Game game, DateTimeOffset syncedAt, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(member.RaApiKey))
+        if (string.IsNullOrWhiteSpace(member.RaUsername) || string.IsNullOrWhiteSpace(member.RaApiKey))
         {
             return;
         }
 
-        var identity = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername;
+        var identity = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername!;
         var boards = await apiKeyPool.ExecuteAsync(
             [member.RaApiKey],
             (key, ct) => raApiClient.GetUserGameLeaderboardsAsync(game.RaGameId, identity, key, ct),
@@ -279,6 +305,60 @@ public sealed class LeaderboardSyncService(
         }
 
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<RaUserSummaryDto?> SyncMemberRaRankSnapshotAsync(
+        Member member,
+        DateTimeOffset syncedAt,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(member.RaUsername))
+        {
+            return null;
+        }
+
+        var preferredKeys = string.IsNullOrWhiteSpace(member.RaApiKey)
+            ? Array.Empty<string>()
+            : new[] { member.RaApiKey };
+
+        var target = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername!;
+        var summary = await apiKeyPool.ExecuteAsync(
+            preferredKeys,
+            (key, ct) => raApiClient.GetUserSummaryAsync(
+                target,
+                key,
+                recentGamesCount: 3,
+                recentAchievementsCount: 0,
+                cancellationToken: ct),
+            cancellationToken);
+
+        if (summary is null)
+        {
+            return null;
+        }
+
+        var hasMetric = summary.Rank is not null
+            || summary.TotalPoints is not null
+            || summary.TotalTruePoints is not null
+            || summary.TotalSoftcorePoints is not null;
+
+        if (hasMetric)
+        {
+            db.MemberRaRankSnapshots.Add(new MemberRaRankSnapshot
+            {
+                MemberId = member.Id,
+                Rank = summary.Rank,
+                TotalRanked = summary.TotalRanked,
+                TotalPoints = summary.TotalPoints,
+                TotalTruePoints = summary.TotalTruePoints,
+                TotalSoftcorePoints = summary.TotalSoftcorePoints,
+                SyncedAt = syncedAt
+            });
+
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        return summary;
     }
 
     private async Task RecomputeFriendRanksAsync(

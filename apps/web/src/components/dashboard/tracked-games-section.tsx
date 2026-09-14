@@ -80,7 +80,7 @@ export function TrackedGamesSection({ games, activityCounts }: Props) {
     <section id="tracked-games" className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-lg font-medium">Tracked games</h2>
+          <h2 className="steam-section-heading">Tracked games</h2>
           <p className="text-sm text-muted-foreground">
             {visibleGames.length} of {games.length} game{games.length === 1 ? "" : "s"}
           </p>
@@ -93,7 +93,7 @@ export function TrackedGamesSection({ games, activityCounts }: Props) {
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Title or platform"
-              className="h-8 w-full min-w-[12rem] rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-48"
+              className="h-8 w-full min-w-[12rem] rounded-md bg-input px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-48"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -101,7 +101,7 @@ export function TrackedGamesSection({ games, activityCounts }: Props) {
             <select
               value={sortKey}
               onChange={(event) => setSortKey(event.target.value as DashboardGameSortKey)}
-              className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="h-8 rounded-md bg-input px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               {SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>

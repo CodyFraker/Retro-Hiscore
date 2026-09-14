@@ -4,6 +4,28 @@ namespace RetroHiscore.Api.Features.Games;
 
 public static class RaMediaUrl
 {
+    public static string SiteBaseUrlFromApiBase(string apiBaseUrl)
+    {
+        var trimmed = apiBaseUrl.TrimEnd('/');
+        if (trimmed.EndsWith("/API", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed[..^4];
+        }
+
+        return trimmed;
+    }
+
+    public static string? ToBadgeUrl(string? badgeName, string mediaBaseUrl)
+    {
+        if (string.IsNullOrWhiteSpace(badgeName))
+        {
+            return null;
+        }
+
+        var baseUrl = mediaBaseUrl.TrimEnd('/');
+        return $"{baseUrl}/Badge/{badgeName}.png";
+    }
+
     public static string? ToAbsolute(string? relativePath, string mediaBaseUrl)
     {
         if (string.IsNullOrWhiteSpace(relativePath))

@@ -19,7 +19,6 @@ public class ConsoleIconSyncOptions
 {
     public const string SectionName = "ConsoleIconSync";
 
-    public string StoragePath { get; set; } = "App_Data/system-icons";
     public int ManualCooldownSeconds { get; set; } = 300;
     public bool ForceRefresh { get; set; }
 }

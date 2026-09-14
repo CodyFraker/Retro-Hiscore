@@ -8,7 +8,7 @@ public class AuthOptions
 
     public string WebOrigin { get; set; } = "http://localhost:18321";
 
-    public List<string> AllowedDiscordUserIds { get; set; } = [];
+    public string? SignInServiceKey { get; set; }
 
     public List<string> AdminDiscordUserIds { get; set; } = [];
 }

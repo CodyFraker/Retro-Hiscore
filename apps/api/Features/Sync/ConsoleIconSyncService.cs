@@ -23,8 +23,6 @@ public sealed class ConsoleIconSyncService(
     IOptions<ConsoleIconSyncOptions> options,
     ILogger<ConsoleIconSyncService> logger) : IConsoleIconSyncService
 {
-    public const string RequestPath = "/system-icons";
-
     private readonly RaOptions _raOptions = raOptions.Value;
     private readonly ConsoleIconSyncOptions _options = options.Value;
 
@@ -53,13 +51,9 @@ public sealed class ConsoleIconSyncService(
 
     public async Task EnsureConsoleIconAsync(int consoleId, CancellationToken cancellationToken = default)
     {
-        var fileName = $"{consoleId}.png";
-        var filePath = Path.Combine(GetStorageDirectory(), fileName);
         var existing = await db.Consoles.FindAsync([consoleId], cancellationToken);
         if (!_options.ForceRefresh
-            && File.Exists(filePath)
-            && existing is not null
-            && !string.IsNullOrWhiteSpace(existing.IconFileName))
+            && existing?.IconData is { Length: > 0 })
         {
             return;
         }
@@ -91,8 +85,6 @@ public sealed class ConsoleIconSyncService(
 
         try
         {
-            Directory.CreateDirectory(GetStorageDirectory());
-
             var neededIds = consoleIds is null
                 ? await db.Games
                     .Where(g => g.ConsoleId != null)
@@ -154,12 +146,9 @@ public sealed class ConsoleIconSyncService(
 
     private async Task SyncOneAsync(RaConsoleIdDto raConsole, bool force, CancellationToken cancellationToken)
     {
-        var fileName = $"{raConsole.Id}.png";
-        var filePath = Path.Combine(GetStorageDirectory(), fileName);
         var existing = await db.Consoles.FindAsync([raConsole.Id], cancellationToken);
-        var fileExists = File.Exists(filePath);
 
-        if (!force && fileExists && existing is not null && !string.IsNullOrWhiteSpace(existing.IconFileName))
+        if (!force && existing?.IconData is { Length: > 0 })
         {
             if (!string.Equals(existing.Name, raConsole.Name, StringComparison.Ordinal))
             {
@@ -175,9 +164,7 @@ public sealed class ConsoleIconSyncService(
             throw new InvalidOperationException("IconURL is missing");
         }
 
-        var bytes = await iconDownloader.DownloadAsync(raConsole.IconUrl, cancellationToken);
-        await File.WriteAllBytesAsync(filePath, bytes, cancellationToken);
-
+        var download = await iconDownloader.DownloadAsync(raConsole.IconUrl, cancellationToken);
         var syncedAt = DateTimeOffset.UtcNow;
         if (existing is null)
         {
@@ -185,30 +172,30 @@ public sealed class ConsoleIconSyncService(
             {
                 RaConsoleId = raConsole.Id,
                 Name = raConsole.Name,
-                IconFileName = fileName,
+                IconData = download.Data,
+                IconContentType = download.ContentType,
                 IconSyncedAt = syncedAt
             });
         }
         else
         {
             existing.Name = raConsole.Name;
-            existing.IconFileName = fileName;
+            existing.IconData = download.Data;
+            existing.IconContentType = download.ContentType;
             existing.IconSyncedAt = syncedAt;
         }
 
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private string GetStorageDirectory()
-        => Path.GetFullPath(_options.StoragePath);
-
-    public static string? ToAbsoluteUrl(int? consoleId, string? iconFileName, string requestBaseUrl)
+    public static string? ToDataUrl(byte[]? data, string? contentType)
     {
-        if (consoleId is null || string.IsNullOrWhiteSpace(iconFileName))
+        if (data is null || data.Length == 0)
         {
             return null;
         }
 
-        return $"{requestBaseUrl.TrimEnd('/')}{RequestPath}/{iconFileName}";
+        var mime = string.IsNullOrWhiteSpace(contentType) ? "image/png" : contentType.Trim();
+        return $"data:{mime};base64,{Convert.ToBase64String(data)}";
     }
 }

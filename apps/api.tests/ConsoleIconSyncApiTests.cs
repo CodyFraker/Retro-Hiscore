@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using RetroHiscore.Api.Data;
@@ -53,13 +54,13 @@ public class ConsoleIconSyncApiTests : IAsyncLifetime
 
         _factory.ConsoleIconDownloader
             .DownloadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }));
+            .Returns(Task.FromResult(new ConsoleIconDownload(ApiFactory.SamplePngBytes, "image/png")));
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
-    public async Task ConsoleIconSync_DownloadsOnlyNeededConsoles_AndExposesUrlOnGames()
+    public async Task ConsoleIconSync_DownloadsOnlyNeededConsoles_AndExposesDataUrlOnGames()
     {
         // Arrange
         using (var scope = _factory.Services.CreateScope())
@@ -80,31 +81,33 @@ public class ConsoleIconSyncApiTests : IAsyncLifetime
         var games = await client.GetFromJsonAsync<List<GameDto>>("/api/games", JsonOptions);
         var detail = await client.GetFromJsonAsync<GameLeaderboardsResponse>("/api/games/38130/leaderboards", JsonOptions);
         var status = await client.GetFromJsonAsync<SyncStatusDto>("/api/sync/console-icons/status", JsonOptions);
-        var iconResponse = await client.GetAsync("/system-icons/1.png");
 
-        // Assert
-        run.Status.ShouldBe(SyncRunStatus.Succeeded);
-        run.Kind.ShouldBe(SyncKind.ConsoleIcons);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var console = await db.Consoles.SingleAsync(c => c.RaConsoleId == 1);
 
-        await _factory.RaApiClient.Received(1).GetConsoleIdsAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>());
-        await _factory.ConsoleIconDownloader.Received(1)
-            .DownloadAsync("https://static.retroachievements.org/assets/images/system/md.png", Arg.Any<CancellationToken>());
+            // Assert
+            run.Status.ShouldBe(SyncRunStatus.Succeeded);
+            run.Kind.ShouldBe(SyncKind.ConsoleIcons);
 
-        File.Exists(Path.Combine(_factory.SystemIconStoragePath, "1.png")).ShouldBeTrue();
-        File.Exists(Path.Combine(_factory.SystemIconStoragePath, "3.png")).ShouldBeFalse();
+            await _factory.RaApiClient.Received(1).GetConsoleIdsAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>());
+            await _factory.ConsoleIconDownloader.Received(1)
+                .DownloadAsync("https://static.retroachievements.org/assets/images/system/md.png", Arg.Any<CancellationToken>());
 
-        games.ShouldNotBeNull();
-        var gameDto = games.Single(g => g.RaGameId == 38130);
-        gameDto.ConsoleIconUrl.ShouldNotBeNull();
-        gameDto.ConsoleIconUrl.ShouldEndWith("/system-icons/1.png");
+            console.IconData.ShouldBe(ApiFactory.SamplePngBytes);
+            (await db.Consoles.AnyAsync(c => c.RaConsoleId == 3)).ShouldBeFalse();
 
-        detail.ShouldNotBeNull();
-        detail.ConsoleIconUrl.ShouldEndWith("/system-icons/1.png");
+            games.ShouldNotBeNull();
+            var gameDto = games.Single(g => g.RaGameId == 38130);
+            gameDto.ConsoleIconUrl.ShouldBe(ConsoleIconSyncService.ToDataUrl(ApiFactory.SamplePngBytes, "image/png"));
 
-        status.ShouldNotBeNull();
-        status.Status.ShouldBe(nameof(SyncRunStatus.Succeeded));
+            detail.ShouldNotBeNull();
+            detail.ConsoleIconUrl.ShouldBe(ConsoleIconSyncService.ToDataUrl(ApiFactory.SamplePngBytes, "image/png"));
 
-        iconResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+            status.ShouldNotBeNull();
+            status.Status.ShouldBe(nameof(SyncRunStatus.Succeeded));
+        }
     }
 
     [Fact]

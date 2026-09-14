@@ -13,7 +13,7 @@ export function BoardWinSummary({ rows }: Props) {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-lg font-medium">Board leads</h2>
+      <h2 className="steam-section-heading">Board leads</h2>
       <ul className="divide-y divide-border border-y border-border">
         {rows.map((row) => (
           <li key={row.memberId} className="flex items-center justify-between gap-4 py-3 text-sm">

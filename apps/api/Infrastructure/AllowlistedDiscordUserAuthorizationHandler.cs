@@ -1,33 +1,31 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Options;
-using RetroHiscore.Api.Options;
-
-namespace RetroHiscore.Api.Infrastructure;
-
-public sealed class AllowlistedDiscordUserRequirement : IAuthorizationRequirement;
-
-public sealed class AllowlistedDiscordUserAuthorizationHandler(
-    IOptions<AuthOptions> authOptions) : AuthorizationHandler<AllowlistedDiscordUserRequirement>
-{
-    protected override Task HandleRequirementAsync(
-        AuthorizationHandlerContext context,
-        AllowlistedDiscordUserRequirement requirement)
-    {
-        var discordId = context.User.FindFirst("sub")?.Value
-            ?? context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrWhiteSpace(discordId))
-        {
-            return Task.CompletedTask;
-        }
-
-        var allowed = authOptions.Value.AllowedDiscordUserIds;
-        if (allowed.Any(id => string.Equals(id, discordId, StringComparison.Ordinal)))
-        {
-            context.Succeed(requirement);
-        }
-
-        return Task.CompletedTask;
-    }
-}
-
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using RetroHiscore.Api.Data;
+
+namespace RetroHiscore.Api.Infrastructure;
+
+public sealed class AllowlistedDiscordUserRequirement : IAuthorizationRequirement;
+
+public sealed class AllowlistedDiscordUserAuthorizationHandler(
+    IServiceScopeFactory scopeFactory) : AuthorizationHandler<AllowlistedDiscordUserRequirement>
+{
+    protected override async Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        AllowlistedDiscordUserRequirement requirement)
+    {
+        var discordId = DiscordUserExtensions.GetDiscordUserId(context.User);
+        if (string.IsNullOrWhiteSpace(discordId))
+        {
+            return;
+        }
+
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var exists = await db.Members.AnyAsync(m => m.DiscordId == discordId);
+        if (exists)
+        {
+            context.Succeed(requirement);
+        }
+    }
+}

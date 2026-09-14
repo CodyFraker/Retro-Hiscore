@@ -36,7 +36,7 @@ export function RivalryPicker({ members }: Props) {
         <select
           value={usernameA}
           onChange={(event) => setUsernameA(event.target.value)}
-          className="block w-full rounded border border-border bg-background px-3 py-2 text-sm sm:w-auto"
+          className="block w-full rounded-md bg-input px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-auto"
         >
           {members.map((member) => (
             <option key={member.id} value={member.raUsername}>
@@ -50,7 +50,7 @@ export function RivalryPicker({ members }: Props) {
         <select
           value={usernameB}
           onChange={(event) => setUsernameB(event.target.value)}
-          className="block w-full rounded border border-border bg-background px-3 py-2 text-sm sm:w-auto"
+          className="block w-full rounded-md bg-input px-3 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-auto"
         >
           {members.map((member) => (
             <option key={member.id} value={member.raUsername}>

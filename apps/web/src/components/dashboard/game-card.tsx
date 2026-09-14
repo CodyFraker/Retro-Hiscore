@@ -32,7 +32,7 @@ export function GameCard({ game, recentChangeCount = 0, onDelete, deleting }: Pr
           href={`/games/${game.raGameId}`}
           className="flex min-w-0 flex-1 items-center gap-4 py-5 pl-4 transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded border border-border bg-secondary/40">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-secondary/40 steam-bevel-inset">
             {artUrl ? (
               <Image
                 src={artUrl}

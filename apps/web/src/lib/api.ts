@@ -1,18 +1,9 @@
 import { getServerSession } from "next-auth";
 import { createApiClient } from "@/generated/api-client";
 import { authOptions } from "@/lib/auth-options";
+import { getApiBaseUrl } from "@/lib/api-base-url";
 
-export function getApiBaseUrl() {
-  if (typeof window === "undefined") {
-    return (
-      process.env.API_URL?.replace(/\/$/, "") ||
-      process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ||
-      "http://localhost:18943"
-    );
-  }
-
-  return process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
-}
+export { getApiBaseUrl };
 
 function createAuthorizedFetch(accessToken?: string): typeof fetch {
   return (input, init) => {

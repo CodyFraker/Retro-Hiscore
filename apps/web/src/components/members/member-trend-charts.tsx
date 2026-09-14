@@ -96,7 +96,7 @@ export function MemberTrendCharts({ items }: Props) {
   return (
     <div className="space-y-10">
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Board leads over time</h2>
+        <h2 className="steam-section-heading">Board leads over time</h2>
         {hasLeadTrend ? (
           <div className="h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -143,7 +143,7 @@ export function MemberTrendCharts({ items }: Props) {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Friend rank by board</h2>
+        <h2 className="steam-section-heading">Friend rank by board</h2>
         {hasRankTrend ? (
           <div className="h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
             <ResponsiveContainer width="100%" height="100%">

@@ -12,7 +12,6 @@ public static class GetGameLeaderboardsEndpoint
     public static RouteHandlerBuilder MapGetGameLeaderboards(this IEndpointRouteBuilder routes)
         => routes.MapGet("/api/games/{raGameId:int}/leaderboards", async (
             int raGameId,
-            HttpRequest httpRequest,
             AppDbContext db,
             IOptions<RaOptions> raOptions,
             CancellationToken ct) =>
@@ -24,12 +23,13 @@ public static class GetGameLeaderboardsEndpoint
             }
 
             var memberRows = await db.Members
+                .Where(m => m.RaUsername != null)
                 .OrderBy(m => m.RaUsername)
-                .Select(m => new { m.Id, m.RaUsername, DisplayName = m.DisplayName ?? m.RaUsername, m.AvatarUrl })
+                .Select(m => new { m.Id, m.RaUsername, DisplayName = m.DisplayName ?? m.RaUsername!, m.AvatarUrl })
                 .ToListAsync(ct);
 
             var members = memberRows
-                .Select(m => new StandingMemberDto(m.Id, m.RaUsername, m.DisplayName, m.AvatarUrl))
+                .Select(m => new StandingMemberDto(m.Id, m.RaUsername!, m.DisplayName, m.AvatarUrl))
                 .ToList();
 
             var leaderboards = await db.Leaderboards
@@ -69,14 +69,12 @@ public static class GetGameLeaderboardsEndpoint
             var console = game.ConsoleId is null
                 ? null
                 : await db.Consoles.AsNoTracking().FirstOrDefaultAsync(c => c.RaConsoleId == game.ConsoleId, ct);
-            var requestBase = $"{httpRequest.Scheme}://{httpRequest.Host}{httpRequest.PathBase}";
-
             return Results.Ok(new GameLeaderboardsResponse(
                 game.Id,
                 game.RaGameId,
                 game.Title,
                 game.ConsoleName,
-                ConsoleIconSyncService.ToAbsoluteUrl(game.ConsoleId, console?.IconFileName, requestBase),
+                ConsoleIconSyncService.ToDataUrl(console?.IconData, console?.IconContentType),
                 images.ImageBoxArtUrl,
                 images.ImageIconUrl,
                 images.ImageTitleUrl,

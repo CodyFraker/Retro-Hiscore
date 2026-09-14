@@ -1,15 +1,25 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MemberAvatar } from "@/components/members/member-avatar";
+import { MemberProfileHero } from "@/components/members/member-profile-hero";
+import { MemberRaSummarySection } from "@/components/members/member-ra-summary-section";
 import { MemberStandingsSection } from "@/components/members/member-standings-section";
 import { MemberTrendCharts } from "@/components/members/member-trend-charts";
+import type {
+  MemberRaAchievementHistoryResponse,
+  MemberRaRankHistoryResponse,
+  MemberRaSummaryResponse,
+} from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ raUsername: string }>;
+};
+
+const unavailableRaSummary: MemberRaSummaryResponse = {
+  available: false,
+  unavailableReason: "Could not load RetroAchievements summary.",
+  summary: null,
 };
 
 export default async function MemberProfilePage({ params }: Props) {
@@ -19,6 +29,10 @@ export default async function MemberProfilePage({ params }: Props) {
   const api = await getServerApiClient();
   let detail: Awaited<ReturnType<typeof api.getMember>>;
   let history: Awaited<ReturnType<typeof api.getMemberHistory>>;
+  let raSummary: MemberRaSummaryResponse = unavailableRaSummary;
+  let raRankHistory: MemberRaRankHistoryResponse = { items: [] };
+  let raAchievementHistory: MemberRaAchievementHistoryResponse = { items: [] };
+
   try {
     [detail, history] = await Promise.all([
       api.getMember(raUsername),
@@ -28,35 +42,36 @@ export default async function MemberProfilePage({ params }: Props) {
     notFound();
   }
 
+  try {
+    [raRankHistory, raAchievementHistory] = await Promise.all([
+      api.getMemberRaRankHistory(raUsername, 200),
+      api.getMemberRaAchievementHistory(raUsername, 2000),
+    ]);
+  } catch {
+    raRankHistory = { items: [] };
+    raAchievementHistory = { items: [] };
+  }
+
+  try {
+    raSummary = await api.getMemberRaSummary(raUsername);
+  } catch {
+    raSummary = unavailableRaSummary;
+  }
+
   return (
-    <div className="space-y-10">
-      <div className="space-y-2">
-        <Link
-          href="/members"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4 shrink-0" />
-          All members
-        </Link>
-        <div className="flex items-center gap-4">
-          <MemberAvatar avatarUrl={detail.avatarUrl} displayName={detail.displayName} size={56} />
-          <h1 className="font-[family-name:var(--font-display)] text-3xl text-[var(--accent-retro)]">
-            {detail.displayName}
-          </h1>
-        </div>
-        <p className="font-mono text-sm text-muted-foreground">@{detail.raUsername}</p>
-        <p className="text-sm text-muted-foreground">
-          Leading <span className="font-mono text-foreground">{detail.friendRankOnes}</span> board
-          {detail.friendRankOnes === 1 ? "" : "s"}
-          <span className="mx-2 text-border">·</span>
-          Scored on <span className="font-mono text-foreground">{detail.boardsWithScore}</span>
-        </p>
-      </div>
+    <div className="space-y-8">
+      <MemberProfileHero detail={detail} raSummary={raSummary} />
+
+      <MemberRaSummarySection
+        data={raSummary}
+        rankHistory={raRankHistory.items}
+        achievementHistory={raAchievementHistory.items}
+      />
 
       <MemberTrendCharts items={history.items} />
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium">Current standings</h2>
+        <h2 className="steam-section-heading">Current standings</h2>
         {detail.standings.length === 0 ? (
           <p className="text-muted-foreground">No scores synced yet.</p>
         ) : (

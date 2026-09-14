@@ -49,39 +49,75 @@
 }
 
 :root {
-  --background: #12160f;
-  --foreground: #e8f0d8;
-  --card: #1a2115;
-  --card-foreground: #e8f0d8;
-  --popover: #1a2115;
-  --popover-foreground: #e8f0d8;
-  --primary: #d4a017;
-  --primary-foreground: #1a1405;
-  --secondary: #24301c;
-  --secondary-foreground: #e8f0d8;
-  --muted: #1e2718;
-  --muted-foreground: #9aab86;
-  --accent: #2a3a22;
-  --accent-foreground: #e8f0d8;
+  --steam-olive: #4c5844;
+  --steam-olive-dark: #3f4738;
+  --steam-gold: #968732;
+  --steam-cream: #eff6ee;
+
+  --background: var(--steam-olive-dark);
+  --foreground: var(--steam-cream);
+  --card: var(--steam-olive);
+  --card-foreground: var(--steam-cream);
+  --popover: var(--steam-olive);
+  --popover-foreground: var(--steam-cream);
+  --primary: var(--steam-gold);
+  --primary-foreground: var(--steam-olive-dark);
+  --secondary: color-mix(in oklab, var(--steam-olive), black 10%);
+  --secondary-foreground: var(--steam-cream);
+  --muted: color-mix(in oklab, var(--steam-olive-dark), var(--steam-olive) 45%);
+  --muted-foreground: color-mix(in oklab, var(--steam-cream), var(--steam-olive) 48%);
+  --accent: color-mix(in oklab, var(--steam-olive), white 7%);
+  --accent-foreground: var(--steam-cream);
   --destructive: #c44b3c;
-  --border: #334028;
-  --input: #334028;
-  --ring: #d4a017;
-  --accent-retro: #9be15d;
-  --chart-1: #9be15d;
-  --chart-2: #d4a017;
-  --chart-3: #6ec6ff;
+  --border: color-mix(in oklab, var(--steam-olive), var(--steam-cream) 14%);
+  --input: color-mix(in oklab, var(--steam-olive-dark), black 6%);
+  --ring: var(--steam-gold);
+  --accent-retro: color-mix(in oklab, var(--steam-gold), var(--steam-cream) 38%);
+  --chart-1: #c4b84a;
+  --chart-2: var(--steam-cream);
+  --chart-3: #7a9eae;
   --chart-4: #c44b3c;
-  --chart-5: #9aab86;
-  --radius: 0.4rem;
-  --sidebar: #1a2115;
-  --sidebar-foreground: #e8f0d8;
-  --sidebar-primary: #d4a017;
-  --sidebar-primary-foreground: #1a1405;
-  --sidebar-accent: #24301c;
-  --sidebar-accent-foreground: #e8f0d8;
-  --sidebar-border: #334028;
-  --sidebar-ring: #d4a017;
+  --chart-5: color-mix(in oklab, var(--steam-cream), var(--steam-olive) 38%);
+  --radius: 0.25rem;
+  --sidebar: var(--steam-olive);
+  --sidebar-foreground: var(--steam-cream);
+  --sidebar-primary: var(--steam-gold);
+  --sidebar-primary-foreground: var(--steam-olive-dark);
+  --sidebar-accent: color-mix(in oklab, var(--steam-olive), black 10%);
+  --sidebar-accent-foreground: var(--steam-cream);
+  --sidebar-border: color-mix(in oklab, var(--steam-olive), var(--steam-cream) 14%);
+  --sidebar-ring: var(--steam-gold);
+
+  --steam-bevel-light: color-mix(in oklab, var(--steam-cream), transparent 72%);
+  --steam-bevel-dark: color-mix(in oklab, var(--steam-olive-dark), black 22%);
+}
+
+@utility steam-bevel-raised {
+  border-style: solid;
+  border-width: 1px;
+  border-top-color: var(--steam-bevel-light);
+  border-left-color: var(--steam-bevel-light);
+  border-right-color: var(--steam-bevel-dark);
+  border-bottom-color: var(--steam-bevel-dark);
+}
+
+@utility steam-bevel-inset {
+  border-style: solid;
+  border-width: 1px;
+  border-top-color: var(--steam-bevel-dark);
+  border-left-color: var(--steam-bevel-dark);
+  border-right-color: var(--steam-bevel-light);
+  border-bottom-color: var(--steam-bevel-light);
+}
+
+@utility steam-section-heading {
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+  text-transform: uppercase;
 }
 
 @layer base {
@@ -90,9 +126,12 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image:
-      radial-gradient(ellipse at top, rgba(155, 225, 93, 0.08), transparent 55%),
-      linear-gradient(180deg, #151b11 0%, #0e120c 100%);
+    background-image: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--steam-olive), black 6%) 0%,
+      var(--steam-olive-dark) 45%,
+      color-mix(in oklab, var(--steam-olive-dark), black 8%) 100%
+    );
     background-attachment: scroll;
   }
   @media (min-width: 768px) {
@@ -102,5 +141,15 @@
   }
   html {
     @apply font-sans;
+  }
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    border-style: solid;
+    border-width: 1px;
+    border-top-color: var(--steam-bevel-dark);
+    border-left-color: var(--steam-bevel-dark);
+    border-right-color: var(--steam-bevel-light);
+    border-bottom-color: var(--steam-bevel-light);
   }
 }

@@ -1,27 +1,24 @@
 using Microsoft.EntityFrameworkCore;
 using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Ra;
+using RetroHiscore.Api.Options;
 
 namespace RetroHiscore.Api.Data;
 
 public static class SeedData
 {
     private static readonly int[] DefaultGameIds = [38130, 2291, 789];
-    private static readonly string[] DefaultUsernames = ["ShrimpPoboy", "beefboybilly", "xXScubXx"];
 
-    public static async Task EnsureSeededAsync(AppDbContext db, RaOptions options, CancellationToken cancellationToken = default)
+    public static async Task EnsureSeededAsync(
+        AppDbContext db,
+        RaOptions raOptions,
+        AuthOptions authOptions,
+        CancellationToken cancellationToken = default)
     {
-        var gameIds = (options.TrackedGameIds is { Count: > 0 }
-                ? options.TrackedGameIds.AsEnumerable()
+        var gameIds = (raOptions.TrackedGameIds is { Count: > 0 }
+                ? raOptions.TrackedGameIds.AsEnumerable()
                 : DefaultGameIds)
             .Distinct()
-            .ToList();
-
-        var usernames = (options.TrackedUsernames is { Count: > 0 }
-                ? options.TrackedUsernames.AsEnumerable()
-                : DefaultUsernames)
-            .Where(u => !string.IsNullOrWhiteSpace(u))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
         var existingGameIds = await db.Games
@@ -37,57 +34,49 @@ public static class SeedData
             });
         }
 
-        var existingUsernames = await db.Members
-            .Select(m => m.RaUsername)
-            .ToListAsync(cancellationToken);
-
-        var existingSet = new HashSet<string>(existingUsernames, StringComparer.OrdinalIgnoreCase);
-        foreach (var username in usernames.Where(u => !existingSet.Contains(u)))
-        {
-            db.Members.Add(new Member
-            {
-                RaUsername = username,
-                DisplayName = username
-            });
-        }
-
         if (db.ChangeTracker.HasChanges())
         {
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        await ApplyMemberLinksAsync(db, options, cancellationToken);
+        await BootstrapAdminMembersAsync(db, authOptions, cancellationToken);
     }
 
-    private static async Task ApplyMemberLinksAsync(
+    private static async Task BootstrapAdminMembersAsync(
         AppDbContext db,
-        RaOptions options,
+        AuthOptions authOptions,
         CancellationToken cancellationToken)
     {
-        if (options.MemberLinks is not { Count: > 0 })
+        if (authOptions.AdminDiscordUserIds is not { Count: > 0 })
         {
             return;
         }
 
-        var members = await db.Members.ToListAsync(cancellationToken);
-        var byUsername = members.ToDictionary(m => m.RaUsername, StringComparer.OrdinalIgnoreCase);
+        var existingByDiscord = await db.Members
+            .Where(m => m.DiscordId != null)
+            .ToDictionaryAsync(m => m.DiscordId!, StringComparer.Ordinal, cancellationToken);
 
-        foreach (var link in options.MemberLinks)
+        foreach (var discordId in authOptions.AdminDiscordUserIds
+                     .Select(id => id.Trim())
+                     .Where(id => !string.IsNullOrWhiteSpace(id))
+                     .Distinct(StringComparer.Ordinal))
         {
-            if (string.IsNullOrWhiteSpace(link.DiscordId) || string.IsNullOrWhiteSpace(link.RaUsername))
+            if (existingByDiscord.TryGetValue(discordId, out var member))
             {
+                if (!member.IsAdmin)
+                {
+                    member.IsAdmin = true;
+                }
+
                 continue;
             }
 
-            if (!byUsername.TryGetValue(link.RaUsername, out var member))
+            db.Members.Add(new Member
             {
-                continue;
-            }
-
-            if (string.IsNullOrWhiteSpace(member.DiscordId))
-            {
-                member.DiscordId = link.DiscordId.Trim();
-            }
+                DiscordId = discordId,
+                IsAdmin = true,
+                DisplayName = "Admin"
+            });
         }
 
         if (db.ChangeTracker.HasChanges())

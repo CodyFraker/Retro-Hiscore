@@ -70,22 +70,23 @@ public sealed class AdminOpsBuilder(
         }
 
         var memberRows = await db.Members
+            .Where(m => m.DiscordId != null)
             .Select(m => new
             {
-                m.RaUsername,
-                DisplayName = m.DisplayName ?? m.RaUsername,
+                Label = m.RaUsername ?? m.DisplayName ?? m.DiscordId ?? "Pending",
+                DisplayName = m.DisplayName ?? m.RaUsername ?? m.DiscordId ?? "Pending",
                 HasApiKey = m.RaApiKey != null && m.RaApiKey != "",
                 BoardsWithScore = m.Entries.Count,
                 LastEntrySyncedAt = m.Entries.Max(e => (DateTimeOffset?)e.SyncedAt)
             })
             .OrderBy(m => m.HasApiKey ? 1 : 0)
-            .ThenBy(m => m.RaUsername)
+            .ThenBy(m => m.Label)
             .ToListAsync(cancellationToken);
 
         var membersWithKey = memberRows.Count(m => m.HasApiKey);
         var memberDtos = memberRows
             .Select(m => new AdminMemberCoverageDto(
-                m.RaUsername,
+                m.Label,
                 m.DisplayName,
                 m.HasApiKey,
                 m.BoardsWithScore,

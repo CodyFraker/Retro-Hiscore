@@ -1,10 +1,10 @@
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Features.Admin;
+using RetroHiscore.Api.Features.Auth;
 using RetroHiscore.Api.Features.Dashboard;
 using RetroHiscore.Api.Features.Games;
 using RetroHiscore.Api.Features.Leaderboards;
@@ -47,6 +47,7 @@ builder.Services.AddHttpClient(nameof(DiscordNotificationService));
 
 builder.Services.AddScoped<IRaApiKeyPool, RaApiKeyPool>();
 builder.Services.AddScoped<ILeaderboardSyncService, LeaderboardSyncService>();
+builder.Services.AddScoped<IMemberRaGameProgressSyncService, MemberRaGameProgressSyncService>();
 builder.Services.AddScoped<IGameMetadataSyncService, GameMetadataSyncService>();
 builder.Services.AddScoped<IConsoleIconSyncService, ConsoleIconSyncService>();
 builder.Services.AddScoped<IDiscordNotificationService, DiscordNotificationService>();
@@ -93,21 +94,13 @@ if (!isTesting)
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
     var raOptions = scope.ServiceProvider.GetRequiredService<IOptions<RaOptions>>().Value;
-    await SeedData.EnsureSeededAsync(db, raOptions);
+    var authOptions = scope.ServiceProvider.GetRequiredService<IOptions<AuthOptions>>().Value;
+    await SeedData.EnsureSeededAsync(db, raOptions, authOptions);
 }
 
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
-
-var consoleIconOptions = app.Services.GetRequiredService<IOptions<ConsoleIconSyncOptions>>().Value;
-var systemIconStoragePath = Path.GetFullPath(consoleIconOptions.StoragePath);
-Directory.CreateDirectory(systemIconStoragePath);
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(systemIconStoragePath),
-    RequestPath = ConsoleIconSyncService.RequestPath
-});
 
 if (!isTesting)
 {
@@ -166,6 +159,9 @@ app.MapPutMemberApiKey();
 app.MapPutMemberProfile();
 app.MapGetRivalry();
 app.MapGetMember();
+app.MapGetMemberRaSummary();
+app.MapGetMemberRaRankHistory();
+app.MapGetMemberRaAchievementHistory();
 app.MapGetMemberHistory();
 app.MapGetGames();
 app.MapAddGame();
@@ -181,6 +177,12 @@ app.MapGetMetadataSyncStatus();
 app.MapTriggerConsoleIconSync();
 app.MapGetConsoleIconSyncStatus();
 app.MapGetAdminOps();
+app.MapGetSignInCheck();
+app.MapGetAdminMemberInvites();
+app.MapPostAdminMemberInvite();
+app.MapDeleteAdminMemberInvite();
+app.MapPatchAdminMemberIsAdmin();
+app.MapPutMemberRaAccount();
 
 app.Run();
 

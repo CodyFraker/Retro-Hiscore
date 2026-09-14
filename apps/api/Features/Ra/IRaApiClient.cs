@@ -10,4 +10,17 @@ public interface IRaApiClient
         string usernameOrUlid,
         string? apiKey = null,
         CancellationToken cancellationToken = default);
+
+    Task<RaUserSummaryDto?> GetUserSummaryAsync(
+        string username,
+        string apiKey,
+        int recentGamesCount = 3,
+        int recentAchievementsCount = 8,
+        CancellationToken cancellationToken = default);
+
+    Task<RaGameInfoAndUserProgressDto?> GetGameInfoAndUserProgressAsync(
+        int gameId,
+        string usernameOrUlid,
+        string apiKey,
+        CancellationToken cancellationToken = default);
 }

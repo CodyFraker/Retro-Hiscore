@@ -116,7 +116,7 @@ export default async function RivalryPage({ params }: Props) {
 
       {closestBattles.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-lg font-medium">Closest battles</h2>
+          <h2 className="steam-section-heading">Closest battles</h2>
           <ul className="divide-y divide-border border-y border-border">
             {closestBattles.map(({ game, board }) => (
               <li
