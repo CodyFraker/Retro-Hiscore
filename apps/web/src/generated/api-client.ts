@@ -562,6 +562,9 @@ export interface AdminSyncRunDto {
   startedAt: string;
   finishedAt?: string | null;
   error?: string | null;
+  raGameId?: number | null;
+  gameTitle?: string | null;
+  memberDisplayName?: string | null;
 }
 
 export interface AdminMemberCoverageSummaryDto {
@@ -587,6 +590,43 @@ export interface RecurringJobSnapshotDto {
   lastExecution?: string | null;
   nextExecution?: string | null;
   lastJobState?: string | null;
+  configuredIntervalMinutes?: number | null;
+  configuredIntervalDays?: number | null;
+}
+
+export interface AdminSyncSettingsDto {
+  leaderboard: AdminLeaderboardSyncSettingsDto;
+  recurringJobs: AdminRecurringJobSettingsDto[];
+}
+
+export interface AdminLeaderboardSyncSettingsDto {
+  hotIntervalMinutes: number;
+  coldIntervalMinutes: number;
+  hotActivityWindowHours: number;
+}
+
+export interface AdminRecurringJobSettingsDto {
+  jobId: string;
+  displayName: string;
+  intervalMinutes?: number | null;
+  intervalDays?: number | null;
+}
+
+export interface PatchAdminSyncSettingsRequest {
+  leaderboard?: PatchLeaderboardSyncSettingsRequest;
+  recurringJobs?: PatchRecurringJobSettingsRequest[];
+}
+
+export interface PatchLeaderboardSyncSettingsRequest {
+  hotIntervalMinutes: number;
+  coldIntervalMinutes: number;
+  hotActivityWindowHours: number;
+}
+
+export interface PatchRecurringJobSettingsRequest {
+  jobId: string;
+  intervalMinutes?: number | null;
+  intervalDays?: number | null;
 }
 
 export interface AdminOpsConfigDto {
@@ -708,6 +748,19 @@ export function createApiClient(options: ApiClientOptions) {
       request<GameSourceDto[]>(baseUrl, `/api/games/${raGameId}/sources`, undefined, fetchImpl),
     getGameLeaderboards: (raGameId: number) =>
       request<GameLeaderboardsResponse>(baseUrl, `/api/games/${raGameId}/leaderboards`, undefined, fetchImpl),
+    postGameRefresh: async (raGameId: number) => {
+      const response = await fetchImpl(`${baseUrl.replace(/\/$/, "")}/api/games/${raGameId}/refresh`, {
+        method: "POST",
+      });
+      const body = await response.json();
+      if (response.status === 429) {
+        return { ok: false as const, status: 429 as const, body: body as SyncCooldownResponse };
+      }
+      if (!response.ok) {
+        throw new Error(`API ${response.status}`);
+      }
+      return { ok: true as const, status: 202 as const, body: body as SyncAcceptedResponse };
+    },
     getGameHistory: (raGameId: number, limit?: number, offset?: number) => {
       const params = new URLSearchParams();
       if (limit != null) params.set("limit", String(limit));
@@ -787,6 +840,14 @@ export function createApiClient(options: ApiClientOptions) {
     getConsoleIconSyncStatus: () =>
       request<SyncStatusDto>(baseUrl, "/api/sync/console-icons/status", undefined, fetchImpl),
     getAdminOps: () => request<AdminOpsDto>(baseUrl, "/api/admin/ops", undefined, fetchImpl),
+    getAdminSyncSettings: () =>
+      request<AdminSyncSettingsDto>(baseUrl, "/api/admin/sync-settings", undefined, fetchImpl),
+    patchAdminSyncSettings: (body: PatchAdminSyncSettingsRequest) =>
+      request<AdminSyncSettingsDto>(baseUrl, "/api/admin/sync-settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
     getAdminGames: () => request<AdminGameDto[]>(baseUrl, "/api/admin/games", undefined, fetchImpl),
     getAdminGameTrackQueue: () =>
       request<AdminGameTrackQueueItemDto[]>(baseUrl, "/api/admin/game-track-queue", undefined, fetchImpl),

@@ -10,6 +10,7 @@ import { GameStatsStrip } from "@/components/game/game-stats-strip";
 import { GamePopulationTrendCharts } from "@/components/game/game-population-trend-charts";
 import { GameTrendCharts } from "@/components/game/game-trend-charts";
 import { BoardWinSummary } from "@/components/game/board-win-summary";
+import { GameRefreshButton } from "@/components/game/game-refresh-button";
 import { RetroachievementsLink } from "@/components/game/retroachievements-link";
 import { GameSourcesSection } from "@/components/game/game-sources-section";
 import { getServerApiClient } from "@/lib/api";
@@ -32,6 +33,7 @@ export default async function GamePage({ params }: Props) {
   }
 
   const api = await getServerApiClient();
+  const member = await api.getCurrentMember();
   let data: Awaited<ReturnType<typeof api.getGameLeaderboards>>;
   let history: Awaited<ReturnType<typeof api.getGameHistory>>;
   let populationHistory: Awaited<ReturnType<typeof api.getGameLeaderboardPopulationHistory>>;
@@ -103,7 +105,10 @@ export default async function GamePage({ params }: Props) {
               </p>
             </div>
           </div>
-          <RetroachievementsLink raGameId={data.raGameId} />
+          <div className="flex flex-col items-end gap-3">
+            <GameRefreshButton raGameId={data.raGameId} hasApiKey={member.hasApiKey} />
+            <RetroachievementsLink raGameId={data.raGameId} />
+          </div>
         </div>
       </div>
 

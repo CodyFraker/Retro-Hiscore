@@ -1,4 +1,3 @@
-using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
@@ -12,21 +11,26 @@ namespace RetroHiscore.Api.Features.Sync;
 
 public interface ILeaderboardSyncService
 {
-    Task<SyncRun> SyncAsync(SyncTrigger trigger, CancellationToken cancellationToken = default);
+    Task<SyncRun> SyncGameWithRunAsync(Game game, SyncTrigger trigger, CancellationToken cancellationToken = default);
+    Task<SyncRun> SyncMemberGameWithRunAsync(
+        Game game,
+        Member member,
+        SyncTrigger trigger,
+        Guid? existingRunId = null,
+        CancellationToken cancellationToken = default);
     Task SyncGameAsync(Game game, CancellationToken cancellationToken = default);
     Task SyncGameForMembersAsync(
         Game game,
         IReadOnlyCollection<Guid> memberIds,
         CancellationToken cancellationToken = default);
     bool IsManualCooldownActive(out DateTimeOffset? availableAt);
+    bool IsPerGameRefreshCooldownActive(Guid gameId, Guid memberId, out DateTimeOffset? availableAt);
 }
 
 public sealed class LeaderboardSyncService(
     AppDbContext db,
     IRaApiClient raApiClient,
     IRaApiKeyPool apiKeyPool,
-    IMemberRaGameProgressSyncService memberRaGameProgressSync,
-    IMemberRecentGamesSyncService memberRecentGamesSync,
     IDiscordNotificationService notificationService,
     IOptions<RaOptions> raOptions,
     IOptions<SyncOptions> syncOptions,
@@ -39,7 +43,9 @@ public sealed class LeaderboardSyncService(
     {
         availableAt = null;
         var lastManual = db.SyncRuns
-            .Where(r => r.Kind == SyncKind.LeaderboardScores && r.Trigger == SyncTrigger.Manual)
+            .Where(r => r.Kind == SyncKind.LeaderboardScores
+                && r.Trigger == SyncTrigger.Manual
+                && r.MemberId == null)
             .OrderByDescending(r => r.StartedAt)
             .FirstOrDefault();
 
@@ -58,102 +64,144 @@ public sealed class LeaderboardSyncService(
         return true;
     }
 
-    public async Task<SyncRun> SyncAsync(SyncTrigger trigger, CancellationToken cancellationToken = default)
+    public bool IsPerGameRefreshCooldownActive(Guid gameId, Guid memberId, out DateTimeOffset? availableAt)
+    {
+        availableAt = null;
+        var lastManual = db.SyncRuns
+            .Where(r => r.Kind == SyncKind.LeaderboardScores
+                && r.Trigger == SyncTrigger.Manual
+                && r.GameId == gameId
+                && r.MemberId == memberId)
+            .OrderByDescending(r => r.StartedAt)
+            .FirstOrDefault();
+
+        if (lastManual is null)
+        {
+            return false;
+        }
+
+        var cooldownEnds = lastManual.StartedAt.AddSeconds(_syncOptions.PerGameRefreshCooldownSeconds);
+        if (cooldownEnds <= DateTimeOffset.UtcNow)
+        {
+            return false;
+        }
+
+        availableAt = cooldownEnds;
+        return true;
+    }
+
+    public async Task<SyncRun> SyncGameWithRunAsync(
+        Game game,
+        SyncTrigger trigger,
+        CancellationToken cancellationToken = default)
     {
         var run = new SyncRun
         {
             Kind = SyncKind.LeaderboardScores,
             Trigger = trigger,
             Status = SyncRunStatus.Running,
-            StartedAt = DateTimeOffset.UtcNow
+            StartedAt = DateTimeOffset.UtcNow,
+            GameId = game.Id
         };
         db.SyncRuns.Add(run);
         await db.SaveChangesAsync(cancellationToken);
 
-        var errors = new List<string>();
         var syncedAt = DateTimeOffset.UtcNow;
+        var errors = new List<string>();
 
         try
         {
-            var games = await db.Games.ToListAsync(cancellationToken);
-            var members = await db.Members
-                .Where(m => m.RaUsername != null)
-                .ToListAsync(cancellationToken);
+            await SyncGameForMembersInternalAsync(game, memberIds: null, syncedAt, errors, cancellationToken);
+            run.Status = errors.Count == 0 ? SyncRunStatus.Succeeded : SyncRunStatus.PartialSuccess;
+            run.Error = errors.Count == 0 ? null : string.Join("; ", errors);
 
-            foreach (var game in games)
+            if (run.Status is SyncRunStatus.Succeeded or SyncRunStatus.PartialSuccess)
             {
-                try
-                {
-                    await SyncGameCatalogAsync(game, cancellationToken);
-                    await SyncLeaderboardPopulationCountsAsync(game, syncedAt, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to sync catalog for game {GameId}", game.RaGameId);
-                    errors.Add($"Game {game.RaGameId} catalog: {ex.Message}");
-                }
+                game.LeaderboardScoresSyncedAt = syncedAt;
             }
 
-            foreach (var member in members)
-            {
-                foreach (var game in games)
-                {
-                    try
-                    {
-                        await SyncMemberGameAsync(member, game, syncedAt, cancellationToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogError(ex, "Failed to sync member {Member} for game {GameId}", member.RaUsername, game.RaGameId);
-                        errors.Add($"{member.RaUsername}/{game.RaGameId}: {ex.Message}");
-                    }
-                }
-            }
+            var activity = await ActivityBuilder.BuildForGameAsync(db, game.Id, syncedAt, cancellationToken);
+            await notificationService.NotifyActivityAsync(activity, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Game leaderboard sync failed for {RaGameId}", game.RaGameId);
+            run.Status = SyncRunStatus.Failed;
+            run.Error = ex.Message;
+        }
+        finally
+        {
+            run.FinishedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+        }
 
-            foreach (var member in members)
+        return run;
+    }
+
+    public async Task<SyncRun> SyncMemberGameWithRunAsync(
+        Game game,
+        Member member,
+        SyncTrigger trigger,
+        Guid? existingRunId = null,
+        CancellationToken cancellationToken = default)
+    {
+        SyncRun run;
+        if (existingRunId is { } runId)
+        {
+            run = await db.SyncRuns.FirstAsync(r => r.Id == runId, cancellationToken);
+        }
+        else
+        {
+            run = new SyncRun
             {
-                try
-                {
-                    var summary = await SyncMemberRaRankSnapshotAsync(member, syncedAt, cancellationToken);
-                    if (summary is not null)
-                    {
-                        await memberRaGameProgressSync.SyncMemberGamesFromSummaryAsync(
-                            member,
-                            summary,
-                            syncedAt,
-                            cancellationToken);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to sync RA site rank for member {Member}", member.RaUsername);
-                    errors.Add($"{member.RaUsername} RA rank: {ex.Message}");
-                }
+                Kind = SyncKind.LeaderboardScores,
+                Trigger = trigger,
+                Status = SyncRunStatus.Running,
+                StartedAt = DateTimeOffset.UtcNow,
+                GameId = game.Id,
+                MemberId = member.Id
+            };
+            db.SyncRuns.Add(run);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+
+        var syncedAt = DateTimeOffset.UtcNow;
+        var errors = new List<string>();
+
+        try
+        {
+            try
+            {
+                await SyncGameCatalogAsync(game, cancellationToken);
+                await SyncLeaderboardPopulationCountsAsync(game, syncedAt, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to sync catalog for game {GameId}", game.RaGameId);
+                errors.Add($"catalog: {ex.Message}");
             }
 
             try
             {
-                await memberRecentGamesSync.SyncAllMembersAsync(syncedAt, cancellationToken);
+                await SyncMemberGameAsync(member, game, syncedAt, cancellationToken);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to sync member recent games");
-                errors.Add($"Recent games: {ex.Message}");
+                logger.LogError(ex, "Failed to sync member {Member} for game {GameId}", member.RaUsername, game.RaGameId);
+                errors.Add($"{member.RaUsername}: {ex.Message}");
             }
 
-            await RecomputeFriendRanksAsync(syncedAt, gameId: null, cancellationToken);
+            await RecomputeFriendRanksAsync(syncedAt, game.Id, cancellationToken);
 
-            var activity = await ActivityBuilder.BuildAsync(db, cancellationToken);
-            await notificationService.NotifyActivityAsync(activity, cancellationToken);
-
-            run.Status = errors.Count == 0
-                ? SyncRunStatus.Succeeded
-                : SyncRunStatus.PartialSuccess;
+            run.Status = errors.Count == 0 ? SyncRunStatus.Succeeded : SyncRunStatus.PartialSuccess;
             run.Error = errors.Count == 0 ? null : string.Join("; ", errors);
+
+            var activity = await ActivityBuilder.BuildForGameAsync(db, game.Id, syncedAt, cancellationToken);
+            await notificationService.NotifyActivityAsync(activity, cancellationToken);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Sync run failed");
+            logger.LogError(ex, "Member game sync failed for {RaGameId}", game.RaGameId);
             run.Status = SyncRunStatus.Failed;
             run.Error = ex.Message;
         }
@@ -167,30 +215,24 @@ public sealed class LeaderboardSyncService(
     }
 
     public Task SyncGameAsync(Game game, CancellationToken cancellationToken = default)
-    {
-        return SyncGameForMembersInternalAsync(
-            game,
-            memberIds: null,
-            cancellationToken);
-    }
+        => SyncGameForMembersInternalAsync(game, memberIds: null, DateTimeOffset.UtcNow, errors: null, cancellationToken);
 
     public async Task SyncGameForMembersAsync(
         Game game,
         IReadOnlyCollection<Guid> memberIds,
         CancellationToken cancellationToken = default)
     {
-        var ids = memberIds.Count == 0
-            ? null
-            : memberIds;
-        await SyncGameForMembersInternalAsync(game, ids, cancellationToken);
+        var ids = memberIds.Count == 0 ? null : memberIds;
+        await SyncGameForMembersInternalAsync(game, ids, DateTimeOffset.UtcNow, errors: null, cancellationToken);
     }
 
     private async Task SyncGameForMembersInternalAsync(
         Game game,
         IReadOnlyCollection<Guid>? memberIds,
+        DateTimeOffset syncedAt,
+        List<string>? errors,
         CancellationToken cancellationToken)
     {
-        var syncedAt = DateTimeOffset.UtcNow;
         var membersQuery = db.Members.Where(m => m.RaUsername != null);
         if (memberIds is not null)
         {
@@ -213,6 +255,7 @@ public sealed class LeaderboardSyncService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to sync catalog for game {GameId}", game.RaGameId);
+            errors?.Add($"Game {game.RaGameId} catalog: {ex.Message}");
         }
 
         foreach (var member in members)
@@ -224,6 +267,7 @@ public sealed class LeaderboardSyncService(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to sync member {Member} for game {GameId}", member.RaUsername, game.RaGameId);
+                errors?.Add($"{member.RaUsername}/{game.RaGameId}: {ex.Message}");
             }
         }
 
@@ -401,60 +445,6 @@ public sealed class LeaderboardSyncService(
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<RaUserSummaryDto?> SyncMemberRaRankSnapshotAsync(
-        Member member,
-        DateTimeOffset syncedAt,
-        CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(member.RaUsername))
-        {
-            return null;
-        }
-
-        var preferredKeys = string.IsNullOrWhiteSpace(member.RaApiKey)
-            ? Array.Empty<string>()
-            : new[] { member.RaApiKey };
-
-        var target = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername!;
-        var summary = await apiKeyPool.ExecuteAsync(
-            preferredKeys,
-            (key, ct) => raApiClient.GetUserSummaryAsync(
-                target,
-                key,
-                recentGamesCount: 3,
-                recentAchievementsCount: 0,
-                cancellationToken: ct),
-            cancellationToken);
-
-        if (summary is null)
-        {
-            return null;
-        }
-
-        var hasMetric = summary.Rank is not null
-            || summary.TotalPoints is not null
-            || summary.TotalTruePoints is not null
-            || summary.TotalSoftcorePoints is not null;
-
-        if (hasMetric)
-        {
-            db.MemberRaRankSnapshots.Add(new MemberRaRankSnapshot
-            {
-                MemberId = member.Id,
-                Rank = summary.Rank,
-                TotalRanked = summary.TotalRanked,
-                TotalPoints = summary.TotalPoints,
-                TotalTruePoints = summary.TotalTruePoints,
-                TotalSoftcorePoints = summary.TotalSoftcorePoints,
-                SyncedAt = syncedAt
-            });
-
-            await db.SaveChangesAsync(cancellationToken);
-        }
-
-        return summary;
-    }
-
     private async Task RecomputeFriendRanksAsync(
         DateTimeOffset syncedAt,
         Guid? gameId,
@@ -491,17 +481,4 @@ public sealed class LeaderboardSyncService(
 
         await db.SaveChangesAsync(cancellationToken);
     }
-}
-
-public sealed class SyncJob(ILeaderboardSyncService syncService)
-{
-    [DisableConcurrentExecution(timeoutInSeconds: 60 * 30)]
-    [AutomaticRetry(Attempts = 0)]
-    public Task RunScheduledAsync(CancellationToken cancellationToken = default)
-        => syncService.SyncAsync(SyncTrigger.Scheduled, cancellationToken);
-
-    [DisableConcurrentExecution(timeoutInSeconds: 60 * 30)]
-    [AutomaticRetry(Attempts = 0)]
-    public Task RunManualAsync(CancellationToken cancellationToken = default)
-        => syncService.SyncAsync(SyncTrigger.Manual, cancellationToken);
 }

@@ -19,6 +19,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GameSource> GameSources => Set<GameSource>();
     public DbSet<MemberRecentGamePlay> MemberRecentGamePlays => Set<MemberRecentGamePlay>();
     public DbSet<GameTrackQueue> GameTrackQueues => Set<GameTrackQueue>();
+    public DbSet<SyncLeaderboardSettings> SyncLeaderboardSettings => Set<SyncLeaderboardSettings>();
+    public DbSet<SyncRecurringJob> SyncRecurringJobs => Set<SyncRecurringJob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -134,6 +136,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<SyncRun>(e =>
         {
             e.Property(x => x.Error).HasMaxLength(4000);
+            e.HasIndex(x => new { x.Kind, x.GameId, x.StartedAt });
+            e.HasOne(x => x.Game).WithMany().HasForeignKey(x => x.GameId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne(x => x.Member).WithMany().HasForeignKey(x => x.MemberId).OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<MemberRecentGamePlay>(e =>
@@ -157,6 +162,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.ConsoleName).HasMaxLength(128);
             e.Property(x => x.FailureMessage).HasMaxLength(2000);
             e.HasOne(x => x.ResolvedByMember).WithMany().HasForeignKey(x => x.ResolvedByMemberId);
+        });
+
+        modelBuilder.Entity<SyncLeaderboardSettings>(e =>
+        {
+            e.Property(x => x.Id).ValueGeneratedNever();
+        });
+
+        modelBuilder.Entity<SyncRecurringJob>(e =>
+        {
+            e.HasKey(x => x.JobId);
+            e.Property(x => x.JobId).HasMaxLength(64);
+            e.Property(x => x.DisplayName).HasMaxLength(128).IsRequired();
         });
     }
 }

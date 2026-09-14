@@ -16,6 +16,10 @@ function formatKind(kind: string) {
   switch (kind) {
     case "LeaderboardScores":
       return "Leaderboard scores";
+    case "MemberRank":
+      return "Member RA rank";
+    case "MemberActivity":
+      return "Member activity";
     case "GameMetadata":
       return "Game metadata";
     case "ConsoleIcons":
@@ -141,7 +145,7 @@ export function AdminOpsView({ ops, hangfireDashboardHref }: Props) {
       <Card>
         <CardHeader>
           <CardTitle>Recent sync runs</CardTitle>
-          <CardDescription>Last 15 runs · manual refreshes run inline, not via Hangfire</CardDescription>
+          <CardDescription>Last 15 runs · per-game and member refreshes run via Hangfire jobs</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveTable
@@ -150,6 +154,13 @@ export function AdminOpsView({ ops, hangfireDashboardHref }: Props) {
             emptyMessage={<p className="text-sm text-muted-foreground">No sync runs yet.</p>}
             columns={[
               { header: "Kind", render: (run) => formatKind(run.kind) },
+              {
+                header: "Game",
+                render: (run) =>
+                  run.raGameId != null
+                    ? `${run.gameTitle ?? "Game"} (#${run.raGameId})`
+                    : "—",
+              },
               { header: "Trigger", render: (run) => run.trigger },
               {
                 header: "Status",

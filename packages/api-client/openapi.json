@@ -336,6 +336,34 @@
         }
       }
     },
+    "/api/games/{raGameId}/refresh": {
+      "post": {
+        "operationId": "postGameRefresh",
+        "tags": ["Games"],
+        "summary": "Queues a leaderboard score refresh for the current member on one tracked game using their API key.",
+        "parameters": [
+          {
+            "name": "raGameId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncAcceptedResponse" }
+              }
+            }
+          },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Not Found" },
+          "429": { "description": "Too Many Requests" }
+        }
+      }
+    },
     "/api/games/{raGameId}/leaderboards": {
       "get": {
         "operationId": "getGameLeaderboards",
@@ -694,6 +722,51 @@
               }
             }
           },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/api/admin/sync-settings": {
+      "get": {
+        "operationId": "getAdminSyncSettings",
+        "tags": ["Admin"],
+        "summary": "Returns editable sync schedule settings stored in the database.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminSyncSettingsDto" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      },
+      "patch": {
+        "operationId": "patchAdminSyncSettings",
+        "tags": ["Admin"],
+        "summary": "Updates sync schedule settings and reapplies Hangfire recurring jobs.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PatchAdminSyncSettingsRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminSyncSettingsDto" }
+              }
+            }
+          },
+          "400": { "description": "Bad Request" },
           "401": { "description": "Unauthorized" },
           "403": { "description": "Forbidden" }
         }
@@ -1536,7 +1609,10 @@
           "status": { "type": "string" },
           "startedAt": { "type": "string", "format": "date-time" },
           "finishedAt": { "type": "string", "format": "date-time", "nullable": true },
-          "error": { "type": "string", "nullable": true }
+          "error": { "type": "string", "nullable": true },
+          "raGameId": { "type": "integer", "nullable": true },
+          "gameTitle": { "type": "string", "nullable": true },
+          "memberDisplayName": { "type": "string", "nullable": true }
         }
       },
       "AdminMemberCoverageSummaryDto": {
@@ -1576,7 +1652,67 @@
           "cron": { "type": "string", "nullable": true },
           "lastExecution": { "type": "string", "format": "date-time", "nullable": true },
           "nextExecution": { "type": "string", "format": "date-time", "nullable": true },
-          "lastJobState": { "type": "string", "nullable": true }
+          "lastJobState": { "type": "string", "nullable": true },
+          "configuredIntervalMinutes": { "type": "integer", "nullable": true },
+          "configuredIntervalDays": { "type": "integer", "nullable": true }
+        }
+      },
+      "AdminSyncSettingsDto": {
+        "type": "object",
+        "required": ["leaderboard", "recurringJobs"],
+        "properties": {
+          "leaderboard": { "$ref": "#/components/schemas/AdminLeaderboardSyncSettingsDto" },
+          "recurringJobs": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AdminRecurringJobSettingsDto" }
+          }
+        }
+      },
+      "AdminLeaderboardSyncSettingsDto": {
+        "type": "object",
+        "required": ["hotIntervalMinutes", "coldIntervalMinutes", "hotActivityWindowHours"],
+        "properties": {
+          "hotIntervalMinutes": { "type": "integer" },
+          "coldIntervalMinutes": { "type": "integer" },
+          "hotActivityWindowHours": { "type": "integer" }
+        }
+      },
+      "AdminRecurringJobSettingsDto": {
+        "type": "object",
+        "required": ["jobId", "displayName"],
+        "properties": {
+          "jobId": { "type": "string" },
+          "displayName": { "type": "string" },
+          "intervalMinutes": { "type": "integer", "nullable": true },
+          "intervalDays": { "type": "integer", "nullable": true }
+        }
+      },
+      "PatchAdminSyncSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "leaderboard": { "$ref": "#/components/schemas/PatchLeaderboardSyncSettingsRequest" },
+          "recurringJobs": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PatchRecurringJobSettingsRequest" }
+          }
+        }
+      },
+      "PatchLeaderboardSyncSettingsRequest": {
+        "type": "object",
+        "required": ["hotIntervalMinutes", "coldIntervalMinutes", "hotActivityWindowHours"],
+        "properties": {
+          "hotIntervalMinutes": { "type": "integer" },
+          "coldIntervalMinutes": { "type": "integer" },
+          "hotActivityWindowHours": { "type": "integer" }
+        }
+      },
+      "PatchRecurringJobSettingsRequest": {
+        "type": "object",
+        "required": ["jobId"],
+        "properties": {
+          "jobId": { "type": "string" },
+          "intervalMinutes": { "type": "integer", "nullable": true },
+          "intervalDays": { "type": "integer", "nullable": true }
         }
       },
       "AdminOpsConfigDto": {

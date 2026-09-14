@@ -4,8 +4,9 @@ public class SyncOptions
 {
     public const string SectionName = "Sync";
 
-    public int IntervalMinutes { get; set; } = 15;
     public int ManualCooldownSeconds { get; set; } = 60;
+    public int PerGameRefreshCooldownSeconds { get; set; } = 60;
+    public int DispatchStaggerSeconds { get; set; } = 3;
     public int RecentGamesPerMember { get; set; } = 15;
     public int DashboardRecentGamesLimit { get; set; } = 15;
     public int MaxLeaderboardEligibilityProbesPerSync { get; set; } = 10;

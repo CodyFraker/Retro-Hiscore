@@ -16,6 +16,7 @@ public class Game
     public string? Genre { get; set; }
     public DateTimeOffset? ReleasedAt { get; set; }
     public DateTimeOffset? MetadataSyncedAt { get; set; }
+    public DateTimeOffset? LeaderboardScoresSyncedAt { get; set; }
     public ICollection<Leaderboard> Leaderboards { get; set; } = new List<Leaderboard>();
     public ICollection<GameSource> Sources { get; set; } = new List<GameSource>();
 }

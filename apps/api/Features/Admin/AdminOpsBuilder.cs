@@ -11,7 +11,7 @@ namespace RetroHiscore.Api.Features.Admin;
 public sealed class AdminOpsBuilder(
     AppDbContext db,
     ILeaderboardSyncService leaderboardSyncService,
-    IOptions<SyncOptions> syncOptions,
+    ISyncSettingsStore syncSettingsStore,
     IOptions<RaOptions> raOptions,
     IOptions<HangfireDashboardOptions> hangfireOptions,
     IAdminSchedulerReader schedulerReader)
@@ -20,10 +20,14 @@ public sealed class AdminOpsBuilder(
 
     public async Task<AdminOpsDto> BuildAsync(CancellationToken cancellationToken = default)
     {
-        var sync = syncOptions.Value;
-        var intervalMinutes = Math.Clamp(sync.IntervalMinutes, 1, 60);
+        var policy = await syncSettingsStore.GetLeaderboardPolicyAsync(cancellationToken);
+        var intervalMinutes = Math.Clamp(policy.HotIntervalMinutes, 1, 60);
+        var recurringJobSettings = await syncSettingsStore.GetRecurringJobsAsync(cancellationToken);
+        var configuredByJobId = recurringJobSettings.ToDictionary(j => j.JobId);
 
         var recentRuns = await db.SyncRuns
+            .Include(r => r.Game)
+            .Include(r => r.Member)
             .OrderByDescending(r => r.StartedAt)
             .Take(RecentRunLimit)
             .Select(r => new AdminSyncRunDto(
@@ -33,7 +37,12 @@ public sealed class AdminOpsBuilder(
                 r.Status.ToString(),
                 r.StartedAt,
                 r.FinishedAt,
-                r.Error))
+                r.Error,
+                r.Game != null ? r.Game.RaGameId : null,
+                r.Game != null ? r.Game.Title : null,
+                r.Member != null
+                    ? (r.Member.DisplayName ?? r.Member.RaUsername ?? r.Member.DiscordId)
+                    : null))
             .ToListAsync(cancellationToken);
 
         var latestLeaderboard = await db.SyncRuns
@@ -57,16 +66,18 @@ public sealed class AdminOpsBuilder(
 
         leaderboardSyncService.IsManualCooldownActive(out var manualCooldownUntil);
 
-        var recurringJobs = schedulerReader.GetRecurringJobs();
-        var leaderboardRecurring = recurringJobs.FirstOrDefault(j => j.JobId == "ra-leaderboard-sync");
+        var recurringJobs = EnrichRecurringJobs(schedulerReader.GetRecurringJobs(), configuredByJobId);
+        var dispatchRecurring = recurringJobs.FirstOrDefault(j => j.JobId == SyncRecurringJobIds.LeaderboardDispatch);
+        configuredByJobId.TryGetValue(SyncRecurringJobIds.LeaderboardDispatch, out var dispatchSettings);
 
-        DateTimeOffset? nextScheduledAt = leaderboardRecurring?.NextExecution is { } next
+        DateTimeOffset? nextScheduledAt = dispatchRecurring?.NextExecution is { } next
             ? new DateTimeOffset(DateTime.SpecifyKind(next, DateTimeKind.Utc))
             : null;
 
         if (nextScheduledAt is null && lastSuccessfulLeaderboard?.FinishedAt is { } lastFinished)
         {
-            nextScheduledAt = lastFinished.AddMinutes(intervalMinutes);
+            var dispatchMinutes = Math.Clamp(dispatchSettings?.IntervalMinutes ?? 5, 1, 60);
+            nextScheduledAt = lastFinished.AddMinutes(dispatchMinutes);
         }
 
         var memberRows = await db.Members
@@ -138,6 +149,27 @@ public sealed class AdminOpsBuilder(
                 hangfireDashboardUrl));
     }
 
+    private static IReadOnlyList<RecurringJobSnapshotDto> EnrichRecurringJobs(
+        IReadOnlyList<RecurringJobSnapshotDto> snapshots,
+        IReadOnlyDictionary<string, Domain.SyncRecurringJob> configuredByJobId)
+    {
+        return snapshots
+            .Select(job =>
+            {
+                if (!configuredByJobId.TryGetValue(job.JobId, out var configured))
+                {
+                    return job;
+                }
+
+                return job with
+                {
+                    ConfiguredIntervalMinutes = configured.IntervalMinutes,
+                    ConfiguredIntervalDays = configured.IntervalDays
+                };
+            })
+            .ToList();
+    }
+
     private static string DeriveOverallStatus(SyncRun? latestLeaderboard)
     {
         if (latestLeaderboard is null)
@@ -179,7 +211,10 @@ public sealed record AdminSyncRunDto(
     string Status,
     DateTimeOffset StartedAt,
     DateTimeOffset? FinishedAt,
-    string? Error);
+    string? Error,
+    int? RaGameId,
+    string? GameTitle,
+    string? MemberDisplayName);
 
 public sealed record AdminMemberCoverageSummaryDto(int MembersWithApiKey, int TotalMembers);
 

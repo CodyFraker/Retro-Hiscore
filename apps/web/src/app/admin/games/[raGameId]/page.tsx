@@ -30,17 +30,20 @@ export default async function AdminGameDetailPage({ params }: Props) {
     notFound();
   }
 
+  let game;
+  let sources;
   try {
     const api = await getServerApiClient();
     const games = await api.getAdminGames();
-    const game = games.find((g) => g.raGameId === raGameId);
+    game = games.find((g) => g.raGameId === raGameId);
     if (!game) {
       notFound();
     }
 
-    const sources = await api.getAdminGameSources(raGameId);
-    return <AdminGameManagePanel game={game} initialSources={sources} />;
+    sources = await api.getAdminGameSources(raGameId);
   } catch {
     notFound();
   }
+
+  return <AdminGameManagePanel game={game} initialSources={sources} />;
 }

@@ -1,6 +1,11 @@
 "use server";
 
-import type { AdminGameDto, GameSourceDto, UpsertGameSourceRequest } from "@/generated/api-client";
+import type {
+  AdminGameDto,
+  GameSourceDto,
+  PatchAdminSyncSettingsRequest,
+  UpsertGameSourceRequest,
+} from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
 import { actionErrorMessage, formatAddGameError } from "@/lib/action-error";
 
@@ -101,6 +106,18 @@ export async function deleteAdminGameSourceAction(
     return { ok: true };
   } catch (error) {
     return { ok: false, error: actionErrorMessage(error, "Delete failed") };
+  }
+}
+
+export async function patchAdminSyncSettingsAction(
+  body: PatchAdminSyncSettingsRequest,
+): Promise<AdminActionResult> {
+  try {
+    const api = await getServerApiClient();
+    await api.patchAdminSyncSettings(body);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: actionErrorMessage(error, "Failed to save sync schedules") };
   }
 }
 

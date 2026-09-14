@@ -8,7 +8,10 @@ namespace RetroHiscore.Api.Features.Sync;
 public static class TriggerSyncEndpoint
 {
     public static RouteHandlerBuilder MapTriggerSync(this IEndpointRouteBuilder routes)
-        => routes.MapPost("/api/sync", async (ILeaderboardSyncService syncService, CancellationToken ct) =>
+        => routes.MapPost("/api/sync", async (
+            ILeaderboardSyncService syncService,
+            ILeaderboardSyncDispatcher dispatcher,
+            CancellationToken ct) =>
         {
             if (syncService.IsManualCooldownActive(out var availableAt))
             {
@@ -17,12 +20,15 @@ public static class TriggerSyncEndpoint
                     statusCode: StatusCodes.Status429TooManyRequests);
             }
 
-            var run = await syncService.SyncAsync(SyncTrigger.Manual, ct);
-            return Results.Accepted($"/api/sync/status", new SyncAcceptedResponse(run.Id.ToString()));
+            var enqueued = await dispatcher.DispatchDueGamesAsync(SyncTrigger.Manual, forceAll: true, ct);
+            return Results.Accepted(
+                "/api/sync/status",
+                new SyncAcceptedResponse($"enqueued-{enqueued}"));
         })
         .WithName("TriggerSync")
         .WithTags("Sync")
-        .RequireApiAuth();
+        .WithSummary("Admin: enqueue leaderboard sync jobs for all tracked games.")
+        .RequireAdmin();
 }
 
 public static class GetSyncStatusEndpoint

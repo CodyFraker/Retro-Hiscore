@@ -1,6 +1,6 @@
 "use client";
 
-import { Image } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ export function RefreshMetadataButton({ variant = "button" }: Props) {
   if (variant === "menu") {
     return (
       <DropdownMenuItem disabled={pending} onClick={runSync}>
-        <Image />
+        <ImageIcon aria-hidden />
         {pending ? "Updating art…" : "Refresh game art"}
       </DropdownMenuItem>
     );
@@ -40,7 +40,7 @@ export function RefreshMetadataButton({ variant = "button" }: Props) {
   return (
     <div className="flex flex-col items-end gap-1">
       <Button type="button" variant="secondary" disabled={pending} onClick={runSync}>
-        <Image />
+        <ImageIcon aria-hidden />
         {pending ? "Updating art…" : "Refresh game art"}
       </Button>
       {message && <p className="text-xs text-muted-foreground">{message}</p>}

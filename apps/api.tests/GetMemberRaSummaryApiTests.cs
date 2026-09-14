@@ -183,8 +183,8 @@ public class GetMemberRaSummaryApiTests : IAsyncLifetime
             {
                 MemberId = member.Id,
                 RaAchievementId = 42,
-                DateEarned = DateTimeOffset.Parse("2024-06-01 10:00:00"),
-                DateEarnedHardcore = DateTimeOffset.Parse("2024-06-01 10:00:00"),
+                DateEarned = new DateTimeOffset(2024, 6, 1, 10, 0, 0, TimeSpan.Zero),
+                DateEarnedHardcore = new DateTimeOffset(2024, 6, 1, 10, 0, 0, TimeSpan.Zero),
                 FirstDetectedAt = DateTimeOffset.UtcNow
             });
             await db.SaveChangesAsync();

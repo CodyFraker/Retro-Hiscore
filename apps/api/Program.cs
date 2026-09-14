@@ -47,6 +47,9 @@ builder.Services.AddHttpClient(nameof(DiscordNotificationService));
 
 builder.Services.AddScoped<IRaApiKeyPool, RaApiKeyPool>();
 builder.Services.AddScoped<ILeaderboardSyncService, LeaderboardSyncService>();
+builder.Services.AddScoped<ILeaderboardSyncDispatcher, LeaderboardSyncDispatcher>();
+builder.Services.AddScoped<IMemberActivitySyncService, MemberActivitySyncService>();
+builder.Services.AddScoped<IMemberRankSyncService, MemberRankSyncService>();
 builder.Services.AddScoped<IMemberRaGameProgressSyncService, MemberRaGameProgressSyncService>();
 builder.Services.AddScoped<IGameTrackQueueService, GameTrackQueueService>();
 builder.Services.AddScoped<IMemberRecentGamesSyncService, MemberRecentGamesSyncService>();
@@ -54,16 +57,31 @@ builder.Services.AddScoped<IGameMetadataSyncService, GameMetadataSyncService>();
 builder.Services.AddScoped<IConsoleIconSyncService, ConsoleIconSyncService>();
 builder.Services.AddScoped<IDiscordNotificationService, DiscordNotificationService>();
 builder.Services.AddScoped<AdminOpsBuilder>();
+builder.Services.AddScoped<ISyncSettingsStore, SyncSettingsStore>();
 if (isTesting)
 {
     builder.Services.AddSingleton<IAdminSchedulerReader, NullAdminSchedulerReader>();
+    builder.Services.AddSingleton<IRecurringSyncJobRegistrar, NullRecurringSyncJobRegistrar>();
 }
 else
 {
     builder.Services.AddSingleton<IAdminSchedulerReader, HangfireAdminSchedulerReader>();
+    builder.Services.AddScoped<IRecurringSyncJobRegistrar, RecurringSyncJobRegistrar>();
 }
-builder.Services.AddTransient<SyncJob>();
+builder.Services.AddTransient<MemberActivitySyncJob>();
+builder.Services.AddTransient<MemberRankSyncJob>();
+builder.Services.AddTransient<LeaderboardSyncDispatchJob>();
+builder.Services.AddTransient<GameLeaderboardSyncJob>();
+builder.Services.AddTransient<MemberGameLeaderboardSyncJob>();
 builder.Services.AddTransient<GameMetadataSyncJob>();
+if (isTesting)
+{
+    builder.Services.AddSingleton<ILeaderboardSyncJobEnqueuer, NullLeaderboardSyncJobEnqueuer>();
+}
+else
+{
+    builder.Services.AddSingleton<ILeaderboardSyncJobEnqueuer, HangfireLeaderboardSyncJobEnqueuer>();
+}
 
 if (!isTesting)
 {
@@ -95,6 +113,9 @@ if (!isTesting)
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
+    RecurringJob.RemoveIfExists("ra-leaderboard-sync");
+    var registrar = scope.ServiceProvider.GetRequiredService<IRecurringSyncJobRegistrar>();
+    await registrar.RegisterAllAsync();
 }
 
 app.UseCors();
@@ -109,16 +130,6 @@ if (!isTesting)
         Authorization = [new DashboardSecretAuthorizationFilter(hangfireOptions.DashboardSecret)]
     });
 
-    var syncOptions = app.Services.GetRequiredService<IOptions<SyncOptions>>().Value;
-    RecurringJob.AddOrUpdate<SyncJob>(
-        "ra-leaderboard-sync",
-        job => job.RunScheduledAsync(CancellationToken.None),
-        Cron.MinuteInterval(Math.Clamp(syncOptions.IntervalMinutes, 1, 60)));
-
-    RecurringJob.AddOrUpdate<GameMetadataSyncJob>(
-        "ra-game-metadata-sync",
-        job => job.RunScheduledAsync(CancellationToken.None),
-        Cron.Weekly);
 }
 
 app.MapOpenApi();
@@ -167,6 +178,7 @@ app.MapGetGameLeaderboards();
 app.MapGetGameHistory();
 app.MapGetGameLeaderboardPopulationHistory();
 app.MapGetGameSources();
+app.MapPostGameRefresh();
 app.MapGetLeaderboard();
 app.MapGetLeaderboardHistory();
 app.MapTriggerSync();
@@ -176,6 +188,8 @@ app.MapGetMetadataSyncStatus();
 app.MapTriggerConsoleIconSync();
 app.MapGetConsoleIconSyncStatus();
 app.MapGetAdminOps();
+app.MapGetAdminSyncSettings();
+app.MapPatchAdminSyncSettings();
 app.MapGetAdminGames();
 app.MapPostAdminGame();
 app.MapGetAdminGameTrackQueue();

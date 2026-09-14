@@ -10,4 +10,6 @@ public sealed record RecurringJobSnapshotDto(
     string? Cron,
     DateTime? LastExecution,
     DateTime? NextExecution,
-    string? LastJobState);
+    string? LastJobState,
+    int? ConfiguredIntervalMinutes,
+    int? ConfiguredIntervalDays);

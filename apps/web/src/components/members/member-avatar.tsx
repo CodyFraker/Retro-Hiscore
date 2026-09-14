@@ -13,7 +13,7 @@ export function MemberAvatar({ avatarUrl, displayName, size = 28, className = ""
     return (
       <Image
         src={avatarUrl}
-        alt=""
+        alt={displayName}
         width={size}
         height={size}
         className={`shrink-0 rounded-full ${className}`}

@@ -1,11 +1,11 @@
 using Hangfire;
 using Hangfire.Storage;
+using RetroHiscore.Api.Features.Sync;
 
 namespace RetroHiscore.Api.Features.Admin;
 
 public sealed class HangfireAdminSchedulerReader : IAdminSchedulerReader
 {
-    private static readonly string[] TrackedJobIds = ["ra-leaderboard-sync", "ra-game-metadata-sync"];
 
     public IReadOnlyList<RecurringJobSnapshotDto> GetRecurringJobs()
     {
@@ -14,11 +14,11 @@ public sealed class HangfireAdminSchedulerReader : IAdminSchedulerReader
         var byId = recurring.ToDictionary(j => j.Id, StringComparer.Ordinal);
 
         var results = new List<RecurringJobSnapshotDto>();
-        foreach (var jobId in TrackedJobIds)
+        foreach (var jobId in SyncRecurringJobIds.All)
         {
             if (!byId.TryGetValue(jobId, out var job))
             {
-                results.Add(new RecurringJobSnapshotDto(jobId, null, null, null, null));
+                results.Add(new RecurringJobSnapshotDto(jobId, null, null, null, null, null, null));
                 continue;
             }
 
@@ -36,7 +36,9 @@ public sealed class HangfireAdminSchedulerReader : IAdminSchedulerReader
                 job.Cron,
                 lastExecution,
                 job.NextExecution,
-                lastState));
+                lastState,
+                null,
+                null));
         }
 
         return results;

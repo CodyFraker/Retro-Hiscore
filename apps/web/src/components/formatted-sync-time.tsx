@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { formatSyncTime, formatSyncTimeUtc } from "@/lib/format";
 
 type Props = {
   value: string;
 };
 
-export function FormattedSyncTime({ value }: Props) {
-  const [formatted, setFormatted] = useState(() => formatSyncTimeUtc(value));
+function emptySubscribe() {
+  return () => {};
+}
 
-  useEffect(() => {
-    setFormatted(formatSyncTime(value));
-  }, [value]);
+export function FormattedSyncTime({ value }: Props) {
+  const formatted = useSyncExternalStore(
+    emptySubscribe,
+    () => formatSyncTime(value),
+    () => formatSyncTimeUtc(value),
+  );
 
   return <>{formatted}</>;
 }

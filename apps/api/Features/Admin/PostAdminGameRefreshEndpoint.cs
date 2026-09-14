@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
+using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Ra;
 using RetroHiscore.Api.Features.Sync;
 using RetroHiscore.Api.Infrastructure;
@@ -13,7 +14,7 @@ public static class PostAdminGameRefreshEndpoint
             int raGameId,
             AppDbContext db,
             IGameMetadataSyncService gameMetadataSync,
-            ILeaderboardSyncService leaderboardSync,
+            ILeaderboardSyncJobEnqueuer jobEnqueuer,
             IOptions<RaOptions> raOptions,
             CancellationToken ct) =>
         {
@@ -21,18 +22,19 @@ public static class PostAdminGameRefreshEndpoint
                 raGameId,
                 db,
                 gameMetadataSync,
-                leaderboardSync,
                 ct);
             if (error is not null)
             {
                 return error;
             }
 
+            jobEnqueuer.EnqueueFullGameSync(raGameId, SyncTrigger.Manual);
+
             var dto = await AdminGameMapper.ToDtoAsync(db, game!, raOptions, ct);
             return Results.Ok(dto);
         })
         .WithName("PostAdminGameRefresh")
         .WithTags("Admin")
-        .WithSummary("Refreshes RetroAchievements metadata and friend leaderboard scores for one tracked game.")
+        .WithSummary("Refreshes RetroAchievements metadata and queues a full friend leaderboard sync for one tracked game.")
         .RequireAdmin();
 }

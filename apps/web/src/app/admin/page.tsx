@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { AdminMemberInvitesSection } from "@/components/admin/admin-member-invites-section";
 import { AdminOpsView } from "@/components/admin/admin-ops-view";
+import { AdminSyncSettingsSection } from "@/components/admin/admin-sync-settings-section";
 import { authOptions } from "@/lib/auth-options";
 import { getServerApiClient } from "@/lib/api";
 
@@ -27,17 +28,16 @@ export default async function AdminPage() {
     );
   }
 
+  let ops;
+  let invites;
+  let syncSettings;
   try {
     const api = await getServerApiClient();
-    const [ops, invites] = await Promise.all([api.getAdminOps(), api.getAdminMemberInvites()]);
-    return (
-      <div className="space-y-10">
-        <section className="rounded border border-border p-5">
-          <AdminMemberInvitesSection initialInvites={invites} />
-        </section>
-        <AdminOpsView ops={ops} hangfireDashboardHref={resolveHangfireHref(ops.config.hangfireDashboardUrl)} />
-      </div>
-    );
+    [ops, invites, syncSettings] = await Promise.all([
+      api.getAdminOps(),
+      api.getAdminMemberInvites(),
+      api.getAdminSyncSettings(),
+    ]);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load admin metrics";
     const forbidden = message.includes("403");
@@ -52,4 +52,16 @@ export default async function AdminPage() {
       </div>
     );
   }
+
+  const syncSettingsKey = JSON.stringify(syncSettings);
+
+  return (
+    <div className="space-y-10">
+      <section className="rounded border border-border p-5">
+        <AdminMemberInvitesSection initialInvites={invites} />
+      </section>
+      <AdminSyncSettingsSection key={syncSettingsKey} initialSettings={syncSettings} />
+      <AdminOpsView ops={ops} hangfireDashboardHref={resolveHangfireHref(ops.config.hangfireDashboardUrl)} />
+    </div>
+  );
 }

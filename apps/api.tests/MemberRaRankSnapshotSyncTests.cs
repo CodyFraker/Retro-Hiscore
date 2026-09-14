@@ -61,7 +61,7 @@ public class MemberRaRankSnapshotSyncTests : IAsyncLifetime
             });
 
         using var scope = _factory.Services.CreateScope();
-        var sync = scope.ServiceProvider.GetRequiredService<ILeaderboardSyncService>();
+        var sync = scope.ServiceProvider.GetRequiredService<IMemberRankSyncService>();
 
         // Act
         var run = await sync.SyncAsync(SyncTrigger.Manual);

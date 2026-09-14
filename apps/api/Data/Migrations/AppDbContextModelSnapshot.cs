@@ -59,6 +59,9 @@ namespace RetroHiscore.Api.Data.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<DateTimeOffset?>("LeaderboardScoresSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("MetadataSyncedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -118,6 +121,53 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.HasIndex("GameId");
 
                     b.ToTable("GameSources");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameTrackQueue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConsoleName")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("EnqueuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FailureMessage")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("RaGameId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ResolvedByMemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RaGameId");
+
+                    b.HasIndex("ResolvedByMemberId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("RaGameId", "Status");
+
+                    b.ToTable("GameTrackQueues");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.Leaderboard", b =>
@@ -377,6 +427,55 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.ToTable("MemberRaRankSnapshots");
                 });
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.MemberRecentGamePlay", b =>
+                {
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RaGameId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ConsoleId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ConsoleName")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ImageBoxArt")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ImageIcon")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("LastPlayedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("NumAchieved")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("NumPossibleAchievements")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("SyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("MemberId", "RaGameId");
+
+                    b.HasIndex("LastPlayedAt");
+
+                    b.HasIndex("RaGameId");
+
+                    b.ToTable("MemberRecentGamePlays");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.RaAchievement", b =>
                 {
                     b.Property<int>("RaAchievementId")
@@ -453,6 +552,53 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.ToTable("Consoles", (string)null);
                 });
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.SyncLeaderboardSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ColdIntervalMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HotActivityWindowHours")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HotIntervalMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SyncLeaderboardSettings");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.SyncRecurringJob", b =>
+                {
+                    b.Property<string>("JobId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int?>("IntervalDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("IntervalMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("JobId");
+
+                    b.ToTable("SyncRecurringJobs");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.SyncRun", b =>
                 {
                     b.Property<Guid>("Id")
@@ -466,8 +612,14 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("GameId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Kind")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("MemberId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("timestamp with time zone");
@@ -480,103 +632,33 @@ namespace RetroHiscore.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("MemberId");
+
+                    b.HasIndex("Kind", "GameId", "StartedAt");
+
                     b.ToTable("SyncRuns");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameSource", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Game", "Game")
+                        .WithMany("Sources")
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.GameTrackQueue", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "ResolvedByMember")
+                        .WithMany()
+                        .HasForeignKey("ResolvedByMemberId");
 
-                    b.Property<string>("ConsoleName")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<DateTimeOffset>("EnqueuedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("FailureMessage")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<int>("RaGameId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset?>("ResolvedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("ResolvedByMemberId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RaGameId");
-
-                    b.HasIndex("ResolvedByMemberId");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("RaGameId", "Status");
-
-                    b.ToTable("GameTrackQueues");
-                });
-
-            modelBuilder.Entity("RetroHiscore.Api.Domain.MemberRecentGamePlay", b =>
-                {
-                    b.Property<Guid>("MemberId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("RaGameId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ConsoleId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ConsoleName")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
-                    b.Property<string>("ImageBoxArt")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ImageIcon")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTimeOffset>("LastPlayedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("NumAchieved")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("NumPossibleAchievements")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTimeOffset>("SyncedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.HasKey("MemberId", "RaGameId");
-
-                    b.HasIndex("LastPlayedAt");
-
-                    b.HasIndex("RaGameId");
-
-                    b.ToTable("MemberRecentGamePlays");
+                    b.Navigation("ResolvedByMember");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.Leaderboard", b =>
@@ -669,26 +751,6 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Navigation("Member");
                 });
 
-            modelBuilder.Entity("RetroHiscore.Api.Domain.GameSource", b =>
-                {
-                    b.HasOne("RetroHiscore.Api.Domain.Game", "Game")
-                        .WithMany("Sources")
-                        .HasForeignKey("GameId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Game");
-                });
-
-            modelBuilder.Entity("RetroHiscore.Api.Domain.GameTrackQueue", b =>
-                {
-                    b.HasOne("RetroHiscore.Api.Domain.Member", "ResolvedByMember")
-                        .WithMany()
-                        .HasForeignKey("ResolvedByMemberId");
-
-                    b.Navigation("ResolvedByMember");
-                });
-
             modelBuilder.Entity("RetroHiscore.Api.Domain.MemberRecentGamePlay", b =>
                 {
                     b.HasOne("RetroHiscore.Api.Domain.Member", "Member")
@@ -696,6 +758,23 @@ namespace RetroHiscore.Api.Data.Migrations
                         .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Member");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.SyncRun", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Game", "Game")
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Game");
 
                     b.Navigation("Member");
                 });

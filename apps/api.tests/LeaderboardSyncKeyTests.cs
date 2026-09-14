@@ -41,13 +41,15 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
 
         using var scope = _factory.Services.CreateScope();
         var sync = scope.ServiceProvider.GetRequiredService<ILeaderboardSyncService>();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var game = await db.Games.FirstAsync();
 
         // Act
-        var run = await sync.SyncAsync(SyncTrigger.Manual);
+        var run = await sync.SyncGameWithRunAsync(game, SyncTrigger.Manual);
 
         // Assert
         run.Status.ShouldBe(SyncRunStatus.Succeeded);
-        await _factory.RaApiClient.Received(3).GetUserGameLeaderboardsAsync(
+        await _factory.RaApiClient.Received(1).GetUserGameLeaderboardsAsync(
             Arg.Any<int>(),
             Arg.Any<string>(),
             Arg.Any<string?>(),
@@ -87,9 +89,11 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
 
         using var scope = _factory.Services.CreateScope();
         var sync = scope.ServiceProvider.GetRequiredService<ILeaderboardSyncService>();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var game = await db.Games.FirstAsync();
 
         // Act
-        await sync.SyncAsync(SyncTrigger.Manual);
+        await sync.SyncGameWithRunAsync(game, SyncTrigger.Manual);
 
         // Assert
         capturedKey.ShouldBe("shrimp-key");
@@ -146,9 +150,11 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
 
         using var scope = _factory.Services.CreateScope();
         var sync = scope.ServiceProvider.GetRequiredService<ILeaderboardSyncService>();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var game = await db.Games.FirstAsync();
 
         // Act
-        var run = await sync.SyncAsync(SyncTrigger.Manual);
+        var run = await sync.SyncGameWithRunAsync(game, SyncTrigger.Manual);
 
         // Assert
         run.Status.ShouldBe(SyncRunStatus.Succeeded);

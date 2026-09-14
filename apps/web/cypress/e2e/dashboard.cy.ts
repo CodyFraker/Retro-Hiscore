@@ -8,9 +8,10 @@ describe("Retro Hiscore dashboard", () => {
     cy.contains("td", "—").should("exist");
   });
 
-  it("queues a manual refresh", () => {
+  it("queues a per-game refresh", () => {
     cy.visit("/");
+    cy.contains("Game 38130").click();
     cy.contains("button", "Refresh scores").click();
-    cy.contains("Sync queued");
+    cy.contains("Refresh queued");
   });
 });

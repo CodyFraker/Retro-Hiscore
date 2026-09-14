@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using RetroHiscore.Api.Data;
@@ -128,9 +129,11 @@ public class LeaderboardApiTests : IAsyncLifetime
 
         using var scope = _factory.Services.CreateScope();
         var sync = scope.ServiceProvider.GetRequiredService<ILeaderboardSyncService>();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var game = await db.Games.SingleAsync(g => g.RaGameId == 38130);
 
         // Act
-        var run = await sync.SyncAsync(SyncTrigger.Manual);
+        var run = await sync.SyncGameWithRunAsync(game, SyncTrigger.Manual);
         var client = _factory.CreateAuthenticatedClient();
         var payload = await client.GetFromJsonAsync<GameLeaderboardsResponse>("/api/games/38130/leaderboards", JsonOptions);
 
@@ -167,7 +170,7 @@ public class LeaderboardApiTests : IAsyncLifetime
             await db.SaveChangesAsync();
         }
 
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
         // Act
         var response = await client.PostAsync("/api/sync", null);

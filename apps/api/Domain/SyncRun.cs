@@ -18,7 +18,9 @@ public enum SyncKind
 {
     LeaderboardScores = 0,
     GameMetadata = 1,
-    ConsoleIcons = 2
+    ConsoleIcons = 2,
+    MemberRank = 3,
+    MemberActivity = 4
 }
 
 public class SyncRun
@@ -30,4 +32,8 @@ public class SyncRun
     public DateTimeOffset StartedAt { get; set; }
     public DateTimeOffset? FinishedAt { get; set; }
     public string? Error { get; set; }
+    public Guid? GameId { get; set; }
+    public Game? Game { get; set; }
+    public Guid? MemberId { get; set; }
+    public Member? Member { get; set; }
 }

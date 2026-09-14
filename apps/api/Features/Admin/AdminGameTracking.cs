@@ -90,7 +90,6 @@ public static class AdminGameTracking
         int raGameId,
         AppDbContext db,
         IGameMetadataSyncService gameMetadataSync,
-        ILeaderboardSyncService leaderboardSync,
         CancellationToken ct)
     {
         var game = await db.Games.FirstOrDefaultAsync(g => g.RaGameId == raGameId, ct);
@@ -100,7 +99,6 @@ public static class AdminGameTracking
         }
 
         await gameMetadataSync.SyncGameAsync(game, ct);
-        await leaderboardSync.SyncGameAsync(game, ct);
         return (game, null);
     }
 }

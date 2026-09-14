@@ -22,31 +22,11 @@ export default async function AdminGamesPage() {
     );
   }
 
+  let games;
+  let queue;
   try {
     const api = await getServerApiClient();
-    const [games, queue] = await Promise.all([
-      api.getAdminGames(),
-      api.getAdminGameTrackQueue(),
-    ]);
-
-    return (
-      <div className="space-y-10">
-        <PageHero
-          title="Manage games"
-          titleClassName="text-2xl sm:text-3xl md:text-4xl"
-          description="Track RetroAchievements titles, add download mirrors, and refresh metadata for your group."
-        />
-
-        <AdminGameTrackQueueSection items={queue} />
-
-        <section className="space-y-3 rounded border border-border p-5">
-          <h2 className="text-lg font-semibold">Add game</h2>
-          <AddGameForm />
-        </section>
-
-        <AdminGamesSection games={games} />
-      </div>
-    );
+    [games, queue] = await Promise.all([api.getAdminGames(), api.getAdminGameTrackQueue()]);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load games";
     const forbidden = message.includes("403");
@@ -61,4 +41,23 @@ export default async function AdminGamesPage() {
       </div>
     );
   }
+
+  return (
+    <div className="space-y-10">
+      <PageHero
+        title="Manage games"
+        titleClassName="text-2xl sm:text-3xl md:text-4xl"
+        description="Track RetroAchievements titles, add download mirrors, and refresh metadata for your group."
+      />
+
+      <AdminGameTrackQueueSection items={queue} />
+
+      <section className="space-y-3 rounded border border-border p-5">
+        <h2 className="text-lg font-semibold">Add game</h2>
+        <AddGameForm />
+      </section>
+
+      <AdminGamesSection games={games} />
+    </div>
+  );
 }

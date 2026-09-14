@@ -73,12 +73,12 @@ Requires Docker Desktop (or Docker Engine). The API job mounts `/var/run/docker.
 
 Games are added when members link RA accounts and sync runs (recent games → track queue → admin approval), or when an admin adds a game manually. No default game list is seeded at startup.
 
-Sync every 15 minutes + manual refresh (60s cooldown)
+Leaderboard sync uses Hangfire recurring jobs (member activity, leaderboard dispatch, member RA rank, game metadata). Admins tune intervals and hot/cold per-game policy on **Admin → Sync schedules**. The dispatcher enqueues **per-game** jobs when each game is due (hot vs cold based on recent play). Members refresh scores per game from the game page (requires API key). Admins can enqueue all games via **Refresh scores** in the account menu.
 
 ## Admin sync metrics
 
 - Set `AUTH_ADMIN_DISCORD_USER_IDS` to a comma-separated list of Discord user IDs. Each person must also be invited as a member (Admin → member invites) before they can sign in.
-- Admins see an **Admin** nav link and `/admin` with sync health, run history, member API key coverage, and Hangfire recurring job context (`GET /api/admin/ops`).
+- Admins see an **Admin** nav link and `/admin` with editable sync schedules, health, run history, member API key coverage, and Hangfire recurring job context (`GET /api/admin/ops`, `GET/PATCH /api/admin/sync-settings`).
 
 ## Member API keys and Discord avatars
 

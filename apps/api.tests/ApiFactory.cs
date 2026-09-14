@@ -97,6 +97,9 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 options.ForceRefresh = false;
             });
 
+            services.RemoveAll<ILeaderboardSyncJobEnqueuer>();
+            services.AddSingleton<ILeaderboardSyncJobEnqueuer, InlineLeaderboardSyncJobEnqueuer>();
+
             services.RemoveAll<IRaApiClient>();
             services.AddSingleton(RaApiClient);
             services.RemoveAll<IConsoleIconDownloader>();
