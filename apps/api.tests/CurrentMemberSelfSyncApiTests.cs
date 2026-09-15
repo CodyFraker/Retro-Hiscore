@@ -138,7 +138,7 @@ public class CurrentMemberSelfSyncApiTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetSyncStatus_Returns404_WhenMemberNotRegistered()
+    public async Task GetSyncStatus_ReturnsForbidden_WhenDiscordUserHasNoMemberRecord()
     {
         // Arrange
         var client = _factory.CreateAuthenticatedClient("000000000000000001");
@@ -147,7 +147,7 @@ public class CurrentMemberSelfSyncApiTests : IAsyncLifetime
         var response = await client.GetAsync("/api/members/me/sync-status");
 
         // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
     [Fact]

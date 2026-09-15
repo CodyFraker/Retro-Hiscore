@@ -11,19 +11,17 @@ internal static class MemberAchievementProgressFreshness
         Guid memberId,
         CancellationToken cancellationToken = default)
     {
-        var runAtTask = db.SyncRuns
+        var runAt = await db.SyncRuns
             .AsNoTracking()
             .Where(r => r.MemberId == memberId && r.Kind == SyncKind.MemberAchievements)
             .MaxAsync(r => (DateTimeOffset?)(r.FinishedAt ?? r.StartedAt), cancellationToken);
 
-        var dataAtTask = db.MemberRaAchievements
+        var dataAt = await db.MemberRaAchievements
             .AsNoTracking()
             .Where(a => a.MemberId == memberId)
             .MaxAsync(a => (DateTimeOffset?)a.FirstDetectedAt, cancellationToken);
 
-        await Task.WhenAll(runAtTask, dataAtTask);
-
-        return MaxDateTime(await dataAtTask, await runAtTask);
+        return MaxDateTime(dataAt, runAt);
     }
 
     private static DateTimeOffset? MaxDateTime(DateTimeOffset? a, DateTimeOffset? b)

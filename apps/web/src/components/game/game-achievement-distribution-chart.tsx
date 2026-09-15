@@ -59,7 +59,10 @@ export function GameAchievementDistributionChart({
             <XAxis dataKey="label" tick={{ fontSize: 11 }} label={{ value: "Unlocks", position: "insideBottom", offset: -2, fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} width={40} />
             <Tooltip
-              formatter={(value: number) => [value.toLocaleString(), "Players"]}
+              formatter={(value) => [
+                typeof value === "number" ? value.toLocaleString() : String(value ?? ""),
+                "Players",
+              ]}
               labelFormatter={(label) => `${label} achievements earned`}
             />
             <Bar dataKey="players" fill="var(--chart-2)" radius={[2, 2, 0, 0]} />

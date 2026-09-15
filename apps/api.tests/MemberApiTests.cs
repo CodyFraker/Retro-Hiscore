@@ -463,7 +463,7 @@ public class MemberApiTests : IAsyncLifetime
         shrimpRow.RaStatus.ShouldBe("Playing Game");
         shrimpRow.RaPresenceRaGameId.ShouldBe(38130);
         shrimpRow.RaPresenceGameTitle.ShouldBe("Pinball");
-        shrimpRow.RaPresenceIsTracked.ShouldBeTrue();
+        shrimpRow.RaPresenceIsTracked.ShouldBe(true);
         shrimpRow.RaPresenceSyncedAt.ShouldBe(syncedAt);
     }
 
@@ -477,6 +477,26 @@ public class MemberApiTests : IAsyncLifetime
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var member = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
             member.RaStatus = "Online";
+            var game = await db.Games.SingleAsync(g => g.RaGameId == raGameId);
+            var board = new Leaderboard
+            {
+                RaLeaderboardId = 3813098,
+                GameId = game.Id,
+                Title = "Summary Board",
+                Format = "VALUE",
+                RankAsc = false
+            };
+            db.Leaderboards.Add(board);
+            await db.SaveChangesAsync();
+            db.LeaderboardEntries.Add(new LeaderboardEntry
+            {
+                LeaderboardId = board.Id,
+                MemberId = member.Id,
+                Score = 100,
+                FormattedScore = "100",
+                FriendRank = 1,
+                SyncedAt = DateTimeOffset.UtcNow
+            });
             db.RaAchievements.Add(new RaAchievement
             {
                 RaAchievementId = 9020,

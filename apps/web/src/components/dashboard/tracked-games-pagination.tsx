@@ -42,8 +42,8 @@ export function TrackedGamesPagination({
       </p>
       <div className="flex items-center gap-2">
         {prevPage ? (
-          <Button variant="outline" size="sm" asChild>
-            <Link href={linkForPage(prevPage)}>Previous</Link>
+          <Button variant="outline" size="sm" render={<Link href={linkForPage(prevPage)} />}>
+            Previous
           </Button>
         ) : (
           <Button variant="outline" size="sm" disabled>Previous</Button>
@@ -52,8 +52,8 @@ export function TrackedGamesPagination({
           Page {page} of {pageCount}
         </span>
         {nextPage ? (
-          <Button variant="outline" size="sm" asChild>
-            <Link href={linkForPage(nextPage)}>Next</Link>
+          <Button variant="outline" size="sm" render={<Link href={linkForPage(nextPage)} />}>
+            Next
           </Button>
         ) : (
           <Button variant="outline" size="sm" disabled>Next</Button>

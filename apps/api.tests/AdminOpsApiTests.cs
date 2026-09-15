@@ -65,7 +65,7 @@ public class AdminOpsApiTests
         body.Members.Count.ShouldBe(body.MemberCoverageSummary.TotalMembers);
         body.Config.KeysInPool.ShouldBeGreaterThan(0);
         body.Config.SharedCatalogKeyConfigured.ShouldBeTrue();
-        body.LastSyncByKind.Count.ShouldBe(5);
+        body.LastSyncByKind.Count.ShouldBe(6);
         body.LastSyncByKind.ShouldContain(k => k.Kind == nameof(SyncKind.LeaderboardScores));
     }
 }

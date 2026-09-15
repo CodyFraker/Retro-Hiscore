@@ -586,7 +586,7 @@ export interface DashboardAchievementSummaryResponse {
   unlocksLast30Days: number;
   activeMembersLast7Days: number;
   lastUnlockAt?: string | null;
-  topGameLast7Days?: unknown | null;
+  topGameLast7Days?: DashboardAchievementTopGameDto | null;
   achievementsSyncedAt?: string | null;
 }
 
