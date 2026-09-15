@@ -130,6 +130,8 @@ public sealed class AdminOpsBuilder(
             ? hangfirePath
             : $"{hangfirePath}?secret={Uri.EscapeDataString(hangfireOptions.Value.DashboardSecret)}";
 
+        var lastSyncByKind = await BuildLastSyncByKindAsync(cancellationToken);
+
         return new AdminOpsDto(
             new AdminOpsHealthDto(
                 overallStatus,
@@ -138,6 +140,7 @@ public sealed class AdminOpsBuilder(
                 intervalMinutes,
                 nextScheduledAt,
                 manualCooldownUntil),
+            lastSyncByKind,
             recentRuns,
             new AdminMemberCoverageSummaryDto(membersWithKey, memberRows.Count),
             memberDtos,
@@ -170,6 +173,35 @@ public sealed class AdminOpsBuilder(
             .ToList();
     }
 
+    private async Task<IReadOnlyList<AdminLastSyncByKindDto>> BuildLastSyncByKindAsync(
+        CancellationToken cancellationToken)
+    {
+        var kinds = Enum.GetValues<SyncKind>();
+        var results = new List<AdminLastSyncByKindDto>(kinds.Length);
+
+        foreach (var kind in kinds)
+        {
+            var last = await db.SyncRuns
+                .Where(r => r.Kind == kind)
+                .OrderByDescending(r => r.StartedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (last is null)
+            {
+                results.Add(new AdminLastSyncByKindDto(kind.ToString(), null, null, null));
+                continue;
+            }
+
+            results.Add(new AdminLastSyncByKindDto(
+                kind.ToString(),
+                last.Status.ToString(),
+                last.StartedAt,
+                last.FinishedAt));
+        }
+
+        return results;
+    }
+
     private static string DeriveOverallStatus(SyncRun? latestLeaderboard)
     {
         if (latestLeaderboard is null)
@@ -188,8 +220,15 @@ public sealed class AdminOpsBuilder(
     }
 }
 
+public sealed record AdminLastSyncByKindDto(
+    string Kind,
+    string? Status,
+    DateTimeOffset? StartedAt,
+    DateTimeOffset? FinishedAt);
+
 public sealed record AdminOpsDto(
     AdminOpsHealthDto Health,
+    IReadOnlyList<AdminLastSyncByKindDto> LastSyncByKind,
     IReadOnlyList<AdminSyncRunDto> RecentRuns,
     AdminMemberCoverageSummaryDto MemberCoverageSummary,
     IReadOnlyList<AdminMemberCoverageDto> Members,

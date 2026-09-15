@@ -35,4 +35,10 @@ public interface IRaApiClient
         string usernameOrUlid,
         string apiKey,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<string, int>> GetAchievementDistributionAsync(
+        int gameId,
+        bool hardcore,
+        string? apiKey = null,
+        CancellationToken cancellationToken = default);
 }

@@ -124,6 +124,13 @@ public sealed class SyncSettingsStore(AppDbContext db) : ISyncSettingsStore
                 DisplayName = "Game metadata",
                 IntervalDays = 7,
                 UpdatedAt = now
+            },
+            new SyncRecurringJob
+            {
+                JobId = SyncRecurringJobIds.MemberAchievements,
+                DisplayName = "Member achievements",
+                IntervalMinutes = 360,
+                UpdatedAt = now
             });
         await db.SaveChangesAsync(cancellationToken);
     }
@@ -177,6 +184,15 @@ public sealed class SyncSettingsStore(AppDbContext db) : ISyncSettingsStore
                 }
 
                 job.IntervalDays = metadataDays;
+                break;
+            case SyncRecurringJobIds.MemberAchievements:
+                if (item.IntervalMinutes is not { } achievementMinutes
+                    || achievementMinutes is < 1 or > 60 * 24)
+                {
+                    throw new SyncSettingsValidationException("Member achievements interval must be between 1 and 1440 minutes.");
+                }
+
+                job.IntervalMinutes = achievementMinutes;
                 break;
             default:
                 throw new SyncSettingsValidationException($"Unknown recurring job '{job.JobId}'.");

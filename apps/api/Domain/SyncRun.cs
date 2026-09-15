@@ -20,7 +20,8 @@ public enum SyncKind
     GameMetadata = 1,
     ConsoleIcons = 2,
     MemberRank = 3,
-    MemberActivity = 4
+    MemberActivity = 4,
+    MemberAchievements = 5
 }
 
 public class SyncRun

@@ -22,6 +22,14 @@ public sealed class MemberRankSyncJob(IMemberRankSyncService rankSync)
         => rankSync.SyncAsync(SyncTrigger.Scheduled, cancellationToken);
 }
 
+public sealed class MemberAchievementSyncJob(IMemberAchievementSyncService achievementSync)
+{
+    [DisableConcurrentExecution(timeoutInSeconds: 60 * 30)]
+    [AutomaticRetry(Attempts = 0)]
+    public Task RunScheduledAsync(CancellationToken cancellationToken = default)
+        => achievementSync.SyncAsync(SyncTrigger.Scheduled, cancellationToken);
+}
+
 public sealed class LeaderboardSyncDispatchJob(ILeaderboardSyncDispatcher dispatcher)
 {
     [DisableConcurrentExecution(timeoutInSeconds: 60 * 30)]

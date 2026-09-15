@@ -90,6 +90,52 @@ export function createApiClient(options: ApiClientOptions) {
 
   return {
     getDashboard: () => request<DashboardResponse>(baseUrl, "/api/dashboard", undefined, fetchImpl),
+    getDashboardGames: (limit?: number, offset?: number, sort?: string, q?: string) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      if (offset != null) params.set("offset", String(offset));
+      if (sort) params.set("sort", sort);
+      if (q) params.set("q", q);
+      const qs = params.toString();
+      return request<DashboardGamesResponse>(
+        baseUrl,
+        \`/api/dashboard/games\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getDashboardAchievementActivity: (limit?: number, offset?: number, raGameId?: number, raUsername?: string) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      if (offset != null) params.set("offset", String(offset));
+      if (raGameId != null) params.set("raGameId", String(raGameId));
+      if (raUsername) params.set("raUsername", raUsername);
+      const qs = params.toString();
+      return request<DashboardAchievementActivityResponse>(
+        baseUrl,
+        \`/api/dashboard/achievement-activity\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getDashboardAchievementSummary: () =>
+      request<DashboardAchievementSummaryResponse>(
+        baseUrl,
+        "/api/dashboard/achievement-summary",
+        undefined,
+        fetchImpl,
+      ),
+    getDashboardAchievementHistory: (limit?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<DashboardAchievementHistoryResponse>(
+        baseUrl,
+        \`/api/dashboard/achievement-history\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
     getRivalry: (usernameA: string, usernameB: string) =>
       request<RivalryResponse>(
         baseUrl,
@@ -98,7 +144,25 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       ),
     getMembers: () => request<MemberDto[]>(baseUrl, "/api/members", undefined, fetchImpl),
+    getMembersSummary: () =>
+      request<MembersSummaryDto>(baseUrl, "/api/members/summary", undefined, fetchImpl),
     getCurrentMember: () => request<CurrentMemberDto>(baseUrl, "/api/members/me", undefined, fetchImpl),
+    getMemberSelfSyncStatus: () =>
+      request<MemberSelfSyncStatusDto>(baseUrl, "/api/members/me/sync-status", undefined, fetchImpl),
+    postMemberSelfSyncLeaderboards: async () => {
+      const response = await fetchImpl(\`\${baseUrl.replace(/\\/$/, "")}/api/members/me/sync/leaderboards\`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const body = await response.text();
+        throw new Error(\`API \${response.status}: \${body || response.statusText}\`);
+      }
+      return (await response.json()) as MemberSelfSyncLeaderboardsResponse;
+    },
+    postMemberSelfSyncProfile: () =>
+      request<MemberSelfSyncRunResponse>(baseUrl, "/api/members/me/sync/profile", { method: "POST" }, fetchImpl),
+    postMemberSelfSyncAchievements: () =>
+      request<MemberSelfSyncRunResponse>(baseUrl, "/api/members/me/sync/achievements", { method: "POST" }, fetchImpl),
     putMemberRaAccount: (raUsername: string, raApiKey: string) =>
       request<void>(baseUrl, "/api/members/me/ra-account", {
         method: "PUT",
@@ -142,13 +206,38 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       );
     },
-    getMemberRaAchievementHistory: (raUsername: string, limit?: number) => {
+    getMemberRaAchievementHistory: (
+      raUsername: string,
+      limit?: number,
+      trackedOnly?: boolean,
+      raGameId?: number,
+    ) => {
       const params = new URLSearchParams();
       if (limit != null) params.set("limit", String(limit));
+      if (trackedOnly) params.set("trackedOnly", "true");
+      if (raGameId != null) params.set("raGameId", String(raGameId));
       const qs = params.toString();
       return request<MemberRaAchievementHistoryResponse>(
         baseUrl,
         \`/api/members/\${encodeURIComponent(raUsername)}/ra-achievement-history\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getMemberAchievements: (
+      raUsername: string,
+      limit?: number,
+      offset?: number,
+      trackedOnly?: boolean,
+    ) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      if (offset != null) params.set("offset", String(offset));
+      if (trackedOnly) params.set("trackedOnly", "true");
+      const qs = params.toString();
+      return request<MemberAchievementsListResponse>(
+        baseUrl,
+        \`/api/members/\${encodeURIComponent(raUsername)}/achievements\${qs ? \`?\${qs}\` : ""}\`,
         undefined,
         fetchImpl,
       );
@@ -195,6 +284,15 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       );
     },
+    getGameAchievements: (raGameId: number) =>
+      request<GameAchievementsResponse>(baseUrl, \`/api/games/\${raGameId}/achievements\`, undefined, fetchImpl),
+    getGameAchievementDistribution: (raGameId: number) =>
+      request<GameAchievementDistributionResponse>(
+        baseUrl,
+        \`/api/games/\${raGameId}/achievement-distribution\`,
+        undefined,
+        fetchImpl,
+      ),
     getGameLeaderboardPopulationHistory: (raGameId: number, limit?: number) => {
       const params = new URLSearchParams();
       if (limit != null) params.set("limit", String(limit));
@@ -261,6 +359,60 @@ export function createApiClient(options: ApiClientOptions) {
     },
     getConsoleIconSyncStatus: () =>
       request<SyncStatusDto>(baseUrl, "/api/sync/console-icons/status", undefined, fetchImpl),
+    triggerDueDispatchSync: async () => {
+      const response = await fetchImpl(\`\${baseUrl.replace(/\\/$/, "")}/api/sync/dispatch\`, { method: "POST" });
+      const body = await response.json();
+      if (response.status === 429) {
+        return { ok: false as const, status: 429 as const, body: body as SyncCooldownResponse };
+      }
+      if (!response.ok) {
+        throw new Error(\`API \${response.status}\`);
+      }
+      return { ok: true as const, status: 202 as const, body: body as SyncAcceptedResponse };
+    },
+    triggerMemberActivitySync: async () => {
+      const response = await fetchImpl(\`\${baseUrl.replace(/\\/$/, "")}/api/sync/member-activity\`, {
+        method: "POST",
+      });
+      const body = await response.json();
+      if (response.status === 429) {
+        return { ok: false as const, status: 429 as const, body: body as SyncCooldownResponse };
+      }
+      if (!response.ok) {
+        throw new Error(\`API \${response.status}\`);
+      }
+      return { ok: true as const, status: 202 as const, body: body as SyncAcceptedResponse };
+    },
+    getMemberActivitySyncStatus: () =>
+      request<SyncStatusDto>(baseUrl, "/api/sync/member-activity/status", undefined, fetchImpl),
+    triggerMemberRankSync: async () => {
+      const response = await fetchImpl(\`\${baseUrl.replace(/\\/$/, "")}/api/sync/member-rank\`, { method: "POST" });
+      const body = await response.json();
+      if (response.status === 429) {
+        return { ok: false as const, status: 429 as const, body: body as SyncCooldownResponse };
+      }
+      if (!response.ok) {
+        throw new Error(\`API \${response.status}\`);
+      }
+      return { ok: true as const, status: 202 as const, body: body as SyncAcceptedResponse };
+    },
+    getMemberRankSyncStatus: () =>
+      request<SyncStatusDto>(baseUrl, "/api/sync/member-rank/status", undefined, fetchImpl),
+    triggerMemberAchievementSync: async () => {
+      const response = await fetchImpl(\`\${baseUrl.replace(/\\/$/, "")}/api/sync/member-achievements\`, {
+        method: "POST",
+      });
+      const body = await response.json();
+      if (response.status === 429) {
+        return { ok: false as const, status: 429 as const, body: body as SyncCooldownResponse };
+      }
+      if (!response.ok) {
+        throw new Error(\`API \${response.status}\`);
+      }
+      return { ok: true as const, status: 202 as const, body: body as SyncAcceptedResponse };
+    },
+    getMemberAchievementSyncStatus: () =>
+      request<SyncStatusDto>(baseUrl, "/api/sync/member-achievements/status", undefined, fetchImpl),
     getAdminOps: () => request<AdminOpsDto>(baseUrl, "/api/admin/ops", undefined, fetchImpl),
     getAdminSyncSettings: () =>
       request<AdminSyncSettingsDto>(baseUrl, "/api/admin/sync-settings", undefined, fetchImpl),

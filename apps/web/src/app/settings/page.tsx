@@ -1,6 +1,8 @@
 import { ApiKeyForm } from "@/components/settings/api-key-form";
 import { RaAccountForm } from "@/components/settings/ra-account-form";
+import { SettingsMemberSyncSection } from "@/components/settings/settings-member-sync-section";
 import { PageHero } from "@/components/layout/page-hero";
+import type { MemberSelfSyncStatusDto } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +12,7 @@ export default async function SettingsPage() {
   let raUsername = "";
   let hasApiKey = false;
   let needsOnboarding = false;
+  let syncStatus: MemberSelfSyncStatusDto | null = null;
   let error: string | null = null;
 
   try {
@@ -19,6 +22,9 @@ export default async function SettingsPage() {
     raUsername = member.raUsername ?? "";
     hasApiKey = member.hasApiKey ?? false;
     needsOnboarding = member.needsOnboarding ?? false;
+    if (!needsOnboarding) {
+      syncStatus = await api.getMemberSelfSyncStatus();
+    }
   } catch (err) {
     if (err instanceof Error && !err.message.includes("404")) {
       error = err.message;
@@ -26,7 +32,7 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg space-y-8">
+    <div className="mx-auto max-w-xl space-y-8">
       <PageHero
         title="Settings"
         description="Link your RetroAchievements account so your leaderboard scores stay in sync."
@@ -54,13 +60,18 @@ export default async function SettingsPage() {
       )}
 
       {!error && linked && !needsOnboarding && (
-        <section className="space-y-4 rounded border border-border p-5">
-          <div>
-            <p className="text-sm text-muted-foreground">Linked RetroAchievements account</p>
-            <p className="font-mono text-lg">@{raUsername}</p>
-          </div>
-          <ApiKeyForm hasApiKey={hasApiKey} raUsername={raUsername} />
-        </section>
+        <>
+          <section className="space-y-4 rounded border border-border p-5">
+            <div>
+              <p className="text-sm text-muted-foreground">Linked RetroAchievements account</p>
+              <p className="font-mono text-lg">@{raUsername}</p>
+            </div>
+            <ApiKeyForm hasApiKey={hasApiKey} raUsername={raUsername} />
+          </section>
+          {syncStatus ? (
+            <SettingsMemberSyncSection hasApiKey={hasApiKey} status={syncStatus} />
+          ) : null}
+        </>
       )}
     </div>
   );

@@ -1,18 +1,31 @@
+using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
+using RetroHiscore.Api.Options;
 
 namespace RetroHiscore.Api.Features.Sync;
 
 public interface IMemberActivitySyncService
 {
     Task<SyncRun> SyncAsync(SyncTrigger trigger, CancellationToken cancellationToken = default);
+    bool IsManualCooldownActive(out DateTimeOffset? availableAt);
 }
 
 public sealed class MemberActivitySyncService(
     AppDbContext db,
     IMemberRecentGamesSyncService memberRecentGamesSync,
+    IOptions<SyncOptions> syncOptions,
     ILogger<MemberActivitySyncService> logger) : IMemberActivitySyncService
 {
+    private readonly SyncOptions _syncOptions = syncOptions.Value;
+
+    public bool IsManualCooldownActive(out DateTimeOffset? availableAt)
+        => ManualSyncCooldown.IsActive(
+            db,
+            SyncKind.MemberActivity,
+            _syncOptions.ManualCooldownSeconds,
+            out availableAt);
+
     public async Task<SyncRun> SyncAsync(SyncTrigger trigger, CancellationToken cancellationToken = default)
     {
         var run = new SyncRun

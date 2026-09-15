@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -206,8 +205,8 @@ public static class GetMemberRaSummaryEndpoint
                 raw.Ulid,
                 FormatRaMotto(raw.Motto),
                 RaMediaUrl.ToAbsolute(raw.UserPic, siteBaseUrl),
-                ParseRaDateTime(raw.MemberSince),
-                FormatRaStatus(raw.Status),
+                RaUserSummaryFormatting.ParseDateTime(raw.MemberSince),
+                RaUserSummaryFormatting.FormatStatus(raw.Status),
                 raw.Rank,
                 raw.TotalRanked,
                 raw.TotalPoints,
@@ -247,7 +246,7 @@ public static class GetMemberRaSummaryEndpoint
             RaMediaUrl.ToAbsolute(imageIcon, mediaBaseUrl),
             trackedGameIds.Contains(gameId),
             richPresenceMsg,
-            ParseRaDateTime(richPresenceMsgDate),
+            RaUserSummaryFormatting.ParseDateTime(richPresenceMsgDate),
             progress,
             []);
 
@@ -272,7 +271,7 @@ public static class GetMemberRaSummaryEndpoint
             RaMediaUrl.ToAbsolute(imageBoxArt, mediaBaseUrl),
             RaMediaUrl.ToAbsolute(imageIcon, mediaBaseUrl),
             trackedGameIds.Contains(gameId),
-            ParseRaDateTime(lastPlayed),
+            RaUserSummaryFormatting.ParseDateTime(lastPlayed),
             progress,
             []);
 
@@ -346,7 +345,7 @@ public static class GetMemberRaSummaryEndpoint
                     achievement.Description,
                     achievement.Points,
                     RaMediaUrl.ToBadgeUrl(achievement.BadgeName, mediaBaseUrl),
-                    ParseRaDateTime(achievement.DateAwarded),
+                    RaUserSummaryFormatting.ParseDateTime(achievement.DateAwarded),
                     achievement.HardcoreAchieved == 1,
                     trackedGameIds.Contains(achievement.GameId)));
             }
@@ -355,21 +354,6 @@ public static class GetMemberRaSummaryEndpoint
         return list
             .OrderByDescending(a => a.DateAwarded ?? DateTimeOffset.MinValue)
             .ToList();
-    }
-
-    private static DateTimeOffset? ParseRaDateTime(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return null;
-        }
-
-        if (DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var parsed))
-        {
-            return parsed;
-        }
-
-        return null;
     }
 
     private static string? FormatRaMotto(JsonElement motto)
@@ -395,28 +379,6 @@ public static class GetMemberRaSummaryEndpoint
             {
                 return nestedCamel.GetString();
             }
-        }
-
-        return null;
-    }
-
-    private static string? FormatRaStatus(JsonElement status)
-    {
-        if (status.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-        {
-            return null;
-        }
-
-        if (status.ValueKind == JsonValueKind.String)
-        {
-            return status.GetString();
-        }
-
-        if (status.ValueKind == JsonValueKind.Object
-            && status.TryGetProperty("Status", out var inner)
-            && inner.ValueKind == JsonValueKind.String)
-        {
-            return inner.GetString();
         }
 
         return null;

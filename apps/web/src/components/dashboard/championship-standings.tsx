@@ -26,22 +26,22 @@ export function ChampionshipStandings({ rows, limit = 5 }: Props) {
           {visibleRows.map((row, index) => (
             <li
               key={row.memberId}
-              className="flex flex-col items-start gap-1 px-(--card-spacing) py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+              className="flex flex-col items-start px-(--card-spacing) py-1 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center">
                 <span className="w-6 font-mono text-xs text-muted-foreground">{index + 1}</span>
                 {index === 0 && row.friendRankOnes > 0 && (
-                  <Crown className="size-4 shrink-0 text-[var(--accent-retro)]" />
+                  <Crown className="size-4 shrink-0 mr-2 text-[var(--accent-retro)]" />
                 )}
                 <Link
                   href={`/members/${encodeURIComponent(row.raUsername)}`}
-                  className={`flex items-center gap-2 font-medium hover:text-[var(--accent-retro)] ${index === 0 && row.friendRankOnes > 0 ? "text-[var(--accent-retro)]" : ""}`}
+                  className={`flex min-w-0 items-center gap-1 font-medium hover:text-[var(--accent-retro)] ${index === 0 && row.friendRankOnes > 0 ? "text-[var(--accent-retro)]" : ""}`}
                 >
                   <MemberAvatar avatarUrl={row.avatarUrl} displayName={row.displayName} size={24} />
-                  {row.displayName}
+                  <span className="truncate">{row.displayName}</span>
                 </Link>
               </div>
-              <div className="font-mono text-xs text-muted-foreground sm:text-right">
+              <div className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground sm:text-right">
                 <span className="text-foreground">{row.friendRankOnes}</span> lead
                 {row.friendRankOnes === 1 ? "" : "s"}
                 <span className="mx-2 text-border">·</span>
@@ -51,7 +51,7 @@ export function ChampionshipStandings({ rows, limit = 5 }: Props) {
           ))}
         </ul>
       </CardContent>
-      <CardFooter className="border-t">
+      <CardFooter className="border-t max-h-8">
         <Link href="/members" className="text-sm text-muted-foreground hover:text-[var(--accent-retro)]">
           See all members
         </Link>

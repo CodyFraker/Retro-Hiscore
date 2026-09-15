@@ -151,6 +151,26 @@ public sealed class RaApiClient(HttpClient httpClient, IOptions<RaOptions> optio
         }
     }
 
+    public async Task<IReadOnlyDictionary<string, int>> GetAchievementDistributionAsync(
+        int gameId,
+        bool hardcore,
+        string? apiKey = null,
+        CancellationToken cancellationToken = default)
+    {
+        var key = ResolveApiKey(apiKey);
+        var query = new Dictionary<string, string>
+        {
+            ["y"] = key,
+            ["i"] = gameId.ToString(),
+            ["h"] = hardcore ? "1" : "0"
+        };
+
+        return await GetAsync<Dictionary<string, int>>(
+            "API_GetAchievementDistribution.php",
+            query,
+            cancellationToken);
+    }
+
     public async Task<RaGameInfoAndUserProgressDto?> GetGameInfoAndUserProgressAsync(
         int gameId,
         string usernameOrUlid,

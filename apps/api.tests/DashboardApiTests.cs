@@ -210,11 +210,13 @@ public class DashboardApiTests : IAsyncLifetime
         var client = _factory.CreateAuthenticatedClient();
 
         // Act
-        var dashboard = await client.GetFromJsonAsync<DashboardResponse>("/api/dashboard", JsonOptions);
+        var games = await client.GetFromJsonAsync<DashboardGamesResponse>(
+            "/api/dashboard/games?limit=100",
+            JsonOptions);
 
         // Assert
-        dashboard.ShouldNotBeNull();
-        var pinball = dashboard.Games.Single(g => g.RaGameId == 38130);
+        games.ShouldNotBeNull();
+        var pinball = games.Items.Single(g => g.RaGameId == 38130);
         pinball.Title.ShouldBe("Pinball");
         pinball.FriendRankOneLeader.ShouldNotBeNull();
         pinball.FriendRankOneLeader!.DisplayName.ShouldBe("ShrimpPoboy");
@@ -293,13 +295,46 @@ public class DashboardApiTests : IAsyncLifetime
 
         var client = _factory.CreateAuthenticatedClient();
 
-        var dashboard = await client.GetFromJsonAsync<DashboardResponse>("/api/dashboard", JsonOptions);
+        var games = await client.GetFromJsonAsync<DashboardGamesResponse>(
+            "/api/dashboard/games?limit=100&sort=recent",
+            JsonOptions);
 
-        dashboard.ShouldNotBeNull();
-        var orderedIds = dashboard.Games
+        games.ShouldNotBeNull();
+        var orderedIds = games.Items
             .Where(g => g.RaGameId is 88001 or 88002)
             .Select(g => g.RaGameId)
             .ToList();
         orderedIds.ShouldBe([88002, 88001]);
+    }
+
+    [Fact]
+    public async Task GetDashboardGames_ReturnsPaginatedSlice()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            for (var i = 0; i < 3; i++)
+            {
+                db.Games.Add(new Game
+                {
+                    RaGameId = 99000 + i,
+                    Title = $"Paginate Game {i}"
+                });
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        var page = await client.GetFromJsonAsync<DashboardGamesResponse>(
+            "/api/dashboard/games?limit=2&offset=0&sort=name",
+            JsonOptions);
+
+        page.ShouldNotBeNull();
+        page.Limit.ShouldBe(2);
+        page.Offset.ShouldBe(0);
+        page.Total.ShouldBeGreaterThanOrEqualTo(3);
+        page.Items.Count.ShouldBe(2);
     }
 }

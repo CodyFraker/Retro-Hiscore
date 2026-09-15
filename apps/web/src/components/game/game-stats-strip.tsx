@@ -23,15 +23,22 @@ export function GameStatsStrip({ stats }: Props) {
         },
         {
           label: "Busiest board",
-          value: stats.busiestBoard
-            ? `${stats.busiestBoard.globalEntryCount.toLocaleString()} · ${stats.busiestBoard.title}`
-            : "—",
-          compact: true,
+          value: stats.busiestBoard ? (
+            <span className="block min-w-0">
+              <span className="block font-mono text-xs">
+                {stats.busiestBoard.globalEntryCount.toLocaleString()}
+              </span>
+              <span className="mt-0.5 block line-clamp-2 text-xs text-muted-foreground">
+                {stats.busiestBoard.title}
+              </span>
+            </span>
+          ) : (
+            "—"
+          ),
         },
         {
           label: "Last activity",
           value: stats.lastActivityAt ? formatSyncTime(stats.lastActivityAt) : "—",
-          compact: true,
         },
       ]}
     />

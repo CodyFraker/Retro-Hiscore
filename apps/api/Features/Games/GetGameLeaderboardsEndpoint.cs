@@ -86,6 +86,7 @@ public static class GetGameLeaderboardsEndpoint
                 game.Genre,
                 game.ReleasedAt,
                 game.MetadataSyncedAt,
+                game.LeaderboardScoresSyncedAt,
                 members,
                 response));
         })
@@ -134,5 +135,6 @@ public sealed record GameLeaderboardsResponse(
     string? Genre,
     DateTimeOffset? ReleasedAt,
     DateTimeOffset? MetadataSyncedAt,
+    DateTimeOffset? LeaderboardScoresSyncedAt,
     IReadOnlyList<StandingMemberDto> Members,
     IReadOnlyList<GameLeaderboardDto> Leaderboards);

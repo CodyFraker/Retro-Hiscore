@@ -18,8 +18,6 @@ public static class GetDashboardEndpoint
             IOptions<SyncOptions> syncOptions,
             CancellationToken ct) =>
         {
-            var mediaBaseUrl = raOptions.Value.MediaBaseUrl;
-
             var entries = await db.LeaderboardEntries
                 .Include(e => e.Member)
                 .ToListAsync(ct);
@@ -43,125 +41,11 @@ public static class GetDashboardEndpoint
 
             var recentGroupGames = await RecentGroupGamesBuilder.BuildAsync(db, syncOptions, raOptions, ct);
 
-            var gamesRaw = await db.Games
-                .OrderBy(g => g.Title)
-                .Select(g => new
-                {
-                    g.Id,
-                    g.RaGameId,
-                    g.Title,
-                    g.ConsoleId,
-                    g.ConsoleName,
-                    g.ImageBoxArt,
-                    g.ImageIcon,
-                    g.ImageTitle,
-                    g.ImageIngame,
-                    LeaderboardCount = g.Leaderboards.Count,
-                    ConsoleIconData = db.Consoles
-                        .Where(c => c.RaConsoleId == g.ConsoleId)
-                        .Select(c => c.IconData)
-                        .FirstOrDefault(),
-                    ConsoleIconContentType = db.Consoles
-                        .Where(c => c.RaConsoleId == g.ConsoleId)
-                        .Select(c => c.IconContentType)
-                        .FirstOrDefault()
-                })
-                .ToListAsync(ct);
-
-            var gameIds = gamesRaw.Select(g => g.Id).ToList();
-            var gameEntries = await db.LeaderboardEntries
-                .Include(e => e.Member)
-                .Include(e => e.Leaderboard)
-                .Where(e => gameIds.Contains(e.Leaderboard.GameId))
-                .ToListAsync(ct);
-
-            var games = gamesRaw.Select(g =>
-            {
-                var entriesForGame = gameEntries.Where(e => e.Leaderboard.GameId == g.Id).ToList();
-                var winRows = entriesForGame
-                    .GroupBy(e => e.MemberId)
-                    .Select(memberGroup =>
-                    {
-                        var member = memberGroup.First().Member;
-                        return new
-                        {
-                            RaUsername = member.RaUsername ?? string.Empty,
-                            DisplayName = MemberAuthHelper.DisplayLabel(member),
-                            member.AvatarUrl,
-                            FriendRankOnes = memberGroup.Count(e => e.FriendRank == 1)
-                        };
-                    })
-                    .Where(row => row.FriendRankOnes > 0)
-                    .OrderByDescending(row => row.FriendRankOnes)
-                    .ThenBy(row => row.DisplayName)
-                    .FirstOrDefault();
-
-                var lastActivityAt = entriesForGame
-                    .Where(e => e.ScoreUpdatedAt is not null)
-                    .Select(e => e.ScoreUpdatedAt)
-                    .OrderByDescending(d => d)
-                    .FirstOrDefault();
-
-                var boardPopulations = entriesForGame
-                    .Select(e => e.Leaderboard)
-                    .DistinctBy(l => l.Id)
-                    .Where(l => l.GlobalEntryCount is not null)
-                    .ToList();
-
-                var busiestBoard = boardPopulations
-                    .OrderByDescending(l => l.GlobalEntryCount)
-                    .FirstOrDefault();
-
-                DashboardGameLeaderDto? leader = winRows is null
-                    ? null
-                    : new DashboardGameLeaderDto(winRows.DisplayName, winRows.RaUsername, winRows.AvatarUrl, winRows.FriendRankOnes);
-
-                var playersWithAvatars = entriesForGame
-                    .GroupBy(e => e.MemberId)
-                    .Select(memberGroup =>
-                    {
-                        var member = memberGroup.First().Member;
-                        return new
-                        {
-                            RaUsername = member.RaUsername ?? string.Empty,
-                            DisplayName = MemberAuthHelper.DisplayLabel(member),
-                            member.AvatarUrl
-                        };
-                    })
-                    .Where(row => !string.IsNullOrWhiteSpace(row.AvatarUrl))
-                    .Select(row => new DashboardGamePlayerAvatarDto(
-                        row.DisplayName,
-                        row.RaUsername,
-                        row.AvatarUrl!))
-                    .OrderBy(row => row.DisplayName, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
-
-                return new DashboardGameDto(
-                    g.Id,
-                    g.RaGameId,
-                    g.Title,
-                    g.ConsoleName,
-                    ConsoleIconSyncService.ToDataUrl(g.ConsoleIconData, g.ConsoleIconContentType),
-                    RaMediaUrl.ToAbsolute(g.ImageBoxArt, mediaBaseUrl),
-                    RaMediaUrl.ToAbsolute(g.ImageIcon, mediaBaseUrl),
-                    RaMediaUrl.ToAbsolute(g.ImageTitle, mediaBaseUrl),
-                    RaMediaUrl.ToAbsolute(g.ImageIngame, mediaBaseUrl),
-                    g.LeaderboardCount,
-                    busiestBoard?.GlobalEntryCount,
-                    busiestBoard?.Title,
-                    leader,
-                    playersWithAvatars,
-                    lastActivityAt);
-            })
-            .OrderByDescending(g => g.LastActivityAt ?? DateTimeOffset.MinValue)
-            .ThenBy(g => g.Title)
-            .ToList();
-
-            return Results.Ok(new DashboardResponse(championship, recentGroupGames, games));
+            return Results.Ok(new DashboardResponse(championship, recentGroupGames));
         })
         .WithName("GetDashboard")
         .WithTags("Dashboard")
-        .WithSummary("Returns championship standings, group recent games, and enriched game cards for the home dashboard.")
+        .WithSummary("Returns championship standings and group recent games for the home dashboard.")
         .RequireApiAuth();
 }
 
@@ -208,7 +92,9 @@ public sealed record DashboardGameDto(
     string? MaxGlobalEntryCountLeaderboardTitle,
     DashboardGameLeaderDto? FriendRankOneLeader,
     IReadOnlyList<DashboardGamePlayerAvatarDto> PlayersWithAvatars,
-    DateTimeOffset? LastActivityAt);
+    DateTimeOffset? LastActivityAt,
+    DateTimeOffset? LeaderboardScoresSyncedAt,
+    int? TotalAchievementsInCatalog);
 
 public sealed record RecentGroupGamePlayerDto(
     Guid MemberId,
@@ -231,5 +117,4 @@ public sealed record RecentGroupGameDto(
 
 public sealed record DashboardResponse(
     IReadOnlyList<ChampionshipRowDto> Championship,
-    IReadOnlyList<RecentGroupGameDto> RecentGroupGames,
-    IReadOnlyList<DashboardGameDto> Games);
+    IReadOnlyList<RecentGroupGameDto> RecentGroupGames);

@@ -59,6 +59,18 @@ namespace RetroHiscore.Api.Data.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<DateTimeOffset?>("AchievementDistributionSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AchievementDistributionHardcoreJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AchievementDistributionSoftcoreJson")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("AchievementProgressSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset?>("LeaderboardScoresSyncedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -348,6 +360,23 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Property<string>("RaUsername")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
+
+                    b.Property<string>("RaPresenceGameTitle")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int?>("RaPresenceRaGameId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("RaPresenceRichPresenceAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("RaPresenceSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RaStatus")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.HasKey("Id");
 

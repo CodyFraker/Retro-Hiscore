@@ -113,13 +113,26 @@ public class GameMetadataApiTests : IAsyncLifetime
             await db.SaveChangesAsync();
         }
 
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
         // Act
         var response = await client.PostAsync("/api/sync/metadata", null);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact]
+    public async Task TriggerMetadataSync_WithNonAdmin_ReturnsForbidden()
+    {
+        // Arrange
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.SecondAllowedDiscordUserId);
+
+        // Act
+        var response = await client.PostAsync("/api/sync/metadata", null);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
     [Fact]
@@ -149,7 +162,7 @@ public class GameMetadataApiTests : IAsyncLifetime
             await db.SaveChangesAsync();
         }
 
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
         // Act
         var scoreStatus = await client.GetFromJsonAsync<SyncStatusDto>("/api/sync/status", JsonOptions);

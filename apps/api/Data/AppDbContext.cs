@@ -34,6 +34,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.DiscordId).HasMaxLength(32);
             e.Property(x => x.AvatarUrl).HasMaxLength(512);
             e.Property(x => x.RaApiKey).HasMaxLength(256);
+            e.Property(x => x.RaStatus).HasMaxLength(64);
+            e.Property(x => x.RaPresenceGameTitle).HasMaxLength(256);
         });
 
         modelBuilder.Entity<Game>(e =>

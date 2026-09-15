@@ -17,6 +17,10 @@ public class Game
     public DateTimeOffset? ReleasedAt { get; set; }
     public DateTimeOffset? MetadataSyncedAt { get; set; }
     public DateTimeOffset? LeaderboardScoresSyncedAt { get; set; }
+    public DateTimeOffset? AchievementProgressSyncedAt { get; set; }
+    public DateTimeOffset? AchievementDistributionSyncedAt { get; set; }
+    public string? AchievementDistributionHardcoreJson { get; set; }
+    public string? AchievementDistributionSoftcoreJson { get; set; }
     public ICollection<Leaderboard> Leaderboards { get; set; } = new List<Leaderboard>();
     public ICollection<GameSource> Sources { get; set; } = new List<GameSource>();
 }

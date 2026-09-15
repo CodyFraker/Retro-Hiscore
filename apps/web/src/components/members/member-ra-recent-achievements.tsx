@@ -7,18 +7,28 @@ import type { MemberRaRecentAchievementDto } from "@/generated/api-client";
 
 type Props = {
   achievements: MemberRaRecentAchievementDto[];
+  trackedOnly?: boolean;
+  heading?: string;
 };
 
-export function MemberRaRecentAchievements({ achievements }: Props) {
-  if (achievements.length === 0) {
+export function MemberRaRecentAchievements({
+  achievements,
+  trackedOnly = false,
+  heading = "Recent unlocks",
+}: Props) {
+  const visible = trackedOnly
+    ? achievements.filter((a) => a.isTracked)
+    : achievements;
+
+  if (visible.length === 0) {
     return null;
   }
 
   return (
     <section className="space-y-3">
-      <h3 className="steam-section-heading">Recent unlocks</h3>
+      <h3 className="steam-section-heading">{heading}</h3>
       <ul className="divide-y divide-border rounded-md border border-border">
-        {achievements.map((achievement) => (
+        {visible.map((achievement) => (
           <li key={achievement.raAchievementId} className="flex gap-3 p-3">
             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-secondary/40">
               {achievement.badgeUrl ? (

@@ -1,24 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import type { MemberRaSummaryDto } from "@/generated/api-client";
+import { formatRankLabel } from "@/lib/ra-member-metrics";
 
 type Props = {
   summary?: MemberRaSummaryDto | null;
   friendRankOnes?: number;
   boardsWithScore?: number;
 };
-
-function formatRankLabel(rank?: number | null, totalRanked?: number | null) {
-  if (rank == null) {
-    return "—";
-  }
-
-  if (totalRanked == null || totalRanked <= 0) {
-    return `#${rank.toLocaleString()}`;
-  }
-
-  const topPercent = (rank / totalRanked) * 100;
-  return `#${rank.toLocaleString()} · top ${topPercent.toFixed(1)}%`;
-}
 
 function StatTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (

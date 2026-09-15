@@ -78,9 +78,10 @@ public class ConsoleIconSyncApiTests : IAsyncLifetime
         // Act
         var run = await sync.SyncAsync(SyncTrigger.Manual);
         var client = _factory.CreateAuthenticatedClient();
+        var adminClient = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
         var games = await client.GetFromJsonAsync<List<GameDto>>("/api/games", JsonOptions);
         var detail = await client.GetFromJsonAsync<GameLeaderboardsResponse>("/api/games/38130/leaderboards", JsonOptions);
-        var status = await client.GetFromJsonAsync<SyncStatusDto>("/api/sync/console-icons/status", JsonOptions);
+        var status = await adminClient.GetFromJsonAsync<SyncStatusDto>("/api/sync/console-icons/status", JsonOptions);
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -169,7 +170,7 @@ public class ConsoleIconSyncApiTests : IAsyncLifetime
         _factory.ConsoleIconDownloader.ClearReceivedCalls();
 
         // Act
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
         var response = await client.PostAsync("/api/sync/console-icons?force=true", null);
 
         // Assert
@@ -196,12 +197,25 @@ public class ConsoleIconSyncApiTests : IAsyncLifetime
             await db.SaveChangesAsync();
         }
 
-        var client = _factory.CreateAuthenticatedClient();
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
         // Act
         var response = await client.PostAsync("/api/sync/console-icons", null);
 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact]
+    public async Task TriggerConsoleIconSync_WithNonAdmin_ReturnsForbidden()
+    {
+        // Arrange
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.SecondAllowedDiscordUserId);
+
+        // Act
+        var response = await client.PostAsync("/api/sync/console-icons", null);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 }

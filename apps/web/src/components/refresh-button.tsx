@@ -40,7 +40,7 @@ export function RefreshButton({ disabledReason, variant = "button" }: Props) {
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Button type="button" disabled={pending} onClick={runSync}>
+      <Button type="button" disabled={pending || Boolean(disabledReason)} onClick={runSync}>
         <RefreshCw className={pending ? "animate-spin" : undefined} />
         {pending ? "Refreshing…" : "Refresh scores"}
       </Button>

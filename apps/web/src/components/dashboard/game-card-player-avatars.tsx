@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/avatar";
 import type { DashboardGamePlayerAvatarDto } from "@/generated/api-client";
 
-const MAX_VISIBLE = 4;
+const MAX_VISIBLE = 10;
 
 function avatarFallbackInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -31,23 +31,21 @@ export function GameCardPlayerAvatars({ players }: Props) {
   const overflow = players.length - visible.length;
 
   return (
-    <div className="px-4 pb-4 pt-1">
-      <AvatarGroup>
-        {visible.map((player) => (
-          <Link
-            key={player.raUsername}
-            href={`/members/${encodeURIComponent(player.raUsername)}`}
-            title={player.displayName}
-            className="rounded-full transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            <Avatar size="sm">
-              <AvatarImage src={player.avatarUrl} alt={player.displayName} />
-              <AvatarFallback>{avatarFallbackInitials(player.displayName)}</AvatarFallback>
-            </Avatar>
-          </Link>
-        ))}
-        {overflow > 0 && <AvatarGroupCount>+{overflow}</AvatarGroupCount>}
-      </AvatarGroup>
-    </div>
+    <AvatarGroup className="flex-wrap">
+      {visible.map((player) => (
+        <Link
+          key={player.raUsername}
+          href={`/members/${encodeURIComponent(player.raUsername)}`}
+          title={player.displayName}
+          className="rounded-full transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <Avatar size="sm">
+            <AvatarImage src={player.avatarUrl} alt={player.displayName} />
+            <AvatarFallback>{avatarFallbackInitials(player.displayName)}</AvatarFallback>
+          </Avatar>
+        </Link>
+      ))}
+      {overflow > 0 && <AvatarGroupCount>+{overflow}</AvatarGroupCount>}
+    </AvatarGroup>
   );
 }

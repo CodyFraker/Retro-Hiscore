@@ -21,6 +21,7 @@ public sealed class GameMetadataSyncService(
     IRaApiClient raApiClient,
     IRaApiKeyPool apiKeyPool,
     IConsoleIconSyncService consoleIconSync,
+    IGameAchievementDistributionSyncService achievementDistributionSync,
     IOptions<RaOptions> raOptions,
     IOptions<GameMetadataSyncOptions> options,
     ILogger<GameMetadataSyncService> logger) : IGameMetadataSyncService
@@ -142,6 +143,15 @@ public sealed class GameMetadataSyncService(
             cancellationToken);
         ApplyMetadata(game, payload, syncedAt);
         await db.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await achievementDistributionSync.SyncGameAsync(game, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Achievement distribution sync failed for game {RaGameId}", game.RaGameId);
+        }
     }
 
     private static string? NullIfWhiteSpace(string? value)

@@ -3,8 +3,6 @@
 import { signOut } from "next-auth/react";
 import { LogOut, Settings } from "lucide-react";
 import Link from "next/link";
-import { RefreshButton } from "@/components/refresh-button";
-import { RefreshMetadataButton } from "@/components/refresh-metadata-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +18,6 @@ import {
 type Props = {
   displayName: string;
   avatarUrl?: string | null;
-  showAdminNav?: boolean;
 };
 
 function avatarFallbackInitials(name: string): string {
@@ -31,7 +28,7 @@ function avatarFallbackInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-export function HeaderUserMenu({ displayName, avatarUrl, showAdminNav }: Props) {
+export function HeaderUserMenu({ displayName, avatarUrl }: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -60,13 +57,6 @@ export function HeaderUserMenu({ displayName, avatarUrl, showAdminNav }: Props) 
           <Settings />
           Settings
         </DropdownMenuItem>
-        {showAdminNav ? (
-          <>
-            <DropdownMenuSeparator />
-            <RefreshMetadataButton variant="menu" />
-            <RefreshButton variant="menu" />
-          </>
-        ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           variant="destructive"

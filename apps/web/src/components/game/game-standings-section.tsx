@@ -11,9 +11,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { GameLeaderboardDto, StandingMemberDto } from "@/generated/api-client";
+import type {
+  FriendStandingDto,
+  GameLeaderboardDto,
+  StandingMemberDto,
+} from "@/generated/api-client";
 import { formatStandingScore } from "@/lib/format";
 import { formatGlobalRank } from "@/lib/format-global-rank";
+
+function hasNoScore(standing: FriendStandingDto | null | undefined): boolean {
+  return !standing || standing.score == null;
+}
+
+function StandingScoreCell({ standing }: { standing: FriendStandingDto | undefined }) {
+  const scoreText = formatStandingScore(standing);
+  if (hasNoScore(standing)) {
+    return (
+      <div>
+        <div>{scoreText}</div>
+        <p className="text-xs text-muted-foreground">No score yet</p>
+      </div>
+    );
+  }
+
+  return <div>{scoreText}</div>;
+}
 
 type Props = {
   leaderboards: GameLeaderboardDto[];
@@ -66,7 +88,7 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
                   )}
                   {board.globalEntryCount != null && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {board.globalEntryCount.toLocaleString()} ranked players on RA
+                      {board.globalEntryCount.toLocaleString()} total entries
                     </p>
                   )}
                 </TableCell>
@@ -74,7 +96,7 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
                   const standing = board.standings.find((s) => s.memberId === member.id);
                   return (
                     <TableCell key={member.id} className="text-right font-mono text-sm">
-                      <div>{formatStandingScore(standing)}</div>
+                      <StandingScoreCell standing={standing} />
                       <div className="text-xs text-muted-foreground">
                         <FriendRank
                           rank={standing?.friendRank}
@@ -134,7 +156,7 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
                     <span className="truncate">{member.displayName}</span>
                   </Link>
                   <div className="shrink-0 text-right font-mono text-sm">
-                    <div>{formatStandingScore(standing)}</div>
+                    <StandingScoreCell standing={standing} />
                     <div className="text-xs text-muted-foreground">
                       <FriendRank
                         rank={standing?.friendRank}

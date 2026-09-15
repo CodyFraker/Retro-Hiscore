@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-export default function HomeLoading() {
+export function DashboardPageSkeleton() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">

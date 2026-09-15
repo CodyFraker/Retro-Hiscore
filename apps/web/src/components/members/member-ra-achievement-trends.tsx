@@ -8,7 +8,7 @@ type Props = {
 };
 
 const emptyMessage =
-  "Unlock history is recorded when score sync fetches game progress for now playing and recently played titles.";
+  "Unlock history is recorded when achievement sync runs on tracked games (rank sync, manual achievement sync, or game refresh).";
 
 export function MemberRaAchievementTrends({ items }: Props) {
   const unlockSeries = items.map((item) => ({

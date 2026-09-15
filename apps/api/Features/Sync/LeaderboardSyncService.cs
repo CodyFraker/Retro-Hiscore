@@ -32,6 +32,8 @@ public sealed class LeaderboardSyncService(
     IRaApiClient raApiClient,
     IRaApiKeyPool apiKeyPool,
     IDiscordNotificationService notificationService,
+    IMemberRaGameProgressSyncService memberRaGameProgressSync,
+    IGameAchievementDistributionSyncService achievementDistributionSync,
     IOptions<RaOptions> raOptions,
     IOptions<SyncOptions> syncOptions,
     ILogger<LeaderboardSyncService> logger) : ILeaderboardSyncService
@@ -191,6 +193,24 @@ public sealed class LeaderboardSyncService(
                 errors.Add($"{member.RaUsername}: {ex.Message}");
             }
 
+            try
+            {
+                await memberRaGameProgressSync.SyncMemberGameProgressAsync(
+                    member,
+                    game.RaGameId,
+                    syncedAt,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Failed to sync achievements for member {Member} game {GameId}",
+                    member.RaUsername,
+                    game.RaGameId);
+                errors.Add($"{member.RaUsername} achievements: {ex.Message}");
+            }
+
             await RecomputeFriendRanksAsync(syncedAt, game.Id, cancellationToken);
 
             run.Status = errors.Count == 0 ? SyncRunStatus.Succeeded : SyncRunStatus.PartialSuccess;
@@ -268,6 +288,24 @@ public sealed class LeaderboardSyncService(
             {
                 logger.LogError(ex, "Failed to sync member {Member} for game {GameId}", member.RaUsername, game.RaGameId);
                 errors?.Add($"{member.RaUsername}/{game.RaGameId}: {ex.Message}");
+            }
+
+            try
+            {
+                await memberRaGameProgressSync.SyncMemberGameProgressAsync(
+                    member,
+                    game.RaGameId,
+                    syncedAt,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Failed to sync achievements for member {Member} game {GameId}",
+                    member.RaUsername,
+                    game.RaGameId);
+                errors?.Add($"{member.RaUsername}/{game.RaGameId} achievements: {ex.Message}");
             }
         }
 
@@ -354,6 +392,15 @@ public sealed class LeaderboardSyncService(
         }
 
         await db.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await achievementDistributionSync.SyncGameAsync(game, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Achievement distribution sync failed for game {RaGameId}", game.RaGameId);
+        }
     }
 
     private async Task SyncMemberGameAsync(Member member, Game game, DateTimeOffset syncedAt, CancellationToken cancellationToken)

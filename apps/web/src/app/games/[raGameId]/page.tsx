@@ -1,29 +1,61 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
 import { ArrowLeft, Clock, ImageOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConsoleName } from "@/components/console-name";
-import { GameDeltaCallout } from "@/components/game/game-delta-callout";
-import { GameStandingsSection } from "@/components/game/game-standings-section";
-import { GameMetadata } from "@/components/game/game-metadata";
-import { GameStatsStrip } from "@/components/game/game-stats-strip";
-import { GamePopulationTrendCharts } from "@/components/game/game-population-trend-charts";
-import { GameTrendCharts } from "@/components/game/game-trend-charts";
+import { GameAchievementsSection } from "@/components/game/game-achievements-section";
 import { BoardWinSummary } from "@/components/game/board-win-summary";
+import { GameDeltaCallout } from "@/components/game/game-delta-callout";
+import { GameDetailTabs } from "@/components/game/game-detail-tabs";
+import { GameMetadata } from "@/components/game/game-metadata";
+import { GamePopulationTrendCharts } from "@/components/game/game-population-trend-charts";
 import { GameRefreshButton } from "@/components/game/game-refresh-button";
-import { RetroachievementsLink } from "@/components/game/retroachievements-link";
 import { GameSourcesSection } from "@/components/game/game-sources-section";
+import { GameStandingsSection } from "@/components/game/game-standings-section";
+import { GameStatsStrip } from "@/components/game/game-stats-strip";
+import { GameTrendCharts } from "@/components/game/game-trend-charts";
+import { RetroachievementsLink } from "@/components/game/retroachievements-link";
 import { getServerApiClient } from "@/lib/api";
 import { recentlyUpdatedBoards, summarizeBoardWins } from "@/lib/board-wins";
+import { formatSyncTime } from "@/lib/format";
 import { toGameDeltas } from "@/lib/game-history-series";
 import { summarizeGameStats } from "@/lib/game-stats";
-import { formatSyncTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ raGameId: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { raGameId: raw } = await params;
+  const raGameId = Number(raw);
+  if (!Number.isFinite(raGameId)) {
+    return { title: "Retro Hiscore" };
+  }
+
+  try {
+    const api = await getServerApiClient();
+    const data = await api.getGameLeaderboards(raGameId);
+    const title = `${data.title} · Retro Hiscore`;
+    const consolePart = data.consoleName ? ` on ${data.consoleName}` : "";
+    const boardCount = data.leaderboards.length;
+    const description =
+      boardCount > 0
+        ? `Friend leaderboard standings for ${data.title}${consolePart} — ${boardCount} tracked board${boardCount === 1 ? "" : "s"}.`
+        : `Tracked game ${data.title}${consolePart} on Retro Hiscore.`;
+    return {
+      title,
+      description,
+      openGraph: { title, description },
+      twitter: { title, description },
+    };
+  } catch {
+    return { title: "Retro Hiscore" };
+  }
+}
 
 export default async function GamePage({ params }: Props) {
   const { raGameId: raw } = await params;
@@ -38,13 +70,18 @@ export default async function GamePage({ params }: Props) {
   let history: Awaited<ReturnType<typeof api.getGameHistory>>;
   let populationHistory: Awaited<ReturnType<typeof api.getGameLeaderboardPopulationHistory>>;
   let sources: Awaited<ReturnType<typeof api.getGameSources>>;
+  let achievements: Awaited<ReturnType<typeof api.getGameAchievements>>;
+  let achievementDistribution: Awaited<ReturnType<typeof api.getGameAchievementDistribution>>;
   try {
-    [data, history, populationHistory, sources] = await Promise.all([
-      api.getGameLeaderboards(raGameId),
-      api.getGameHistory(raGameId, 200, 0),
-      api.getGameLeaderboardPopulationHistory(raGameId, 200),
-      api.getGameSources(raGameId),
-    ]);
+    [data, history, populationHistory, sources, achievements, achievementDistribution] =
+      await Promise.all([
+        api.getGameLeaderboards(raGameId),
+        api.getGameHistory(raGameId, 200, 0),
+        api.getGameLeaderboardPopulationHistory(raGameId, 200),
+        api.getGameSources(raGameId),
+        api.getGameAchievements(raGameId),
+        api.getGameAchievementDistribution(raGameId),
+      ]);
   } catch {
     notFound();
   }
@@ -59,7 +96,7 @@ export default async function GamePage({ params }: Props) {
     <div className="space-y-8">
       <div className="space-y-4">
         <Link
-          href="/"
+          href="/games"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4 shrink-0" />
@@ -105,8 +142,12 @@ export default async function GamePage({ params }: Props) {
               </p>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-3">
-            <GameRefreshButton raGameId={data.raGameId} hasApiKey={member.hasApiKey} />
+          <div className="flex flex-col items-end gap-2">
+            <GameRefreshButton
+              raGameId={data.raGameId}
+              hasApiKey={member.hasApiKey}
+              leaderboardScoresSyncedAt={data.leaderboardScoresSyncedAt}
+            />
             <RetroachievementsLink raGameId={data.raGameId} />
           </div>
         </div>
@@ -120,48 +161,60 @@ export default async function GamePage({ params }: Props) {
           Waiting for first sync.
         </p>
       ) : (
-        <>
-          <GameStatsStrip stats={stats} />
-
-          <div className="md:overflow-x-auto">
-            <GameStandingsSection leaderboards={data.leaderboards} members={data.members} />
-          </div>
-
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            <BoardWinSummary rows={winRows} />
-
-            {recentBoards.length > 0 && (
-              <section className="space-y-3">
-                <h2 className="steam-section-heading">Recently updated</h2>
-                <ul className="divide-y divide-border border-y border-border">
-                  {recentBoards.map((board) => (
-                    <li
-                      key={board.raLeaderboardId}
-                      className="flex items-center justify-between gap-4 py-3 text-sm"
-                    >
-                      <Link
-                        href={`/leaderboards/${board.raLeaderboardId}`}
-                        className="font-medium hover:text-[var(--accent-retro)]"
-                      >
-                        {board.title}
-                      </Link>
-                      <span className="text-xs text-muted-foreground">
-                        {formatSyncTime(board.latestScoreUpdatedAt)}
-                        {board.globalEntryCount != null && (
-                          <> · {board.globalEntryCount.toLocaleString()} on RA</>
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
-
-          <GameTrendCharts items={history.items} />
-          <GamePopulationTrendCharts data={populationHistory} />
-          <GameDeltaCallout deltas={deltas} />
-        </>
+        <Suspense fallback={null}>
+          <GameDetailTabs
+            standings={
+              <>
+                <GameStatsStrip stats={stats} />
+                <div className="md:overflow-x-auto">
+                  <GameStandingsSection leaderboards={data.leaderboards} members={data.members} />
+                </div>
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                  <BoardWinSummary rows={winRows} />
+                  {recentBoards.length > 0 && (
+                    <section className="space-y-3">
+                      <h2 className="steam-section-heading">Recently updated</h2>
+                      <ul className="divide-y divide-border border-y border-border">
+                        {recentBoards.map((board) => (
+                          <li
+                            key={board.raLeaderboardId}
+                            className="flex items-center justify-between gap-4 py-3 text-sm"
+                          >
+                            <Link
+                              href={`/leaderboards/${board.raLeaderboardId}`}
+                              className="font-medium hover:text-[var(--accent-retro)]"
+                            >
+                              {board.title}
+                            </Link>
+                            <span className="text-xs text-muted-foreground">
+                              {formatSyncTime(board.latestScoreUpdatedAt)}
+                              {board.globalEntryCount != null && (
+                                <> · {board.globalEntryCount.toLocaleString()} Total Entries</>
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  )}
+                </div>
+              </>
+            }
+            trends={
+              <>
+                <GameTrendCharts items={history.items} />
+                <GamePopulationTrendCharts data={populationHistory} />
+                <GameDeltaCallout deltas={deltas} />
+              </>
+            }
+            achievements={
+              <GameAchievementsSection
+                achievements={achievements}
+                distribution={achievementDistribution}
+              />
+            }
+          />
+        </Suspense>
       )}
     </div>
   );

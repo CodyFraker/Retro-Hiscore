@@ -21,6 +21,89 @@
         }
       }
     },
+    "/api/dashboard/games": {
+      "get": {
+        "operationId": "getDashboardGames",
+        "tags": ["Dashboard"],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["recent", "name", "boards", "population"] }
+          },
+          { "name": "q", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DashboardGamesResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/achievement-activity": {
+      "get": {
+        "operationId": "getDashboardAchievementActivity",
+        "tags": ["Dashboard"],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } },
+          { "name": "raGameId", "in": "query", "schema": { "type": "integer" } },
+          { "name": "raUsername", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DashboardAchievementActivityResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/achievement-summary": {
+      "get": {
+        "operationId": "getDashboardAchievementSummary",
+        "tags": ["Dashboard"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DashboardAchievementSummaryResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/dashboard/achievement-history": {
+      "get": {
+        "operationId": "getDashboardAchievementHistory",
+        "tags": ["Dashboard"],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DashboardAchievementHistoryResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/rivalry/{usernameA}/{usernameB}": {
       "get": {
         "operationId": "getRivalry",
@@ -61,6 +144,22 @@
         }
       }
     },
+    "/api/members/summary": {
+      "get": {
+        "operationId": "getMembersSummary",
+        "tags": ["Members"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MembersSummaryDto" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/members/me": {
       "get": {
         "operationId": "getCurrentMember",
@@ -75,6 +174,80 @@
             }
           },
           "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/sync-status": {
+      "get": {
+        "operationId": "getMemberSelfSyncStatus",
+        "tags": ["Members"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberSelfSyncStatusDto" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/sync/leaderboards": {
+      "post": {
+        "operationId": "postMemberSelfSyncLeaderboards",
+        "tags": ["Members"],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberSelfSyncLeaderboardsResponse" }
+              }
+            }
+          },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Not Found" },
+          "429": { "description": "Too Many Requests" }
+        }
+      }
+    },
+    "/api/members/me/sync/profile": {
+      "post": {
+        "operationId": "postMemberSelfSyncProfile",
+        "tags": ["Members"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberSelfSyncRunResponse" }
+              }
+            }
+          },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Not Found" },
+          "429": { "description": "Too Many Requests" }
+        }
+      }
+    },
+    "/api/members/me/sync/achievements": {
+      "post": {
+        "operationId": "postMemberSelfSyncAchievements",
+        "tags": ["Members"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberSelfSyncRunResponse" }
+              }
+            }
+          },
+          "403": { "description": "Forbidden" },
+          "404": { "description": "Not Found" },
+          "429": { "description": "Too Many Requests" }
         }
       }
     },
@@ -202,6 +375,16 @@
             "name": "limit",
             "in": "query",
             "schema": { "type": "integer" }
+          },
+          {
+            "name": "trackedOnly",
+            "in": "query",
+            "schema": { "type": "boolean" }
+          },
+          {
+            "name": "raGameId",
+            "in": "query",
+            "schema": { "type": "integer" }
           }
         ],
         "responses": {
@@ -210,6 +393,46 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/MemberRaAchievementHistoryResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/{raUsername}/achievements": {
+      "get": {
+        "operationId": "getMemberAchievements",
+        "tags": ["Members"],
+        "parameters": [
+          {
+            "name": "raUsername",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "trackedOnly",
+            "in": "query",
+            "schema": { "type": "boolean" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberAchievementsListResponse" }
               }
             }
           },
@@ -454,6 +677,56 @@
         }
       }
     },
+    "/api/games/{raGameId}/achievements": {
+      "get": {
+        "operationId": "getGameAchievements",
+        "tags": ["Games"],
+        "parameters": [
+          {
+            "name": "raGameId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameAchievementsResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/games/{raGameId}/achievement-distribution": {
+      "get": {
+        "operationId": "getGameAchievementDistribution",
+        "tags": ["Games"],
+        "parameters": [
+          {
+            "name": "raGameId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameAchievementDistributionResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
     "/api/leaderboards/{raLeaderboardId}": {
       "get": {
         "operationId": "getLeaderboard",
@@ -641,6 +914,150 @@
         }
       }
     },
+    "/api/sync/dispatch": {
+      "post": {
+        "operationId": "triggerDueDispatchSync",
+        "tags": ["Sync"],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncAcceptedResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncCooldownResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/member-activity": {
+      "post": {
+        "operationId": "triggerMemberActivitySync",
+        "tags": ["Sync"],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncAcceptedResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncCooldownResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/member-activity/status": {
+      "get": {
+        "operationId": "getMemberActivitySyncStatus",
+        "tags": ["Sync"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncStatusDto" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/member-rank": {
+      "post": {
+        "operationId": "triggerMemberRankSync",
+        "tags": ["Sync"],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncAcceptedResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncCooldownResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/member-rank/status": {
+      "get": {
+        "operationId": "getMemberRankSyncStatus",
+        "tags": ["Sync"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncStatusDto" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/member-achievements": {
+      "post": {
+        "operationId": "triggerMemberAchievementSync",
+        "tags": ["Sync"],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncAcceptedResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncCooldownResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/member-achievements/status": {
+      "get": {
+        "operationId": "getMemberAchievementSyncStatus",
+        "tags": ["Sync"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncStatusDto" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/member-invites": {
       "get": {
         "operationId": "getAdminMemberInvites",
@@ -811,6 +1228,39 @@
           "isAdmin": { "type": "boolean" }
         }
       },
+      "MemberSelfSyncScopeStatusDto": {
+        "type": "object",
+        "properties": {
+          "lastSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "cooldownUntil": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "MemberSelfSyncStatusDto": {
+        "type": "object",
+        "required": ["leaderboards", "profile", "achievements"],
+        "properties": {
+          "leaderboards": { "$ref": "#/components/schemas/MemberSelfSyncScopeStatusDto" },
+          "profile": { "$ref": "#/components/schemas/MemberSelfSyncScopeStatusDto" },
+          "achievements": { "$ref": "#/components/schemas/MemberSelfSyncScopeStatusDto" }
+        }
+      },
+      "MemberSelfSyncLeaderboardsResponse": {
+        "type": "object",
+        "required": ["queued", "skippedCooldown"],
+        "properties": {
+          "queued": { "type": "integer" },
+          "skippedCooldown": { "type": "integer" }
+        }
+      },
+      "MemberSelfSyncRunResponse": {
+        "type": "object",
+        "required": ["id", "status"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "status": { "type": "string" },
+          "finishedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
       "PutMemberRaAccountRequest": {
         "type": "object",
         "required": ["raUsername", "raApiKey"],
@@ -855,7 +1305,43 @@
           "avatarUrl": { "type": "string", "nullable": true },
           "boardsWithScore": { "type": "integer" },
           "friendRankOnes": { "type": "integer" },
-          "hasApiKey": { "type": "boolean" }
+          "hasApiKey": { "type": "boolean" },
+          "raRank": { "type": "integer", "nullable": true },
+          "raTotalRanked": { "type": "integer", "nullable": true },
+          "raTotalPoints": { "type": "integer", "nullable": true },
+          "raTotalSoftcorePoints": { "type": "integer", "nullable": true },
+          "raMetricsSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "raRankDelta": { "type": "integer", "nullable": true },
+          "raPointsDelta": { "type": "integer", "nullable": true },
+          "lastActiveAt": { "type": "string", "format": "date-time", "nullable": true },
+          "raStatus": { "type": "string", "nullable": true },
+          "raPresenceRaGameId": { "type": "integer", "nullable": true },
+          "raPresenceGameTitle": { "type": "string", "nullable": true },
+          "raPresenceIsTracked": { "type": "boolean", "nullable": true },
+          "raPresenceSyncedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "MembersSummaryDto": {
+        "type": "object",
+        "required": [
+          "memberCount",
+          "unlocksLast7Days",
+          "unlocksLast30Days",
+          "activeMembersLast7Days",
+          "playingNowCount"
+        ],
+        "properties": {
+          "memberCount": { "type": "integer" },
+          "championshipLeaderDisplayName": { "type": "string", "nullable": true },
+          "championshipLeaderRaUsername": { "type": "string", "nullable": true },
+          "championshipLeaderFriendRankOnes": { "type": "integer", "nullable": true },
+          "unlocksLast7Days": { "type": "integer" },
+          "unlocksLast30Days": { "type": "integer" },
+          "activeMembersLast7Days": { "type": "integer" },
+          "lastUnlockAt": { "type": "string", "format": "date-time", "nullable": true },
+          "topGameLast7Days": { "$ref": "#/components/schemas/DashboardAchievementTopGameDto", "nullable": true },
+          "playingNowCount": { "type": "integer" },
+          "raMetricsFreshnessAt": { "type": "string", "format": "date-time", "nullable": true }
         }
       },
       "MemberStandingDto": {
@@ -1165,6 +1651,7 @@
           "genre": { "type": "string", "nullable": true },
           "releasedAt": { "type": "string", "format": "date-time", "nullable": true },
           "metadataSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "leaderboardScoresSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
           "members": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/StandingMemberDto" }
@@ -1390,7 +1877,9 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/DashboardGamePlayerAvatarDto" }
           },
-          "lastActivityAt": { "type": "string", "format": "date-time", "nullable": true }
+          "lastActivityAt": { "type": "string", "format": "date-time", "nullable": true },
+          "leaderboardScoresSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "totalAchievementsInCatalog": { "type": "integer", "nullable": true }
         }
       },
       "RecentGroupGamePlayerDto": {
@@ -1494,7 +1983,7 @@
       },
       "DashboardResponse": {
         "type": "object",
-        "required": ["championship", "recentGroupGames", "games"],
+        "required": ["championship", "recentGroupGames"],
         "properties": {
           "championship": {
             "type": "array",
@@ -1503,11 +1992,286 @@
           "recentGroupGames": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/RecentGroupGameDto" }
-          },
-          "games": {
+          }
+        }
+      },
+      "DashboardGamesResponse": {
+        "type": "object",
+        "required": ["total", "offset", "limit", "items"],
+        "properties": {
+          "total": { "type": "integer" },
+          "offset": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/DashboardGameDto" }
           }
+        }
+      },
+      "DashboardAchievementActivityItemDto": {
+        "type": "object",
+        "required": [
+          "memberId",
+          "raUsername",
+          "displayName",
+          "raGameId",
+          "gameTitle",
+          "raAchievementId",
+          "title",
+          "points",
+          "hardcoreEarned"
+        ],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "raAchievementId": { "type": "integer" },
+          "title": { "type": "string" },
+          "points": { "type": "integer" },
+          "badgeUrl": { "type": "string", "nullable": true },
+          "dateEarned": { "type": "string", "format": "date-time", "nullable": true },
+          "hardcoreEarned": { "type": "boolean" }
+        }
+      },
+      "DashboardAchievementActivityResponse": {
+        "type": "object",
+        "required": ["total", "offset", "limit", "items"],
+        "properties": {
+          "total": { "type": "integer" },
+          "offset": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DashboardAchievementActivityItemDto" }
+          }
+        }
+      },
+      "DashboardAchievementTopGameDto": {
+        "type": "object",
+        "required": ["raGameId", "title", "unlockCount"],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "unlockCount": { "type": "integer" }
+        }
+      },
+      "DashboardAchievementSummaryResponse": {
+        "type": "object",
+        "required": ["unlocksLast7Days", "unlocksLast30Days", "activeMembersLast7Days"],
+        "properties": {
+          "unlocksLast7Days": { "type": "integer" },
+          "unlocksLast30Days": { "type": "integer" },
+          "activeMembersLast7Days": { "type": "integer" },
+          "lastUnlockAt": { "type": "string", "format": "date-time", "nullable": true },
+          "topGameLast7Days": {
+            "nullable": true,
+            "allOf": [{ "$ref": "#/components/schemas/DashboardAchievementTopGameDto" }]
+          },
+          "achievementsSyncedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "DashboardAchievementHistoryItemDto": {
+        "type": "object",
+        "required": ["earnedAt", "cumulativeUnlocks", "cumulativePoints", "cumulativeTruePoints"],
+        "properties": {
+          "earnedAt": { "type": "string", "format": "date-time" },
+          "cumulativeUnlocks": { "type": "integer" },
+          "cumulativePoints": { "type": "integer" },
+          "cumulativeTruePoints": { "type": "integer" }
+        }
+      },
+      "DashboardAchievementHistoryResponse": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DashboardAchievementHistoryItemDto" }
+          }
+        }
+      },
+      "GameAchievementMemberDto": {
+        "type": "object",
+        "required": ["memberId", "raUsername", "displayName"],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true }
+        }
+      },
+      "GameAchievementCatalogItemDto": {
+        "type": "object",
+        "required": ["raAchievementId", "title", "points", "trueRatio", "displayOrder"],
+        "properties": {
+          "raAchievementId": { "type": "integer" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "points": { "type": "integer" },
+          "trueRatio": { "type": "integer" },
+          "badgeUrl": { "type": "string", "nullable": true },
+          "displayOrder": { "type": "integer" }
+        }
+      },
+      "GameAchievementMemberUnlockDto": {
+        "type": "object",
+        "required": ["memberId", "raAchievementId", "hardcoreEarned"],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raAchievementId": { "type": "integer" },
+          "dateEarned": { "type": "string", "format": "date-time", "nullable": true },
+          "hardcoreEarned": { "type": "boolean" }
+        }
+      },
+      "GameAchievementMemberSummaryDto": {
+        "type": "object",
+        "required": [
+          "memberId",
+          "achievementsEarned",
+          "achievementsTotal",
+          "pointsEarned",
+          "pointsPossible"
+        ],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "achievementsEarned": { "type": "integer" },
+          "achievementsTotal": { "type": "integer" },
+          "pointsEarned": { "type": "integer" },
+          "pointsPossible": { "type": "integer" },
+          "lastUnlockAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "GameAchievementRecentUnlockDto": {
+        "type": "object",
+        "required": [
+          "memberId",
+          "raUsername",
+          "displayName",
+          "raAchievementId",
+          "title",
+          "points",
+          "hardcoreEarned"
+        ],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "raAchievementId": { "type": "integer" },
+          "title": { "type": "string" },
+          "points": { "type": "integer" },
+          "badgeUrl": { "type": "string", "nullable": true },
+          "dateEarned": { "type": "string", "format": "date-time", "nullable": true },
+          "hardcoreEarned": { "type": "boolean" }
+        }
+      },
+      "GameAchievementsResponse": {
+        "type": "object",
+        "required": [
+          "raGameId",
+          "title",
+          "achievements",
+          "members",
+          "unlocks",
+          "memberSummaries",
+          "membersMastered",
+          "recentUnlocks"
+        ],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "achievementProgressSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "achievements": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameAchievementCatalogItemDto" }
+          },
+          "members": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameAchievementMemberDto" }
+          },
+          "unlocks": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameAchievementMemberUnlockDto" }
+          },
+          "memberSummaries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameAchievementMemberSummaryDto" }
+          },
+          "completionLeader": {
+            "allOf": [{ "$ref": "#/components/schemas/GameAchievementMemberSummaryDto" }],
+            "nullable": true
+          },
+          "membersMastered": { "type": "integer" },
+          "recentUnlocks": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameAchievementRecentUnlockDto" }
+          }
+        }
+      },
+      "AchievementDistributionBucketDto": {
+        "type": "object",
+        "required": ["achievementsEarned", "playerCount"],
+        "properties": {
+          "achievementsEarned": { "type": "integer" },
+          "playerCount": { "type": "integer" }
+        }
+      },
+      "GameAchievementDistributionResponse": {
+        "type": "object",
+        "required": ["raGameId", "available", "softcoreBuckets", "hardcoreBuckets"],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "available": { "type": "boolean" },
+          "syncedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "softcoreBuckets": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AchievementDistributionBucketDto" }
+          },
+          "hardcoreBuckets": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AchievementDistributionBucketDto" }
+          }
+        }
+      },
+      "MemberAchievementListItemDto": {
+        "type": "object",
+        "required": [
+          "raAchievementId",
+          "raGameId",
+          "gameTitle",
+          "isTracked",
+          "title",
+          "points",
+          "hardcoreEarned"
+        ],
+        "properties": {
+          "raAchievementId": { "type": "integer" },
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "isTracked": { "type": "boolean" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "points": { "type": "integer" },
+          "badgeUrl": { "type": "string", "nullable": true },
+          "dateEarned": { "type": "string", "format": "date-time", "nullable": true },
+          "hardcoreEarned": { "type": "boolean" }
+        }
+      },
+      "MemberAchievementsListResponse": {
+        "type": "object",
+        "required": ["total", "offset", "limit", "items"],
+        "properties": {
+          "total": { "type": "integer" },
+          "offset": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberAchievementListItemDto" }
+          },
+          "achievementsProgressSyncedAt": { "type": "string", "format": "date-time", "nullable": true }
         }
       },
       "MemberSummaryDto": {
@@ -1569,11 +2333,25 @@
           }
         }
       },
+      "AdminLastSyncByKindDto": {
+        "type": "object",
+        "required": ["kind"],
+        "properties": {
+          "kind": { "type": "string" },
+          "status": { "type": "string", "nullable": true },
+          "startedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "finishedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
       "AdminOpsDto": {
         "type": "object",
-        "required": ["health", "recentRuns", "memberCoverageSummary", "members", "scheduler", "config"],
+        "required": ["health", "lastSyncByKind", "recentRuns", "memberCoverageSummary", "members", "scheduler", "config"],
         "properties": {
           "health": { "$ref": "#/components/schemas/AdminOpsHealthDto" },
+          "lastSyncByKind": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AdminLastSyncByKindDto" }
+          },
           "recentRuns": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/AdminSyncRunDto" }

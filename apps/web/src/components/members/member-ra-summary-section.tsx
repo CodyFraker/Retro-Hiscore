@@ -3,6 +3,7 @@ import { MemberRaRecentAchievements } from "@/components/members/member-ra-recen
 import { MemberRaRecentlyPlayed } from "@/components/members/member-ra-recently-played";
 import { MemberRaSummaryTrends } from "@/components/members/member-ra-summary-trends";
 import { MemberRaAchievementTrends } from "@/components/members/member-ra-achievement-trends";
+import { LastSyncedLabel } from "@/components/sync/last-synced-label";
 import type {
   MemberRaAchievementHistoryItemDto,
   MemberRaRankHistoryItemDto,
@@ -37,10 +38,14 @@ export function MemberRaSummarySection({ data, rankHistory, achievementHistory }
   }
 
   const summary = data.summary;
+  const profileSyncedAt = rankHistory[0]?.syncedAt ?? null;
 
   return (
     <section className="space-y-8">
-      <h2 className="steam-section-heading">RetroAchievements</h2>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+        <h2 className="steam-section-heading">RetroAchievements</h2>
+        <LastSyncedLabel at={profileSyncedAt} />
+      </div>
 
       <div className="min-w-0 space-y-6">
         {summary.presence ? <MemberRaPresenceCard presence={summary.presence} /> : null}
@@ -49,6 +54,11 @@ export function MemberRaSummarySection({ data, rankHistory, achievementHistory }
           excludeGameId={summary.presence?.raGameId}
         />
         <MemberRaRecentAchievements achievements={summary.recentAchievements} />
+        <MemberRaRecentAchievements
+          achievements={summary.recentAchievements}
+          trackedOnly
+          heading="Recent unlocks (tracked games)"
+        />
       </div>
 
       <div className="space-y-3">

@@ -339,4 +339,172 @@ public class MemberApiTests : IAsyncLifetime
         history.Items[2].SyncedAt.ShouldBe(olderSync);
         history.Items[2].LeaderboardTitle.ShouldBe("Board A");
     }
+
+    [Fact]
+    public async Task GetMembers_IncludesLatestRaMetricsAndTrend_WhenTwoSnapshots()
+    {
+        // Arrange
+        var olderSync = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var newerSync = new DateTimeOffset(2026, 1, 2, 0, 0, 0, TimeSpan.Zero);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            db.MemberRaRankSnapshots.AddRange(
+                new MemberRaRankSnapshot
+                {
+                    MemberId = shrimp.Id,
+                    Rank = 120_000,
+                    TotalRanked = 163_826,
+                    TotalPoints = 500,
+                    SyncedAt = olderSync
+                },
+                new MemberRaRankSnapshot
+                {
+                    MemberId = shrimp.Id,
+                    Rank = 117_215,
+                    TotalRanked = 163_826,
+                    TotalPoints = 534,
+                    TotalSoftcorePoints = 14,
+                    SyncedAt = newerSync
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var members = await client.GetFromJsonAsync<List<MemberDto>>("/api/members", JsonOptions);
+
+        // Assert
+        members.ShouldNotBeNull();
+        var shrimpRow = members.First(m => m.RaUsername == "ShrimpPoboy");
+        shrimpRow.RaRank.ShouldBe(117_215);
+        shrimpRow.RaTotalPoints.ShouldBe(534);
+        shrimpRow.RaTotalSoftcorePoints.ShouldBe(14);
+        shrimpRow.RaMetricsSyncedAt.ShouldBe(newerSync);
+        shrimpRow.RaRankDelta.ShouldBe(120_000 - 117_215);
+        shrimpRow.RaPointsDelta.ShouldBe(34);
+    }
+
+    [Fact]
+    public async Task GetMembers_LastActiveAt_UsesRaSyncedPlayAndUnlocks()
+    {
+        // Arrange
+        var playAt = new DateTimeOffset(2026, 2, 10, 12, 0, 0, TimeSpan.Zero);
+        var unlockAt = new DateTimeOffset(2026, 2, 15, 8, 0, 0, TimeSpan.Zero);
+        const int raGameId = 38130;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            db.MemberRecentGamePlays.Add(new MemberRecentGamePlay
+            {
+                MemberId = shrimp.Id,
+                RaGameId = raGameId,
+                Title = "Pinball",
+                ConsoleId = 1,
+                LastPlayedAt = playAt,
+                SyncedAt = playAt
+            });
+            db.RaAchievements.Add(new RaAchievement
+            {
+                RaAchievementId = 9010,
+                RaGameId = raGameId,
+                Title = "Play",
+                Points = 1,
+                TrueRatio = 1,
+                DisplayOrder = 1
+            });
+            db.MemberRaAchievements.Add(new MemberRaAchievement
+            {
+                MemberId = shrimp.Id,
+                RaAchievementId = 9010,
+                DateEarned = unlockAt
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var members = await client.GetFromJsonAsync<List<MemberDto>>("/api/members", JsonOptions);
+
+        // Assert
+        members.ShouldNotBeNull();
+        var shrimpRow = members.First(m => m.RaUsername == "ShrimpPoboy");
+        shrimpRow.LastActiveAt.ShouldBe(unlockAt);
+    }
+
+    [Fact]
+    public async Task GetMembers_IncludesPresence_WhenMemberRankSyncWrotePresence()
+    {
+        // Arrange
+        var syncedAt = new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            shrimp.RaStatus = "Playing Game";
+            shrimp.RaPresenceRaGameId = 38130;
+            shrimp.RaPresenceGameTitle = "Pinball";
+            shrimp.RaPresenceSyncedAt = syncedAt;
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var members = await client.GetFromJsonAsync<List<MemberDto>>("/api/members", JsonOptions);
+
+        // Assert
+        members.ShouldNotBeNull();
+        var shrimpRow = members.First(m => m.RaUsername == "ShrimpPoboy");
+        shrimpRow.RaStatus.ShouldBe("Playing Game");
+        shrimpRow.RaPresenceRaGameId.ShouldBe(38130);
+        shrimpRow.RaPresenceGameTitle.ShouldBe("Pinball");
+        shrimpRow.RaPresenceIsTracked.ShouldBeTrue();
+        shrimpRow.RaPresenceSyncedAt.ShouldBe(syncedAt);
+    }
+
+    [Fact]
+    public async Task GetMembersSummary_ReturnsMemberCountAndAchievementStats()
+    {
+        // Arrange
+        const int raGameId = 38130;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var member = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            member.RaStatus = "Online";
+            db.RaAchievements.Add(new RaAchievement
+            {
+                RaAchievementId = 9020,
+                RaGameId = raGameId,
+                Title = "Fresh",
+                Points = 1,
+                TrueRatio = 1,
+                DisplayOrder = 1
+            });
+            db.MemberRaAchievements.Add(new MemberRaAchievement
+            {
+                MemberId = member.Id,
+                RaAchievementId = 9020,
+                DateEarned = DateTimeOffset.UtcNow.AddDays(-1)
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var summary = await client.GetFromJsonAsync<MembersSummaryDto>("/api/members/summary", JsonOptions);
+
+        // Assert
+        summary.ShouldNotBeNull();
+        summary.MemberCount.ShouldBeGreaterThanOrEqualTo(2);
+        summary.UnlocksLast7Days.ShouldBeGreaterThanOrEqualTo(1);
+        summary.PlayingNowCount.ShouldBeGreaterThanOrEqualTo(1);
+        summary.ChampionshipLeaderRaUsername.ShouldNotBeNullOrWhiteSpace();
+    }
 }

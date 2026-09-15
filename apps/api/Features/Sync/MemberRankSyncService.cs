@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
-using RetroHiscore.Api.Features.Ra;
 using RetroHiscore.Api.Options;
 
 namespace RetroHiscore.Api.Features.Sync;
@@ -10,15 +9,25 @@ namespace RetroHiscore.Api.Features.Sync;
 public interface IMemberRankSyncService
 {
     Task<SyncRun> SyncAsync(SyncTrigger trigger, CancellationToken cancellationToken = default);
+    bool IsManualCooldownActive(out DateTimeOffset? availableAt);
 }
 
 public sealed class MemberRankSyncService(
     AppDbContext db,
-    IRaApiClient raApiClient,
-    IRaApiKeyPool apiKeyPool,
+    IMemberRaRankSnapshotSync memberRaRankSnapshotSync,
     IMemberRaGameProgressSyncService memberRaGameProgressSync,
+    IOptions<SyncOptions> syncOptions,
     ILogger<MemberRankSyncService> logger) : IMemberRankSyncService
 {
+    private readonly SyncOptions _syncOptions = syncOptions.Value;
+
+    public bool IsManualCooldownActive(out DateTimeOffset? availableAt)
+        => ManualSyncCooldown.IsActive(
+            db,
+            SyncKind.MemberRank,
+            _syncOptions.ManualCooldownSeconds,
+            out availableAt);
+
     public async Task<SyncRun> SyncAsync(SyncTrigger trigger, CancellationToken cancellationToken = default)
     {
         var run = new SyncRun
@@ -44,15 +53,11 @@ public sealed class MemberRankSyncService(
             {
                 try
                 {
-                    var summary = await SyncMemberRaRankSnapshotAsync(member, syncedAt, cancellationToken);
-                    if (summary is not null)
-                    {
-                        await memberRaGameProgressSync.SyncMemberGamesFromSummaryAsync(
-                            member,
-                            summary,
-                            syncedAt,
-                            cancellationToken);
-                    }
+                    await memberRaRankSnapshotSync.SyncMemberAsync(member, syncedAt, cancellationToken);
+                    await memberRaGameProgressSync.SyncMemberTrackedGamesAsync(
+                        member,
+                        syncedAt,
+                        cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -79,59 +84,5 @@ public sealed class MemberRankSyncService(
         }
 
         return run;
-    }
-
-    private async Task<RaUserSummaryDto?> SyncMemberRaRankSnapshotAsync(
-        Member member,
-        DateTimeOffset syncedAt,
-        CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(member.RaUsername))
-        {
-            return null;
-        }
-
-        var preferredKeys = string.IsNullOrWhiteSpace(member.RaApiKey)
-            ? Array.Empty<string>()
-            : new[] { member.RaApiKey };
-
-        var target = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername!;
-        var summary = await apiKeyPool.ExecuteAsync(
-            preferredKeys,
-            (key, ct) => raApiClient.GetUserSummaryAsync(
-                target,
-                key,
-                recentGamesCount: 3,
-                recentAchievementsCount: 0,
-                cancellationToken: ct),
-            cancellationToken);
-
-        if (summary is null)
-        {
-            return null;
-        }
-
-        var hasMetric = summary.Rank is not null
-            || summary.TotalPoints is not null
-            || summary.TotalTruePoints is not null
-            || summary.TotalSoftcorePoints is not null;
-
-        if (hasMetric)
-        {
-            db.MemberRaRankSnapshots.Add(new MemberRaRankSnapshot
-            {
-                MemberId = member.Id,
-                Rank = summary.Rank,
-                TotalRanked = summary.TotalRanked,
-                TotalPoints = summary.TotalPoints,
-                TotalTruePoints = summary.TotalTruePoints,
-                TotalSoftcorePoints = summary.TotalSoftcorePoints,
-                SyncedAt = syncedAt
-            });
-
-            await db.SaveChangesAsync(cancellationToken);
-        }
-
-        return summary;
     }
 }

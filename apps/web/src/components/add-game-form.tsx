@@ -16,7 +16,7 @@ export function AddGameForm() {
 
   return (
     <form
-      className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3"
+      className="flex flex-col gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         const parsed = parseRaGameIdInput(input);
@@ -41,39 +41,38 @@ export function AddGameForm() {
         });
       }}
     >
-      <label className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <span className="text-xs font-medium text-muted-foreground">
-          RetroAchievements game id or URL
-        </span>
+      <label htmlFor="add-game-input" className="text-xs font-medium text-muted-foreground">
+        RetroAchievements game id or URL
+      </label>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <input
+          id="add-game-input"
           type="text"
           inputMode="text"
           value={input}
           disabled={pending}
           onChange={(event) => setInput(event.target.value)}
           placeholder="e.g. 38130 or retroachievements.org/game/38130"
-          className="h-8 w-full rounded-md bg-input px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+          className="h-8 min-w-0 flex-1 rounded-md bg-input px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
         />
-        <span className="text-xs text-muted-foreground">
-          Find games on{" "}
-          <a
-            href="https://retroachievements.org/games"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-foreground hover:text-[var(--accent-retro)]"
-          >
-            RetroAchievements
-          </a>
-        </span>
-      </label>
-      <div className="flex flex-col items-stretch gap-1 sm:items-end">
-        <Button type="submit" disabled={pending || !input.trim()}>
+        <Button type="submit" className="w-full shrink-0 sm:w-auto" disabled={pending || !input.trim()}>
           <Plus />
           {pending ? "Adding…" : "Add game"}
         </Button>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-        {!error && message && <p className="text-xs text-muted-foreground">{message}</p>}
       </div>
+      <span className="text-xs text-muted-foreground">
+        Find games on{" "}
+        <a
+          href="https://retroachievements.org/games"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-foreground hover:text-[var(--accent-retro)]"
+        >
+          RetroAchievements
+        </a>
+      </span>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      {!error && message && <p className="text-xs text-muted-foreground">{message}</p>}
     </form>
   );
 }

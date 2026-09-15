@@ -46,6 +46,12 @@ public sealed class RecurringSyncJobRegistrar(IRecurringJobManager recurringJobs
                     x => x.RunScheduledAsync(CancellationToken.None),
                     SyncRecurringJobCron.ForIntervalDays(job.IntervalDays ?? 7));
                 break;
+            case SyncRecurringJobIds.MemberAchievements:
+                recurringJobs.AddOrUpdate<MemberAchievementSyncJob>(
+                    job.JobId,
+                    x => x.RunScheduledAsync(CancellationToken.None),
+                    SyncRecurringJobCron.ForMinuteInterval(job.IntervalMinutes ?? 360, 1, 60 * 24));
+                break;
             default:
                 throw new InvalidOperationException($"Unsupported recurring job id '{job.JobId}'.");
         }

@@ -90,4 +90,53 @@ public class MemberRaGameProgressSyncTests : IAsyncLifetime
         unlocks[0].DateEarned.ShouldNotBeNull();
         unlocks[0].DateEarnedHardcore.ShouldNotBeNull();
     }
+
+    [Fact]
+    public async Task SyncMemberGameProgress_PersistsLockedAchievementInCatalog_WithoutMemberUnlock()
+    {
+        // Arrange
+        await _factory.SetMemberApiKeyAsync("ShrimpPoboy", "shrimp-key");
+        const int gameId = 38130;
+        const int lockedId = 9002;
+
+        _factory.RaApiClient
+            .GetGameInfoAndUserProgressAsync(
+                gameId,
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<RaGameInfoAndUserProgressDto?>(new RaGameInfoAndUserProgressDto
+            {
+                Id = gameId,
+                Achievements = new Dictionary<string, RaGameAchievementProgressDto>
+                {
+                    ["9002"] = new RaGameAchievementProgressDto
+                    {
+                        Id = lockedId,
+                        Title = "Locked",
+                        Points = 1,
+                        TrueRatio = 5,
+                        BadgeName = "badge-9002",
+                        DisplayOrder = 2
+                    }
+                }
+            }));
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var member = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+        var sync = scope.ServiceProvider.GetRequiredService<IMemberRaGameProgressSyncService>();
+        var syncedAt = DateTimeOffset.UtcNow;
+
+        // Act
+        await sync.SyncMemberGameProgressAsync(member, gameId, syncedAt);
+
+        // Assert
+        var catalog = await db.RaAchievements.SingleAsync(a => a.RaAchievementId == lockedId);
+        catalog.Title.ShouldBe("Locked");
+        var unlocks = await db.MemberRaAchievements
+            .Where(m => m.MemberId == member.Id && m.RaAchievementId == lockedId)
+            .ToListAsync();
+        unlocks.Count.ShouldBe(0);
+    }
 }

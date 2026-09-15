@@ -10,6 +10,17 @@ namespace RetroHiscore.Api.Features.Sync;
 
 public interface IMemberRaGameProgressSyncService
 {
+    Task SyncMemberGameProgressAsync(
+        Member member,
+        int raGameId,
+        DateTimeOffset syncedAt,
+        CancellationToken cancellationToken = default);
+
+    Task SyncMemberTrackedGamesAsync(
+        Member member,
+        DateTimeOffset syncedAt,
+        CancellationToken cancellationToken = default);
+
     Task SyncMemberGamesFromSummaryAsync(
         Member member,
         RaUserSummaryDto summary,
@@ -33,13 +44,41 @@ public sealed class MemberRaGameProgressSyncService(
         DateTimeOffset syncedAt,
         CancellationToken cancellationToken = default)
     {
+        var gameIds = CollectGameIds(summary);
+        foreach (var gameId in gameIds)
+        {
+            await SyncMemberGameProgressAsync(member, gameId, syncedAt, cancellationToken);
+        }
+    }
+
+    public async Task SyncMemberTrackedGamesAsync(
+        Member member,
+        DateTimeOffset syncedAt,
+        CancellationToken cancellationToken = default)
+    {
         if (string.IsNullOrWhiteSpace(member.RaUsername) || string.IsNullOrWhiteSpace(member.RaApiKey))
         {
             return;
         }
 
-        var gameIds = CollectGameIds(summary);
-        if (gameIds.Count == 0)
+        var trackedGameIds = await db.Games
+            .AsNoTracking()
+            .Select(g => g.RaGameId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var raGameId in trackedGameIds)
+        {
+            await SyncMemberGameProgressAsync(member, raGameId, syncedAt, cancellationToken);
+        }
+    }
+
+    public async Task SyncMemberGameProgressAsync(
+        Member member,
+        int raGameId,
+        DateTimeOffset syncedAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(member.RaUsername) || string.IsNullOrWhiteSpace(member.RaApiKey))
         {
             return;
         }
@@ -47,34 +86,29 @@ public sealed class MemberRaGameProgressSyncService(
         var identity = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername!;
         var mediaBaseUrl = _raOptions.MediaBaseUrl;
 
-        foreach (var gameId in gameIds)
+        try
         {
-            try
+            var progress = await apiKeyPool.ExecuteAsync(
+                [member.RaApiKey],
+                (key, ct) => raApiClient.GetGameInfoAndUserProgressAsync(raGameId, identity, key, ct),
+                cancellationToken);
+
+            if (progress?.Achievements is null || progress.Achievements.Count == 0)
             {
-                var progress = await apiKeyPool.ExecuteAsync(
-                    [member.RaApiKey],
-                    (key, ct) => raApiClient.GetGameInfoAndUserProgressAsync(gameId, identity, key, ct),
+                return;
+            }
+
+            foreach (var achievement in progress.Achievements.Values)
+            {
+                await UpsertAchievementCatalogAsync(
+                    raGameId,
+                    achievement,
+                    syncedAt,
+                    mediaBaseUrl,
                     cancellationToken);
 
-                if (progress?.Achievements is null || progress.Achievements.Count == 0)
+                if (!string.IsNullOrWhiteSpace(achievement.DateEarned))
                 {
-                    continue;
-                }
-
-                foreach (var achievement in progress.Achievements.Values)
-                {
-                    if (string.IsNullOrWhiteSpace(achievement.DateEarned))
-                    {
-                        continue;
-                    }
-
-                    await UpsertAchievementCatalogAsync(
-                        gameId,
-                        achievement,
-                        syncedAt,
-                        mediaBaseUrl,
-                        cancellationToken);
-
                     await EnsureMemberUnlockAsync(
                         member.Id,
                         achievement,
@@ -82,14 +116,21 @@ public sealed class MemberRaGameProgressSyncService(
                         cancellationToken);
                 }
             }
-            catch (Exception ex)
+
+            var game = await db.Games.FirstOrDefaultAsync(g => g.RaGameId == raGameId, cancellationToken);
+            if (game is not null)
             {
-                logger.LogError(
-                    ex,
-                    "Failed to sync RA game progress for member {Member} game {GameId}",
-                    member.RaUsername,
-                    gameId);
+                game.AchievementProgressSyncedAt = syncedAt;
+                await db.SaveChangesAsync(cancellationToken);
             }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Failed to sync RA game progress for member {Member} game {GameId}",
+                member.RaUsername,
+                raGameId);
         }
     }
 

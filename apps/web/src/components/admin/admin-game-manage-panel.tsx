@@ -63,7 +63,7 @@ export function AdminGameManagePanel({ game, initialSources }: Props) {
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
-            Manage games
+            Games
           </Link>
           <h1 className="font-[family-name:var(--font-display)] text-2xl text-[var(--accent-retro)]">
             {game.title}

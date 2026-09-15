@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Admin;
 using Shouldly;
 
@@ -64,5 +65,7 @@ public class AdminOpsApiTests
         body.Members.Count.ShouldBe(body.MemberCoverageSummary.TotalMembers);
         body.Config.KeysInPool.ShouldBeGreaterThan(0);
         body.Config.SharedCatalogKeyConfigured.ShouldBeTrue();
+        body.LastSyncByKind.Count.ShouldBe(5);
+        body.LastSyncByKind.ShouldContain(k => k.Kind == nameof(SyncKind.LeaderboardScores));
     }
 }

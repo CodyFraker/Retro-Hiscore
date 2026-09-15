@@ -1,27 +1,11 @@
-import { getServerSession } from "next-auth";
 import { AddGameForm } from "@/components/add-game-form";
 import { AdminGameTrackQueueSection } from "@/components/admin/admin-game-track-queue-section";
 import { AdminGamesSection } from "@/components/admin/admin-games-section";
-import { PageHero } from "@/components/layout/page-hero";
-import { authOptions } from "@/lib/auth-options";
 import { getServerApiClient } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminGamesPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.isAdmin) {
-    return (
-      <div className="mx-auto max-w-lg space-y-4 py-12">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl text-[var(--accent-retro)]">
-          Not authorized
-        </h1>
-        <p className="text-muted-foreground">This page is only available to site administrators.</p>
-      </div>
-    );
-  }
-
   let games;
   let queue;
   try {
@@ -44,18 +28,12 @@ export default async function AdminGamesPage() {
 
   return (
     <div className="space-y-10">
-      <PageHero
-        title="Manage games"
-        titleClassName="text-2xl sm:text-3xl md:text-4xl"
-        description="Track RetroAchievements titles, add download mirrors, and refresh metadata for your group."
-      />
-
-      <AdminGameTrackQueueSection items={queue} />
-
       <section className="space-y-3 rounded border border-border p-5">
         <h2 className="text-lg font-semibold">Add game</h2>
         <AddGameForm />
       </section>
+      
+      <AdminGameTrackQueueSection items={queue} />
 
       <AdminGamesSection games={games} />
     </div>

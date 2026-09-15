@@ -4,15 +4,17 @@ import { RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { LastSyncedLabel } from "@/components/sync/last-synced-label";
 import { Button } from "@/components/ui/button";
 import { triggerGameRefreshAction } from "@/lib/actions/game-sync";
 
 type Props = {
   raGameId: number;
   hasApiKey: boolean;
+  leaderboardScoresSyncedAt?: string | null;
 };
 
-export function GameRefreshButton({ raGameId, hasApiKey }: Props) {
+export function GameRefreshButton({ raGameId, hasApiKey, leaderboardScoresSyncedAt }: Props) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -42,7 +44,8 @@ export function GameRefreshButton({ raGameId, hasApiKey }: Props) {
         <RefreshCw className={pending ? "animate-spin" : undefined} />
         {pending ? "Refreshing…" : "Refresh scores"}
       </Button>
-      {message && <p className="text-xs text-muted-foreground">{message}</p>}
+      {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
+      <LastSyncedLabel at={leaderboardScoresSyncedAt} />
     </div>
   );
 }
