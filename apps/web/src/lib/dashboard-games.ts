@@ -32,7 +32,7 @@ export function sortDashboardGames(
         return b.leaderboardCount - a.leaderboardCount || a.title.localeCompare(b.title);
       case "population":
         return (
-          (b.maxGlobalEntryCount ?? 0) - (a.maxGlobalEntryCount ?? 0) ||
+          (b.totalRankedEntriesAcrossBoards ?? 0) - (a.totalRankedEntriesAcrossBoards ?? 0) ||
           a.title.localeCompare(b.title)
         );
       case "recent":

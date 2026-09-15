@@ -1,9 +1,20 @@
-import type { GameLeaderboardPopulationHistoryResponse } from "@/generated/api-client";
+import type {
+  GameLeaderboardPopulationHistoryResponse,
+  LeaderboardPopulationPointDto,
+} from "@/generated/api-client";
 
 export type TotalPopulationPoint = {
   syncedAt: string;
   totalEntryCount: number;
   boardCount: number;
+};
+
+export type BoardPopulationRow = {
+  raLeaderboardId: number;
+  title: string;
+  latestEntryCount: number;
+  entryCountDelta: number | null;
+  points: LeaderboardPopulationPointDto[];
 };
 
 export function toTotalPopulationSeries(
@@ -27,4 +38,35 @@ export function toTotalPopulationSeries(
       boardCount: boards,
     }))
     .sort((a, b) => new Date(a.syncedAt).getTime() - new Date(b.syncedAt).getTime());
+}
+
+export function toBoardPopulationRows(
+  data: GameLeaderboardPopulationHistoryResponse,
+): BoardPopulationRow[] {
+  return data.boards
+    .map((board) => {
+      const points = [...board.points].sort(
+        (a, b) => new Date(a.syncedAt).getTime() - new Date(b.syncedAt).getTime(),
+      );
+      const latest = points.at(-1);
+      const previous = points.length >= 2 ? points.at(-2) : undefined;
+
+      return {
+        raLeaderboardId: board.raLeaderboardId,
+        title: board.title,
+        latestEntryCount: latest?.entryCount ?? 0,
+        entryCountDelta:
+          latest != null && previous != null ? latest.entryCount - previous.entryCount : null,
+        points,
+      };
+    })
+    .filter((row) => row.points.length > 0)
+    .sort((a, b) => {
+      const deltaDiff =
+        Math.abs(b.entryCountDelta ?? 0) - Math.abs(a.entryCountDelta ?? 0);
+      if (deltaDiff !== 0) {
+        return deltaDiff;
+      }
+      return a.title.localeCompare(b.title);
+    });
 }

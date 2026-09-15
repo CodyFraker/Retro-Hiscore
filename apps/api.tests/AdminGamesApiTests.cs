@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using RetroHiscore.Api.Data;
+using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Admin;
 using RetroHiscore.Api.Features.Games;
 using RetroHiscore.Api.Features.Ra;
@@ -51,6 +52,90 @@ public class AdminGamesApiTests : IAsyncLifetime
         games.ShouldNotBeNull();
         games.Count.ShouldBeGreaterThan(0);
         games.ShouldAllBe(g => g.SourceCount >= 0);
+        games.ShouldAllBe(g => g.LeaderboardSyncStatus.Tier is "Hot" or "Cold");
+    }
+
+    [Fact]
+    public async Task GetAdminGames_ReturnsHotLeaderboardSyncStatus_WhenGroupPlayedRecently()
+    {
+        // Arrange
+        const int raGameId = 38130;
+        var recentPlay = DateTimeOffset.UtcNow.AddHours(-1);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            var game = await db.Games.SingleAsync(g => g.RaGameId == raGameId);
+            game.LeaderboardScoresSyncedAt = DateTimeOffset.UtcNow.AddDays(-2);
+            db.MemberRecentGamePlays.Add(new MemberRecentGamePlay
+            {
+                MemberId = shrimp.Id,
+                RaGameId = raGameId,
+                Title = "Tracked",
+                ConsoleId = 1,
+                ConsoleName = "Genesis",
+                LastPlayedAt = recentPlay,
+                NumAchieved = 1,
+                NumPossibleAchievements = 5,
+                SyncedAt = recentPlay
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
+
+        // Act
+        var games = await client.GetFromJsonAsync<List<AdminGameDto>>("/api/admin/games", JsonOptions);
+
+        // Assert
+        games.ShouldNotBeNull();
+        var game = games!.Single(g => g.RaGameId == raGameId);
+        game.LeaderboardSyncStatus.Tier.ShouldBe("Hot");
+        game.LeaderboardSyncStatus.LeaderboardSyncIsDue.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task PatchAdminGameLeaderboardSync_ForcesColdSchedule()
+    {
+        // Arrange
+        const int raGameId = 38130;
+        var recentPlay = DateTimeOffset.UtcNow.AddHours(-1);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            var game = await db.Games.SingleAsync(g => g.RaGameId == raGameId);
+            game.LeaderboardScoresSyncedAt = DateTimeOffset.UtcNow.AddMinutes(-5);
+            db.MemberRecentGamePlays.Add(new MemberRecentGamePlay
+            {
+                MemberId = shrimp.Id,
+                RaGameId = raGameId,
+                Title = "Tracked",
+                ConsoleId = 1,
+                ConsoleName = "Genesis",
+                LastPlayedAt = recentPlay,
+                NumAchieved = 1,
+                NumPossibleAchievements = 5,
+                SyncedAt = recentPlay
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
+
+        // Act
+        var response = await client.PatchAsJsonAsync(
+            $"/api/admin/games/{raGameId}/leaderboard-sync",
+            new PatchAdminGameLeaderboardSyncRequest(true));
+        var updated = await response.Content.ReadFromJsonAsync<AdminGameDto>(JsonOptions);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        updated.ShouldNotBeNull();
+        updated!.ForceColdLeaderboardSync.ShouldBeTrue();
+        updated.LeaderboardSyncStatus.Tier.ShouldBe("Cold");
+        updated.LeaderboardSyncStatus.LeaderboardSyncForcedCold.ShouldBeTrue();
+        updated.LeaderboardSyncStatus.LeaderboardSyncIsDue.ShouldBeFalse();
     }
 
     [Fact]

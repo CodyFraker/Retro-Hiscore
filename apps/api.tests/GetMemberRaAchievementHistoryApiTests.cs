@@ -99,9 +99,13 @@ public class GetMemberRaAchievementHistoryApiTests : IAsyncLifetime
         // Assert
         body.ShouldNotBeNull();
         body.Items.Count.ShouldBe(2);
+        body.Items[0].PointsEarned.ShouldBe(5);
+        body.Items[0].TruePointsEarned.ShouldBe(5);
         body.Items[0].CumulativeUnlocks.ShouldBe(1);
         body.Items[0].CumulativePoints.ShouldBe(5);
         body.Items[0].CumulativeTruePoints.ShouldBe(5);
+        body.Items[1].PointsEarned.ShouldBe(10);
+        body.Items[1].TruePointsEarned.ShouldBe(15);
         body.Items[1].CumulativeUnlocks.ShouldBe(2);
         body.Items[1].CumulativePoints.ShouldBe(15);
         body.Items[1].CumulativeTruePoints.ShouldBe(20);

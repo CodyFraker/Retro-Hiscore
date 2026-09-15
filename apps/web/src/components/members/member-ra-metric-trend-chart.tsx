@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { ChartEmptyState } from "@/components/charts/chart-empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { chartYDomain, type ChartYDomainMode } from "@/lib/chart-y-domain";
 
 type Props = {
   title: string;
@@ -22,14 +23,23 @@ type Props = {
   reversedY?: boolean;
   formatValue?: (value: number) => string;
   stroke?: string;
+  yDomainMode?: ChartYDomainMode;
+  tickFormat?: "sync" | "date";
 };
 
-function formatTick(value: string) {
+function formatSyncTick(value: string) {
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatDateTick(value: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
   }).format(new Date(value));
 }
 
@@ -44,6 +54,8 @@ export function MemberRaMetricTrendChart({
   reversedY = false,
   formatValue = defaultFormatValue,
   stroke = "var(--chart-1)",
+  yDomainMode = "tight",
+  tickFormat = "sync",
 }: Props) {
   const chartData = useMemo(
     () =>
@@ -55,6 +67,13 @@ export function MemberRaMetricTrendChart({
         })),
     [items, dataKey],
   );
+
+  const yDomain = useMemo(() => {
+    const values = chartData.map((row) => row[dataKey] as number);
+    return chartYDomain(values, yDomainMode);
+  }, [chartData, dataKey, yDomainMode]);
+
+  const formatTick = tickFormat === "date" ? formatDateTick : formatSyncTick;
 
   if (chartData.length < 2) {
     return (
@@ -88,7 +107,10 @@ export function MemberRaMetricTrendChart({
             />
             <YAxis
               reversed={reversedY}
-              width={48}
+              type="number"
+              domain={yDomain}
+              allowDataOverflow
+              width={52}
               tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
               tickLine={false}
               axisLine={false}

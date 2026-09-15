@@ -17,6 +17,7 @@ public static class PostAdminGameEndpoint
             ILeaderboardSyncService leaderboardSync,
             IConsoleIconSyncService consoleIconSync,
             IOptions<RaOptions> raOptions,
+            ISyncSettingsStore syncSettingsStore,
             CancellationToken ct) =>
         {
             var (game, error) = await AdminGameTracking.AddGameAsync(
@@ -33,7 +34,7 @@ public static class PostAdminGameEndpoint
                 return error;
             }
 
-            var dto = await AdminGameMapper.ToDtoAsync(db, game!, raOptions, ct);
+            var dto = await AdminGameMapper.ToDtoAsync(db, game!, raOptions, syncSettingsStore, ct);
             return Results.Created($"/api/admin/games/{game!.RaGameId}", dto);
         })
         .WithName("PostAdminGame")

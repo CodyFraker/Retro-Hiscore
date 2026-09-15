@@ -85,7 +85,49 @@ public class GetGameAchievementsApiTests : IAsyncLifetime
         body!.Achievements.Count.ShouldBe(1);
         body.Achievements[0].Title.ShouldBe("Test Ach");
         body.Unlocks.Count.ShouldBe(1);
+        body.Members.Count.ShouldBe(1);
+        body.Members[0].RaUsername.ShouldBe("ShrimpPoboy");
         body.MemberSummaries.Any(s => s.AchievementsEarned == 1).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task GetGameAchievements_IncludesMemberEngagedViaAchievementsOnly()
+    {
+        // Arrange
+        const int raGameId = 38130;
+        const int achievementId = 8002;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var member = await db.Members.SingleAsync(m => m.RaUsername == "xXScubXx");
+            db.RaAchievements.Add(new RaAchievement
+            {
+                RaAchievementId = achievementId,
+                RaGameId = raGameId,
+                Title = "Scub unlock",
+                Points = 5,
+                TrueRatio = 10,
+                DisplayOrder = 1
+            });
+            db.MemberRaAchievements.Add(new MemberRaAchievement
+            {
+                MemberId = member.Id,
+                RaAchievementId = achievementId,
+                DateEarned = DateTimeOffset.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var response = await client.GetAsync($"/api/games/{raGameId}/achievements");
+        var body = await response.Content.ReadFromJsonAsync<GameAchievementsResponse>(JsonOptions);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        body.ShouldNotBeNull();
+        body!.Members.Select(m => m.RaUsername).ShouldBe(["xXScubXx"]);
     }
 
     [Fact]

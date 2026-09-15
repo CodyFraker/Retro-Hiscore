@@ -17,6 +17,7 @@ public class Game
     public DateTimeOffset? ReleasedAt { get; set; }
     public DateTimeOffset? MetadataSyncedAt { get; set; }
     public DateTimeOffset? LeaderboardScoresSyncedAt { get; set; }
+    public bool ForceColdLeaderboardSync { get; set; }
     public DateTimeOffset? AchievementProgressSyncedAt { get; set; }
     public DateTimeOffset? AchievementDistributionSyncedAt { get; set; }
     public string? AchievementDistributionHardcoreJson { get; set; }

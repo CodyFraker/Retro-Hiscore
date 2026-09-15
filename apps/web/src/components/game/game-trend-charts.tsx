@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -12,12 +11,18 @@ import {
   YAxis,
 } from "recharts";
 import { ChartEmptyState } from "@/components/charts/chart-empty-state";
+import { GameRankTrendSection } from "@/components/game/game-rank-trend-section";
 import { MemberAvatar } from "@/components/members/member-avatar";
-import type { GameHistoryItemDto } from "@/generated/api-client";
+import type {
+  GameDelta,
+  GameHistoryItemDto,
+  GameLeaderboardDto,
+  StandingMemberDto,
+} from "@/generated/api-client";
+import { chartYDomain } from "@/lib/chart-y-domain";
 import {
-  countDistinctSyncTimestampsForBoardRanks,
   countDistinctSyncTimestampsForMemberLeads,
-  toBoardRankSeries,
+  memberLeadSeriesHasVariation,
   toMemberLeadSeries,
 } from "@/lib/game-history-series";
 
@@ -31,6 +36,10 @@ const CHART_COLORS = [
 
 type Props = {
   items: GameHistoryItemDto[];
+  leaderboards: GameLeaderboardDto[];
+  members: StandingMemberDto[];
+  deltas: GameDelta[];
+  defaultMemberId?: string | null;
 };
 
 function formatTick(value: string) {
@@ -46,15 +55,14 @@ function memberSeriesKey(memberId: string) {
   return `member-${memberId}`;
 }
 
-function boardMemberSeriesKey(raLeaderboardId: number, memberId: string) {
-  return `board-${raLeaderboardId}-${memberId}`;
-}
-
-export function GameTrendCharts({ items }: Props) {
+export function GameTrendCharts({
+  items,
+  leaderboards,
+  members,
+  deltas,
+  defaultMemberId,
+}: Props) {
   const memberLeadSeries = useMemo(() => toMemberLeadSeries(items), [items]);
-  const boardRankSeries = useMemo(() => toBoardRankSeries(items), [items]);
-  const [hiddenMembers, setHiddenMembers] = useState<Record<string, boolean>>({});
-  const [hiddenBoards, setHiddenBoards] = useState<Record<string, boolean>>({});
 
   const leadChartData = useMemo(() => {
     const byTime = new Map<string, Record<string, string | number>>();
@@ -72,198 +80,113 @@ export function GameTrendCharts({ items }: Props) {
     );
   }, [memberLeadSeries]);
 
-  const rankChartData = useMemo(() => {
-    const byTime = new Map<string, Record<string, string | number>>();
-    for (const board of boardRankSeries) {
-      const key = boardMemberSeriesKey(board.raLeaderboardId, board.memberId);
-      for (const point of board.points) {
-        if (point.friendRank == null) {
-          continue;
-        }
-        const row = byTime.get(point.syncedAt) ?? { syncedAt: point.syncedAt };
-        row[key] = point.friendRank;
-        byTime.set(point.syncedAt, row);
-      }
-    }
-    return [...byTime.values()].sort(
-      (a, b) =>
-        new Date(String(a.syncedAt)).getTime() - new Date(String(b.syncedAt)).getTime(),
-    );
-  }, [boardRankSeries]);
-
-  const maxFriendRank = useMemo(() => {
-    let max = 1;
-    for (const board of boardRankSeries) {
-      for (const point of board.points) {
-        if (point.friendRank != null && point.friendRank > max) {
-          max = point.friendRank;
+  const leadYDomain = useMemo(() => {
+    const values: number[] = [];
+    for (const row of leadChartData) {
+      for (const member of memberLeadSeries) {
+        const value = row[memberSeriesKey(member.memberId)];
+        if (typeof value === "number") {
+          values.push(value);
         }
       }
     }
-    return max;
-  }, [boardRankSeries]);
+    return chartYDomain(values, "tight");
+  }, [leadChartData, memberLeadSeries]);
 
-  const hasLeadTrend = countDistinctSyncTimestampsForMemberLeads(memberLeadSeries) >= 2;
-  const hasRankTrend = countDistinctSyncTimestampsForBoardRanks(boardRankSeries) >= 2;
+  const hasLeadTrend =
+    countDistinctSyncTimestampsForMemberLeads(memberLeadSeries) >= 2 &&
+    memberLeadSeriesHasVariation(memberLeadSeries);
 
   return (
     <div className="space-y-10">
       <section className="space-y-3">
-        <h2 className="steam-section-heading">Board leads over time</h2>
+        <div>
+          <h2 className="steam-section-heading">Board leads over time</h2>
+          <p className="text-xs text-muted-foreground">
+            How many leaderboards each member leads among friends at each sync.
+          </p>
+        </div>
         {hasLeadTrend ? (
           <div className="space-y-2">
-          <ul className="flex flex-wrap gap-3 px-1 text-xs text-muted-foreground">
-            {memberLeadSeries.map((member, index) => (
-              <li key={member.memberId} className="inline-flex items-center gap-1.5">
-                <MemberAvatar avatarUrl={member.avatarUrl} displayName={member.displayName} size={18} />
-                <span style={{ color: CHART_COLORS[index % CHART_COLORS.length] }}>{member.displayName}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="min-w-0 h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={leadChartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="syncedAt"
-                  tickFormatter={formatTick}
-                  stroke="var(--muted-foreground)"
-                  fontSize={11}
-                  minTickGap={32}
-                />
-                <YAxis
-                  stroke="var(--muted-foreground)"
-                  fontSize={11}
-                  width={40}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "0.4rem",
-                    color: "var(--foreground)",
-                  }}
-                  labelFormatter={(label) => formatTick(String(label))}
-                  formatter={(value) => [value, "Friend #1 boards"]}
-                />
-                <Legend
-                  wrapperStyle={{ flexWrap: "wrap", paddingTop: 8 }}
-                  onClick={(payload) => {
-                    const id = String(payload.dataKey ?? "");
-                    if (!id) return;
-                    setHiddenMembers((prev) => ({ ...prev, [id]: !prev[id] }));
-                  }}
-                />
-                {memberLeadSeries.map((member, index) => {
-                  const key = memberSeriesKey(member.memberId);
-                  return (
-                    <Line
-                      key={key}
-                      type="monotone"
-                      dataKey={key}
-                      name={member.displayName}
-                      stroke={CHART_COLORS[index % CHART_COLORS.length]}
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                      connectNulls
-                      hide={Boolean(hiddenMembers[key])}
-                    />
-                  );
-                })}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+            <ul className="flex flex-wrap gap-3 px-1 text-xs text-muted-foreground">
+              {memberLeadSeries.map((member, index) => (
+                <li key={member.memberId} className="inline-flex items-center gap-1.5">
+                  <MemberAvatar
+                    avatarUrl={member.avatarUrl}
+                    displayName={member.displayName}
+                    size={18}
+                  />
+                  <span style={{ color: CHART_COLORS[index % CHART_COLORS.length] }}>
+                    {member.displayName}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div className="min-w-0 h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={leadChartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="syncedAt"
+                    tickFormatter={formatTick}
+                    stroke="var(--muted-foreground)"
+                    fontSize={11}
+                    minTickGap={32}
+                  />
+                  <YAxis
+                    stroke="var(--muted-foreground)"
+                    fontSize={11}
+                    width={40}
+                    allowDecimals={false}
+                    domain={leadYDomain}
+                    allowDataOverflow
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "0.4rem",
+                      color: "var(--foreground)",
+                    }}
+                    labelFormatter={(label) => formatTick(String(label))}
+                    formatter={(value, _name, item) => {
+                      const member = memberLeadSeries.find(
+                        (entry) => memberSeriesKey(entry.memberId) === String(item?.dataKey),
+                      );
+                      return [value, member?.displayName ?? "Friend #1 boards"];
+                    }}
+                  />
+                  {memberLeadSeries.map((member, index) => {
+                    const key = memberSeriesKey(member.memberId);
+                    return (
+                      <Line
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        name={member.displayName}
+                        stroke={CHART_COLORS[index % CHART_COLORS.length]}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                        connectNulls
+                      />
+                    );
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         ) : (
-          <ChartEmptyState />
+          <ChartEmptyState message="No change in board leads between syncs yet." />
         )}
       </section>
 
-      <section className="space-y-3">
-        <h2 className="steam-section-heading">Friend rank by board</h2>
-        {hasRankTrend ? (
-          <div className="space-y-2">
-          <ul className="flex flex-wrap gap-3 px-1 text-xs text-muted-foreground">
-            {boardRankSeries.map((board, index) => (
-              <li key={`${board.raLeaderboardId}-${board.memberId}`} className="inline-flex items-center gap-1.5">
-                <MemberAvatar avatarUrl={board.avatarUrl} displayName={board.displayName} size={18} />
-                <span style={{ color: CHART_COLORS[index % CHART_COLORS.length] }}>
-                  {board.displayName} — {board.leaderboardTitle}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <div className="min-w-0 h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={rankChartData} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="syncedAt"
-                  tickFormatter={formatTick}
-                  stroke="var(--muted-foreground)"
-                  fontSize={11}
-                  minTickGap={32}
-                />
-                <YAxis
-                  stroke="var(--muted-foreground)"
-                  fontSize={11}
-                  width={40}
-                  reversed
-                  domain={[1, maxFriendRank]}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "0.4rem",
-                    color: "var(--foreground)",
-                  }}
-                  labelFormatter={(label) => formatTick(String(label))}
-                  formatter={(value, name) => {
-                    const board = boardRankSeries.find(
-                      (item) =>
-                        boardMemberSeriesKey(item.raLeaderboardId, item.memberId) === String(name),
-                    );
-                    const label = board
-                      ? `${board.displayName} — ${board.leaderboardTitle}`
-                      : String(name);
-                    return [`#${value}`, label];
-                  }}
-                />
-                <Legend
-                  wrapperStyle={{ flexWrap: "wrap", paddingTop: 8 }}
-                  onClick={(payload) => {
-                    const id = String(payload.dataKey ?? "");
-                    if (!id) return;
-                    setHiddenBoards((prev) => ({ ...prev, [id]: !prev[id] }));
-                  }}
-                />
-                {boardRankSeries.map((board, index) => {
-                  const key = boardMemberSeriesKey(board.raLeaderboardId, board.memberId);
-                  return (
-                    <Line
-                      key={key}
-                      type="monotone"
-                      dataKey={key}
-                      name={`${board.displayName} — ${board.leaderboardTitle}`}
-                      stroke={CHART_COLORS[index % CHART_COLORS.length]}
-                      strokeWidth={2}
-                      dot={{ r: 3 }}
-                      connectNulls
-                      hide={Boolean(hiddenBoards[key])}
-                    />
-                  );
-                })}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          </div>
-        ) : (
-          <ChartEmptyState />
-        )}
-      </section>
+      <GameRankTrendSection
+        items={items}
+        leaderboards={leaderboards}
+        members={members}
+        deltas={deltas}
+        defaultMemberId={defaultMemberId}
+      />
     </div>
   );
 }

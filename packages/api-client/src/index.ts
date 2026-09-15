@@ -137,6 +137,8 @@ export interface MemberRaAchievementHistoryResponse {
 
 export interface MemberRaAchievementHistoryItemDto {
   earnedAt: string;
+  pointsEarned: number;
+  truePointsEarned: number;
   cumulativeUnlocks: number;
   cumulativePoints: number;
   cumulativeTruePoints: number;
@@ -318,6 +320,7 @@ export interface GameLeaderboardsResponse {
   releasedAt?: string | null;
   metadataSyncedAt?: string | null;
   leaderboardScoresSyncedAt?: string | null;
+  leaderboardSyncStatus: GameLeaderboardSyncStatusDto;
   members: StandingMemberDto[];
   leaderboards: GameLeaderboardDto[];
 }
@@ -447,6 +450,15 @@ export interface DashboardGameLeaderDto {
   friendRankOnes: number;
 }
 
+export interface GameLeaderboardSyncStatusDto {
+  tier: string;
+  groupLastPlayedAt?: string | null;
+  leaderboardSyncNextDueAt?: string | null;
+  leaderboardSyncIntervalMinutes: number;
+  leaderboardSyncIsDue: boolean;
+  leaderboardSyncForcedCold: boolean;
+}
+
 export interface DashboardGamePlayerAvatarDto {
   displayName: string;
   raUsername: string;
@@ -464,13 +476,13 @@ export interface DashboardGameDto {
   imageTitleUrl?: string | null;
   imageIngameUrl?: string | null;
   leaderboardCount: number;
-  maxGlobalEntryCount?: number | null;
-  maxGlobalEntryCountLeaderboardTitle?: string | null;
+  totalRankedEntriesAcrossBoards?: number | null;
   friendRankOneLeader?: DashboardGameLeaderDto | null;
   playersWithAvatars: DashboardGamePlayerAvatarDto[];
   lastActivityAt?: string | null;
   leaderboardScoresSyncedAt?: string | null;
   totalAchievementsInCatalog?: number | null;
+  leaderboardSyncStatus: GameLeaderboardSyncStatusDto;
 }
 
 export interface RecentGroupGamePlayerDto {
@@ -518,6 +530,8 @@ export interface AdminGameDto {
   leaderboardCount: number;
   sourceCount: number;
   metadataSyncedAt?: string | null;
+  forceColdLeaderboardSync: boolean;
+  leaderboardSyncStatus: GameLeaderboardSyncStatusDto;
 }
 
 export interface GameSourceDto {
@@ -539,6 +553,10 @@ export interface UpsertGameSourceRequest {
 
 export interface PostAdminGameRequest {
   raGameId: number;
+}
+
+export interface PatchAdminGameLeaderboardSyncRequest {
+  forceColdLeaderboardSync: boolean;
 }
 
 export interface DashboardResponse {
@@ -1234,6 +1252,12 @@ export function createApiClient(options: ApiClientOptions) {
       request<void>(baseUrl, `/api/admin/games/${raGameId}`, { method: "DELETE" }, fetchImpl),
     postAdminGameRefresh: (raGameId: number) =>
       request<AdminGameDto>(baseUrl, `/api/admin/games/${raGameId}/refresh`, { method: "POST" }, fetchImpl),
+    patchAdminGameLeaderboardSync: (raGameId: number, forceColdLeaderboardSync: boolean) =>
+      request<AdminGameDto>(baseUrl, `/api/admin/games/${raGameId}/leaderboard-sync`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forceColdLeaderboardSync }),
+      }, fetchImpl),
     getAdminGameSources: (raGameId: number) =>
       request<GameSourceDto[]>(baseUrl, `/api/admin/games/${raGameId}/sources`, undefined, fetchImpl),
     postAdminGameSource: (raGameId: number, body: UpsertGameSourceRequest) =>

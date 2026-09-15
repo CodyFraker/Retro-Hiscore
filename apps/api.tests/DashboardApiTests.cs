@@ -228,6 +228,56 @@ public class DashboardApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetDashboardGames_IncludesPlayersEngagedViaAchievementsOnly()
+    {
+        // Arrange
+        const int raGameId = 87001;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            shrimp.AvatarUrl = "https://cdn.discordapp.com/avatars/1/ach-only.png";
+            db.Games.Add(new Game
+            {
+                RaGameId = raGameId,
+                Title = "Achievements Only Game"
+            });
+            db.RaAchievements.Add(new RaAchievement
+            {
+                RaAchievementId = 870010,
+                RaGameId = raGameId,
+                Title = "First trophy",
+                Points = 5,
+                TrueRatio = 10,
+                DisplayOrder = 1
+            });
+            await db.SaveChangesAsync();
+
+            db.MemberRaAchievements.Add(new MemberRaAchievement
+            {
+                MemberId = shrimp.Id,
+                RaAchievementId = 870010,
+                DateEarned = DateTimeOffset.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var games = await client.GetFromJsonAsync<DashboardGamesResponse>(
+            "/api/dashboard/games?limit=100",
+            JsonOptions);
+
+        // Assert
+        games.ShouldNotBeNull();
+        var game = games!.Items.Single(g => g.RaGameId == raGameId);
+        game.PlayersWithAvatars.Count.ShouldBe(1);
+        game.PlayersWithAvatars[0].RaUsername.ShouldBe("ShrimpPoboy");
+        game.PlayersWithAvatars[0].AvatarUrl.ShouldBe("https://cdn.discordapp.com/avatars/1/ach-only.png");
+    }
+
+    [Fact]
     public async Task GetDashboard_OrdersGamesByLastActivityThenTitle()
     {
         var olderActivity = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
@@ -336,5 +386,117 @@ public class DashboardApiTests : IAsyncLifetime
         page.Offset.ShouldBe(0);
         page.Total.ShouldBeGreaterThanOrEqualTo(3);
         page.Items.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task GetDashboardGames_ReturnsTotalRankedEntriesAcrossAllBoardsWithoutFriendEntries()
+    {
+        const int raGameId = 87100;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var game = new Game
+            {
+                RaGameId = raGameId,
+                Title = "Global Entry Sum Game"
+            };
+            db.Games.Add(game);
+            await db.SaveChangesAsync();
+
+            db.Leaderboards.AddRange(
+                new Leaderboard
+                {
+                    RaLeaderboardId = 871001,
+                    GameId = game.Id,
+                    Title = "Board One",
+                    Format = "VALUE",
+                    RankAsc = false,
+                    GlobalEntryCount = 100
+                },
+                new Leaderboard
+                {
+                    RaLeaderboardId = 871002,
+                    GameId = game.Id,
+                    Title = "Board Two",
+                    Format = "VALUE",
+                    RankAsc = false,
+                    GlobalEntryCount = 200
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        var games = await client.GetFromJsonAsync<DashboardGamesResponse>(
+            "/api/dashboard/games?limit=100",
+            JsonOptions);
+
+        games.ShouldNotBeNull();
+        var item = games!.Items.Single(g => g.RaGameId == raGameId);
+        item.TotalRankedEntriesAcrossBoards.ShouldBe(300);
+    }
+
+    [Fact]
+    public async Task GetDashboardGames_ReturnsHotAndColdLeaderboardSyncStatus()
+    {
+        // Arrange
+        const int hotRaGameId = 38130;
+        const int coldRaGameId = 88002;
+        var recentPlay = DateTimeOffset.UtcNow.AddHours(-2);
+        var stalePlay = DateTimeOffset.UtcNow.AddDays(-30);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            db.Games.Add(new Game
+            {
+                RaGameId = coldRaGameId,
+                Title = "Cold Sync Game"
+            });
+            db.MemberRecentGamePlays.AddRange(
+                new MemberRecentGamePlay
+                {
+                    MemberId = shrimp.Id,
+                    RaGameId = hotRaGameId,
+                    Title = "Hot Game",
+                    ConsoleId = 1,
+                    ConsoleName = "Genesis",
+                    LastPlayedAt = recentPlay,
+                    NumAchieved = 1,
+                    NumPossibleAchievements = 10,
+                    SyncedAt = recentPlay
+                },
+                new MemberRecentGamePlay
+                {
+                    MemberId = shrimp.Id,
+                    RaGameId = coldRaGameId,
+                    Title = "Cold Sync Game",
+                    ConsoleId = 1,
+                    ConsoleName = "Genesis",
+                    LastPlayedAt = stalePlay,
+                    NumAchieved = 0,
+                    NumPossibleAchievements = 10,
+                    SyncedAt = stalePlay
+                });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var games = await client.GetFromJsonAsync<DashboardGamesResponse>(
+            "/api/dashboard/games?limit=100",
+            JsonOptions);
+
+        // Assert
+        games.ShouldNotBeNull();
+        var hot = games!.Items.Single(g => g.RaGameId == hotRaGameId);
+        hot.LeaderboardSyncStatus.Tier.ShouldBe("Hot");
+        hot.LeaderboardSyncStatus.LeaderboardSyncIntervalMinutes.ShouldBe(15);
+        hot.LeaderboardSyncStatus.GroupLastPlayedAt.ShouldNotBeNull();
+
+        var cold = games.Items.Single(g => g.RaGameId == coldRaGameId);
+        cold.LeaderboardSyncStatus.Tier.ShouldBe("Cold");
+        cold.LeaderboardSyncStatus.LeaderboardSyncIntervalMinutes.ShouldBe(1440);
     }
 }

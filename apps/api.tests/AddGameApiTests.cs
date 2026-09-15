@@ -67,6 +67,8 @@ public class AddGameApiTests : IAsyncLifetime
 
         detail.ShouldNotBeNull();
         detail.Leaderboards.Count.ShouldBe(1);
+        detail.Members.Count.ShouldBe(1);
+        detail.Members[0].RaUsername.ShouldBe("ShrimpPoboy");
         var shrimp = detail.Leaderboards[0].Standings.Single(s => s.RaUsername == "ShrimpPoboy");
         shrimp.Score.ShouldBe(12345);
         shrimp.FriendRank.ShouldBe(1);
@@ -125,7 +127,8 @@ public class AddGameApiTests : IAsyncLifetime
         created.LeaderboardCount.ShouldBe(1);
         detail.ShouldNotBeNull();
         detail.Leaderboards.Count.ShouldBe(1);
-        detail.Leaderboards[0].Standings.ShouldAllBe(s => s.Score == null);
+        detail.Members.Count.ShouldBe(0);
+        detail.Leaderboards[0].Standings.Count.ShouldBe(0);
     }
 
     private void SetupRaMocks(int raGameId, bool includeMemberScore)

@@ -12,6 +12,7 @@ import { GameDetailTabs } from "@/components/game/game-detail-tabs";
 import { GameMetadata } from "@/components/game/game-metadata";
 import { GamePopulationTrendCharts } from "@/components/game/game-population-trend-charts";
 import { GameRefreshButton } from "@/components/game/game-refresh-button";
+import { LeaderboardSyncTierBadge } from "@/components/sync/leaderboard-sync-tier-badge";
 import { GameSourcesSection } from "@/components/game/game-sources-section";
 import { GameStandingsSection } from "@/components/game/game-standings-section";
 import { GameStatsStrip } from "@/components/game/game-stats-strip";
@@ -143,6 +144,7 @@ export default async function GamePage({ params }: Props) {
             </div>
           </div>
           <div className="flex flex-col items-end gap-2">
+            <LeaderboardSyncTierBadge status={data.leaderboardSyncStatus} />
             <GameRefreshButton
               raGameId={data.raGameId}
               hasApiKey={member.hasApiKey}
@@ -202,9 +204,15 @@ export default async function GamePage({ params }: Props) {
             }
             trends={
               <>
-                <GameTrendCharts items={history.items} />
-                <GamePopulationTrendCharts data={populationHistory} />
                 <GameDeltaCallout deltas={deltas} />
+                <GameTrendCharts
+                  items={history.items}
+                  leaderboards={data.leaderboards}
+                  members={data.members}
+                  deltas={deltas}
+                  defaultMemberId={member.id}
+                />
+                <GamePopulationTrendCharts data={populationHistory} />
               </>
             }
             achievements={

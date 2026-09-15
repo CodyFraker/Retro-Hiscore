@@ -1,5 +1,6 @@
 import { AlertCircle } from "lucide-react";
 import { TrackedGamesSection } from "@/components/dashboard/tracked-games-section";
+import { TrackedGamesToolbar } from "@/components/dashboard/tracked-games-toolbar";
 import { PageHero } from "@/components/layout/page-hero";
 import { getServerApiClient } from "@/lib/api";
 import {
@@ -43,6 +44,13 @@ export default async function GamesIndexPage({ searchParams }: Props) {
         title="Tracked games"
         titleClassName="text-2xl sm:text-3xl md:text-4xl"
         description="Friend leaderboard standings for every title your group tracks on RetroAchievements."
+        actions={
+          gamesPage && (gamesPage.total > 0 || query)
+            ? (
+                <TrackedGamesToolbar basePath="/games" query={query} sort={sort} />
+              )
+            : undefined
+        }
       />
 
       {error ? (
@@ -58,6 +66,7 @@ export default async function GamesIndexPage({ searchParams }: Props) {
             query={query}
             sort={sort}
             showHeading={false}
+            showToolbar={false}
           />
         )
       )}

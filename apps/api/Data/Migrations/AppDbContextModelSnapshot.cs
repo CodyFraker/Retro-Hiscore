@@ -74,6 +74,9 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Property<DateTimeOffset?>("LeaderboardScoresSyncedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("ForceColdLeaderboardSync")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTimeOffset?>("MetadataSyncedAt")
                         .HasColumnType("timestamp with time zone");
 

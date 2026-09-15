@@ -37,7 +37,6 @@ export default async function MemberProfilePage({ params }: Props) {
   let history: Awaited<ReturnType<typeof api.getMemberHistory>>;
   let raSummary: MemberRaSummaryResponse = unavailableRaSummary;
   let raRankHistory: MemberRaRankHistoryResponse = { items: [] };
-  let raAchievementHistory: MemberRaAchievementHistoryResponse = { items: [] };
   let raTrackedAchievementHistory: MemberRaAchievementHistoryResponse = { items: [] };
   let trackedAchievements: MemberAchievementsListResponse = {
     total: 0,
@@ -56,16 +55,13 @@ export default async function MemberProfilePage({ params }: Props) {
   }
 
   try {
-    [raRankHistory, raAchievementHistory, raTrackedAchievementHistory, trackedAchievements] =
-      await Promise.all([
-        api.getMemberRaRankHistory(raUsername, 200),
-        api.getMemberRaAchievementHistory(raUsername, 2000),
-        api.getMemberRaAchievementHistory(raUsername, 2000, true),
-        api.getMemberAchievements(raUsername, 200, 0, true),
-      ]);
+    [raRankHistory, raTrackedAchievementHistory, trackedAchievements] = await Promise.all([
+      api.getMemberRaRankHistory(raUsername, 200),
+      api.getMemberRaAchievementHistory(raUsername, 2000, true),
+      api.getMemberAchievements(raUsername, 200, 0, true),
+    ]);
   } catch {
     raRankHistory = { items: [] };
-    raAchievementHistory = { items: [] };
     raTrackedAchievementHistory = { items: [] };
     trackedAchievements = { total: 0, offset: 0, limit: 0, items: [] };
   }
@@ -93,11 +89,7 @@ export default async function MemberProfilePage({ params }: Props) {
       <Suspense fallback={null}>
         <MemberProfileTabs
           overview={
-            <MemberRaSummarySection
-              data={raSummary}
-              rankHistory={raRankHistory.items}
-              achievementHistory={raAchievementHistory.items}
-            />
+            <MemberRaSummarySection data={raSummary} rankHistory={raRankHistory.items} />
           }
           leaderboards={
             <>
@@ -123,7 +115,10 @@ export default async function MemberProfilePage({ params }: Props) {
                 <MemberTrackedAchievementsTable items={trackedAchievements.items} />
               </section>
               <section className="space-y-3">
-                <h2 className="steam-section-heading">Unlock trends (tracked games)</h2>
+                <div className="space-y-1">
+                  <h2 className="steam-section-heading">Unlock activity</h2>
+                  <p className="text-sm text-muted-foreground">Tracked games only.</p>
+                </div>
                 <MemberRaAchievementTrends items={raTrackedAchievementHistory.items} />
               </section>
             </>

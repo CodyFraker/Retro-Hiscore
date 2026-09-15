@@ -23,10 +23,9 @@ export function DashboardRecentAchievementsCard({ items, achievementsSyncedAt }:
         </Link>
       </CardHeader>
       <CardContent className="space-y-3">
-        <LastSyncedLabel at={achievementsSyncedAt} />
-        <p className="text-xs text-muted-foreground">Preview · see Achievements for the full feed.</p>
         <AchievementsActivityFeed items={items} variant="card" />
         <AchievementPointsLegend />
+        <LastSyncedLabel at={achievementsSyncedAt} />
       </CardContent>
     </Card>
   );

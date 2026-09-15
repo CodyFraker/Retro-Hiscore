@@ -6,6 +6,7 @@ import { ConsoleName } from "@/components/console-name";
 import { DataFieldList } from "@/components/layout/data-field-list";
 import { ResponsiveTable } from "@/components/layout/responsive-table";
 import { FormattedSyncTime } from "@/components/formatted-sync-time";
+import { LeaderboardSyncTierBadge } from "@/components/sync/leaderboard-sync-tier-badge";
 
 type Props = {
   games: AdminGameDto[];
@@ -56,6 +57,29 @@ export function AdminGamesSection({ games }: Props) {
               ),
           },
           {
+            header: "LB sync",
+            cellClassName: "text-sm",
+            render: (game) => (
+              <div className="space-y-1">
+                <LeaderboardSyncTierBadge status={game.leaderboardSyncStatus} />
+                <p className="text-xs text-muted-foreground">
+                  {game.leaderboardSyncStatus.leaderboardSyncIsDue
+                    ? "Due now"
+                    : game.leaderboardSyncStatus.leaderboardSyncNextDueAt
+                      ? (
+                          <>
+                            Next{" "}
+                            <FormattedSyncTime
+                              value={game.leaderboardSyncStatus.leaderboardSyncNextDueAt}
+                            />
+                          </>
+                        )
+                      : "—"}
+                </p>
+              </div>
+            ),
+          },
+          {
             header: "Actions",
             headerClassName: "text-right",
             cellClassName: "text-right text-sm",
@@ -95,6 +119,10 @@ export function AdminGamesSection({ games }: Props) {
                   ) : (
                     "—"
                   ),
+                },
+                {
+                  label: "LB sync",
+                  value: <LeaderboardSyncTierBadge status={game.leaderboardSyncStatus} />,
                 },
               ]}
             />

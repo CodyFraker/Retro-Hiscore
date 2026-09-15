@@ -86,6 +86,23 @@ export async function postAdminGameRefreshAction(raGameId: number): Promise<Admi
   }
 }
 
+export type PatchAdminGameLeaderboardSyncResult =
+  | { ok: true; game: AdminGameDto }
+  | { ok: false; error: string };
+
+export async function patchAdminGameLeaderboardSyncAction(
+  raGameId: number,
+  forceColdLeaderboardSync: boolean,
+): Promise<PatchAdminGameLeaderboardSyncResult> {
+  try {
+    const api = await getServerApiClient();
+    const game = await api.patchAdminGameLeaderboardSync(raGameId, forceColdLeaderboardSync);
+    return { ok: true, game };
+  } catch (error) {
+    return { ok: false, error: actionErrorMessage(error, "Failed to update leaderboard sync") };
+  }
+}
+
 export async function deleteAdminGameAction(raGameId: number): Promise<AdminActionResult> {
   try {
     const api = await getServerApiClient();

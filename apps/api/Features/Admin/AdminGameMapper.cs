@@ -14,6 +14,7 @@ public static class AdminGameMapper
         AppDbContext db,
         Game game,
         IOptions<RaOptions> raOptions,
+        ISyncSettingsStore syncSettingsStore,
         CancellationToken ct)
     {
         var leaderboardCount = await db.Leaderboards.CountAsync(l => l.GameId == game.Id, ct);
@@ -22,6 +23,16 @@ public static class AdminGameMapper
         var console = game.ConsoleId is null
             ? null
             : await db.Consoles.AsNoTracking().FirstOrDefaultAsync(c => c.RaConsoleId == game.ConsoleId, ct);
+
+        var syncStatusByGameId = await GameLeaderboardSyncStatusQuery.GetForGamesAsync(
+            db,
+            syncSettingsStore,
+            [new GameLeaderboardSyncStatusQuery.GameSyncInput(
+                game.Id,
+                game.RaGameId,
+                game.LeaderboardScoresSyncedAt,
+                game.ForceColdLeaderboardSync)],
+            ct);
 
         return new AdminGameDto(
             game.Id,
@@ -35,6 +46,8 @@ public static class AdminGameMapper
             images.ImageIngameUrl,
             leaderboardCount,
             sourceCount,
-            game.MetadataSyncedAt);
+            game.MetadataSyncedAt,
+            game.ForceColdLeaderboardSync,
+            syncStatusByGameId[game.Id]);
     }
 }

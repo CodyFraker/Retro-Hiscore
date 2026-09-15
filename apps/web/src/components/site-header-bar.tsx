@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { Menu, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -22,6 +22,7 @@ type Props = {
   displayName: string;
   avatarUrl?: string | null;
   showAdminNav?: boolean;
+  profileHref?: string | null;
 };
 
 type NavLink = {
@@ -103,6 +104,7 @@ export function SiteHeaderBar({
   displayName,
   avatarUrl,
   showAdminNav,
+  profileHref,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -121,7 +123,11 @@ export function SiteHeaderBar({
         </div>
 
         <div className="hidden shrink-0 md:flex">
-          <HeaderUserMenu displayName={displayName} avatarUrl={avatarUrl} />
+          <HeaderUserMenu
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            profileHref={profileHref}
+          />
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -144,7 +150,7 @@ export function SiteHeaderBar({
             <div className="flex flex-col gap-6 overflow-y-auto px-4 pb-6">
               <NavLinks onNavigate={() => setOpen(false)} showAdminNav={showAdminNav} />
               <Link
-                href="/settings"
+                href={profileHref ?? "/settings"}
                 onClick={() => setOpen(false)}
                 className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
@@ -160,6 +166,18 @@ export function SiteHeaderBar({
                 <span>{displayName}</span>
               </Link>
               <div className="flex flex-col gap-3 border-t border-border pt-4">
+                {profileHref ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    render={
+                      <Link href={profileHref} onClick={() => setOpen(false)} />
+                    }
+                  >
+                    <User />
+                    Profile
+                  </Button>
+                ) : null}
                 <SettingsLinkButton onNavigate={() => setOpen(false)} />
                 <SignOutButton />
               </div>

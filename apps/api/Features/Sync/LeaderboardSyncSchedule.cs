@@ -17,15 +17,18 @@ public static class LeaderboardSyncSchedule
         DateTimeOffset utcNow,
         DateTimeOffset? lastSyncedAt,
         DateTimeOffset? maxLastPlayedAt,
-        LeaderboardSyncPolicy policy)
+        LeaderboardSyncPolicy policy,
+        bool forceColdLeaderboardSync = false)
     {
         var hotWindow = TimeSpan.FromHours(policy.HotActivityWindowHours);
         var hotInterval = TimeSpan.FromMinutes(policy.HotIntervalMinutes);
         var coldInterval = TimeSpan.FromMinutes(policy.ColdIntervalMinutes);
 
-        var tier = maxLastPlayedAt is { } played && played >= utcNow - hotWindow
-            ? LeaderboardSyncTier.Hot
-            : LeaderboardSyncTier.Cold;
+        var tier = forceColdLeaderboardSync
+            ? LeaderboardSyncTier.Cold
+            : maxLastPlayedAt is { } played && played >= utcNow - hotWindow
+                ? LeaderboardSyncTier.Hot
+                : LeaderboardSyncTier.Cold;
 
         var interval = tier == LeaderboardSyncTier.Hot ? hotInterval : coldInterval;
 

@@ -37,6 +37,7 @@ public static class DashboardGamesQuery
     public static async Task<DashboardGamesResponse> GetPageAsync(
         AppDbContext db,
         IOptions<RaOptions> raOptions,
+        ISyncSettingsStore syncSettingsStore,
         int? limit,
         int? offset,
         string? sort,
@@ -48,7 +49,7 @@ public static class DashboardGamesQuery
         var sortKey = ParseSort(sort);
         var normalizedQuery = query?.Trim();
 
-        var all = await BuildAllAsync(db, raOptions, ct);
+        var all = await BuildAllAsync(db, raOptions, syncSettingsStore, ct);
         IEnumerable<DashboardGameDto> filtered = all;
 
         if (!string.IsNullOrWhiteSpace(normalizedQuery))
@@ -74,7 +75,7 @@ public static class DashboardGamesQuery
                 .OrderByDescending(g => g.LeaderboardCount)
                 .ThenBy(g => g.Title, StringComparer.OrdinalIgnoreCase),
             DashboardGameSort.Population => games
-                .OrderByDescending(g => g.MaxGlobalEntryCount ?? 0)
+                .OrderByDescending(g => g.TotalRankedEntriesAcrossBoards ?? 0)
                 .ThenBy(g => g.Title, StringComparer.OrdinalIgnoreCase),
             _ => games
                 .OrderByDescending(g => g.LastActivityAt ?? DateTimeOffset.MinValue)
@@ -85,6 +86,7 @@ public static class DashboardGamesQuery
     public static async Task<IReadOnlyList<DashboardGameDto>> BuildAllAsync(
         AppDbContext db,
         IOptions<RaOptions> raOptions,
+        ISyncSettingsStore syncSettingsStore,
         CancellationToken ct)
     {
         var mediaBaseUrl = raOptions.Value.MediaBaseUrl;
@@ -103,6 +105,7 @@ public static class DashboardGamesQuery
                 g.ImageTitle,
                 g.ImageIngame,
                 g.LeaderboardScoresSyncedAt,
+                g.ForceColdLeaderboardSync,
                 LeaderboardCount = g.Leaderboards.Count,
                 ConsoleIconData = db.Consoles
                     .Where(c => c.RaConsoleId == g.ConsoleId)
@@ -125,11 +128,33 @@ public static class DashboardGamesQuery
             .Select(g => new { RaGameId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.RaGameId, x => x.Count, ct);
 
+        var rankedTotalsByGameId = await db.Leaderboards
+            .AsNoTracking()
+            .Where(l => gameIds.Contains(l.GameId) && l.GlobalEntryCount != null)
+            .GroupBy(l => l.GameId)
+            .Select(g => new { GameId = g.Key, Total = g.Sum(l => l.GlobalEntryCount!.Value) })
+            .ToDictionaryAsync(x => x.GameId, x => x.Total, ct);
+
         var gameEntries = await db.LeaderboardEntries
             .Include(e => e.Member)
             .Include(e => e.Leaderboard)
             .Where(e => gameIds.Contains(e.Leaderboard.GameId))
             .ToListAsync(ct);
+
+        var engagedMembersByGame = await GameEngagedMembersQuery.GetForGamesAsync(
+            db,
+            gamesRaw.Select(g => (g.Id, g.RaGameId)).ToList(),
+            ct);
+
+        var syncStatusByGameId = await GameLeaderboardSyncStatusQuery.GetForGamesAsync(
+            db,
+            syncSettingsStore,
+            gamesRaw.Select(g => new GameLeaderboardSyncStatusQuery.GameSyncInput(
+                g.Id,
+                g.RaGameId,
+                g.LeaderboardScoresSyncedAt,
+                g.ForceColdLeaderboardSync)).ToList(),
+            ct);
 
         return gamesRaw.Select(g =>
         {
@@ -158,41 +183,27 @@ public static class DashboardGamesQuery
                 .OrderByDescending(d => d)
                 .FirstOrDefault();
 
-            var boardPopulations = entriesForGame
-                .Select(e => e.Leaderboard)
-                .DistinctBy(l => l.Id)
-                .Where(l => l.GlobalEntryCount is not null)
-                .ToList();
-
-            var busiestBoard = boardPopulations
-                .OrderByDescending(l => l.GlobalEntryCount)
-                .FirstOrDefault();
-
             DashboardGameLeaderDto? leader = winRows is null
                 ? null
                 : new DashboardGameLeaderDto(winRows.DisplayName, winRows.RaUsername, winRows.AvatarUrl, winRows.FriendRankOnes);
 
-            var playersWithAvatars = entriesForGame
-                .GroupBy(e => e.MemberId)
-                .Select(memberGroup =>
-                {
-                    var member = memberGroup.First().Member;
-                    return new
-                    {
-                        RaUsername = member.RaUsername ?? string.Empty,
-                        DisplayName = MemberAuthHelper.DisplayLabel(member),
-                        member.AvatarUrl
-                    };
-                })
-                .Where(row => !string.IsNullOrWhiteSpace(row.AvatarUrl))
-                .Select(row => new DashboardGamePlayerAvatarDto(
-                    row.DisplayName,
-                    row.RaUsername,
-                    row.AvatarUrl!))
-                .OrderBy(row => row.DisplayName, StringComparer.OrdinalIgnoreCase)
+            var engagedMembers = engagedMembersByGame.TryGetValue(g.Id, out var rows)
+                ? rows
+                : [];
+
+            var playersWithAvatars = engagedMembers
+                .Where(m => !string.IsNullOrWhiteSpace(m.AvatarUrl))
+                .Select(m => new DashboardGamePlayerAvatarDto(
+                    m.DisplayName,
+                    m.RaUsername,
+                    m.AvatarUrl!))
                 .ToList();
 
             catalogCounts.TryGetValue(g.RaGameId, out var catalogTotal);
+
+            int? totalRankedEntriesAcrossBoards = rankedTotalsByGameId.TryGetValue(g.Id, out var total)
+                ? total
+                : null;
 
             return new DashboardGameDto(
                 g.Id,
@@ -205,13 +216,13 @@ public static class DashboardGamesQuery
                 RaMediaUrl.ToAbsolute(g.ImageTitle, mediaBaseUrl),
                 RaMediaUrl.ToAbsolute(g.ImageIngame, mediaBaseUrl),
                 g.LeaderboardCount,
-                busiestBoard?.GlobalEntryCount,
-                busiestBoard?.Title,
+                totalRankedEntriesAcrossBoards,
                 leader,
                 playersWithAvatars,
                 lastActivityAt,
                 g.LeaderboardScoresSyncedAt,
-                catalogTotal > 0 ? catalogTotal : null);
+                catalogTotal > 0 ? catalogTotal : null,
+                syncStatusByGameId[g.Id]);
         }).ToList();
     }
 }

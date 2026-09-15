@@ -220,6 +220,7 @@ app.MapPostAdminGameTrackQueueApprove();
 app.MapPostAdminGameTrackQueueReject();
 app.MapDeleteAdminGame();
 app.MapPostAdminGameRefresh();
+app.MapPatchAdminGameLeaderboardSync();
 app.MapGetAdminGameSources();
 app.MapPostAdminGameSource();
 app.MapPutAdminGameSource();

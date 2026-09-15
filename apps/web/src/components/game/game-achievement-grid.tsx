@@ -21,6 +21,14 @@ export function GameAchievementGrid({ achievements, members, unlocks }: Props) {
     );
   }
 
+  if (members.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        No friend achievement progress synced for this game yet.
+      </p>
+    );
+  }
+
   const unlockSet = new Set(
     unlocks.map((u) => `${u.memberId}:${u.raAchievementId}`),
   );

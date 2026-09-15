@@ -16,6 +16,7 @@ public static class PostAdminGameRefreshEndpoint
             IGameMetadataSyncService gameMetadataSync,
             ILeaderboardSyncJobEnqueuer jobEnqueuer,
             IOptions<RaOptions> raOptions,
+            ISyncSettingsStore syncSettingsStore,
             CancellationToken ct) =>
         {
             var (game, error) = await AdminGameTracking.RefreshGameAsync(
@@ -30,7 +31,7 @@ public static class PostAdminGameRefreshEndpoint
 
             jobEnqueuer.EnqueueFullGameSync(raGameId, SyncTrigger.Manual);
 
-            var dto = await AdminGameMapper.ToDtoAsync(db, game!, raOptions, ct);
+            var dto = await AdminGameMapper.ToDtoAsync(db, game!, raOptions, syncSettingsStore, ct);
             return Results.Ok(dto);
         })
         .WithName("PostAdminGameRefresh")

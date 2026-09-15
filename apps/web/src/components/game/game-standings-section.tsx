@@ -43,7 +43,17 @@ type Props = {
 };
 
 export function GameStandingsSection({ leaderboards, members }: Props) {
+  if (members.length === 0) {
+    return (
+      <p className="mt-8 text-sm text-muted-foreground">
+        No friend scores synced for this game yet. Refresh scores or wait for the next sync after
+        someone plays.
+      </p>
+    );
+  }
+
   return (
+    <div className="mt-8 mb-8">
     <ResponsiveTable
       rows={leaderboards}
       rowKey={(board) => String(board.id)}
@@ -177,5 +187,6 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
         </li>
       )}
     />
+    </div>
   );
 }

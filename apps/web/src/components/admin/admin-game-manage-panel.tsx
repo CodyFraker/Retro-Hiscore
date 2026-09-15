@@ -10,9 +10,11 @@ import {
   GAME_SOURCE_TYPE_OPTIONS,
   gameSourceTypeLabel,
 } from "@/lib/game-source-labels";
+import { LeaderboardSyncTierBadge } from "@/components/sync/leaderboard-sync-tier-badge";
 import {
   deleteAdminGameAction,
   deleteAdminGameSourceAction,
+  patchAdminGameLeaderboardSyncAction,
   postAdminGameRefreshAction,
   upsertAdminGameSourceAction,
 } from "@/lib/actions/admin";
@@ -36,6 +38,7 @@ export function AdminGameManagePanel({ game, initialSources }: Props) {
   const [form, setForm] = useState<UpsertGameSourceRequest>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [forceCold, setForceCold] = useState(game.forceColdLeaderboardSync);
   const [pending, startTransition] = useTransition();
 
   function resetForm() {
@@ -124,6 +127,39 @@ export function AdminGameManagePanel({ game, initialSources }: Props) {
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
+
+      <section className="space-y-3 rounded border border-border p-5">
+        <h2 className="text-lg font-semibold">Leaderboard sync</h2>
+        <p className="text-sm text-muted-foreground">
+          Hot games sync more often when the group has played recently. Pin to cold to reduce RetroAchievements API
+          calls; manual refresh still works.
+        </p>
+        <div className="flex flex-wrap items-center gap-3">
+          <LeaderboardSyncTierBadge status={game.leaderboardSyncStatus} />
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 rounded border-border"
+              checked={forceCold}
+              disabled={pending}
+              onChange={(event) => {
+                const next = event.target.checked;
+                startTransition(async () => {
+                  setError(null);
+                  const result = await patchAdminGameLeaderboardSyncAction(game.raGameId, next);
+                  if (!result.ok) {
+                    setError(result.error);
+                    return;
+                  }
+                  setForceCold(result.game.forceColdLeaderboardSync);
+                  router.refresh();
+                });
+              }}
+            />
+            Force cold schedule
+          </label>
+        </div>
+      </section>
 
       <section className="space-y-4 rounded border border-border p-5">
         <h2 className="text-lg font-semibold">Download mirrors</h2>

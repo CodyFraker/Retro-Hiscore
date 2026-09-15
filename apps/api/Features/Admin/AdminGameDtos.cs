@@ -1,3 +1,5 @@
+using RetroHiscore.Api.Features.Sync;
+
 namespace RetroHiscore.Api.Features.Admin;
 
 public sealed record AdminGameDto(
@@ -12,6 +14,10 @@ public sealed record AdminGameDto(
     string? ImageIngameUrl,
     int LeaderboardCount,
     int SourceCount,
-    DateTimeOffset? MetadataSyncedAt);
+    DateTimeOffset? MetadataSyncedAt,
+    bool ForceColdLeaderboardSync,
+    GameLeaderboardSyncStatusDto LeaderboardSyncStatus);
 
 public sealed record PostAdminGameRequest(int RaGameId);
+
+public sealed record PatchAdminGameLeaderboardSyncRequest(bool ForceColdLeaderboardSync);

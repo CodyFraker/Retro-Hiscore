@@ -449,6 +449,12 @@ export function createApiClient(options: ApiClientOptions) {
       request<void>(baseUrl, \`/api/admin/games/\${raGameId}\`, { method: "DELETE" }, fetchImpl),
     postAdminGameRefresh: (raGameId: number) =>
       request<AdminGameDto>(baseUrl, \`/api/admin/games/\${raGameId}/refresh\`, { method: "POST" }, fetchImpl),
+    patchAdminGameLeaderboardSync: (raGameId: number, forceColdLeaderboardSync: boolean) =>
+      request<AdminGameDto>(baseUrl, \`/api/admin/games/\${raGameId}/leaderboard-sync\`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forceColdLeaderboardSync }),
+      }, fetchImpl),
     getAdminGameSources: (raGameId: number) =>
       request<GameSourceDto[]>(baseUrl, \`/api/admin/games/\${raGameId}/sources\`, undefined, fetchImpl),
     postAdminGameSource: (raGameId: number, body: UpsertGameSourceRequest) =>

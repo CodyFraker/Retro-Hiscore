@@ -1394,9 +1394,18 @@
       },
       "MemberRaAchievementHistoryItemDto": {
         "type": "object",
-        "required": ["earnedAt", "cumulativeUnlocks", "cumulativePoints", "cumulativeTruePoints"],
+        "required": [
+          "earnedAt",
+          "pointsEarned",
+          "truePointsEarned",
+          "cumulativeUnlocks",
+          "cumulativePoints",
+          "cumulativeTruePoints"
+        ],
         "properties": {
           "earnedAt": { "type": "string", "format": "date-time" },
+          "pointsEarned": { "type": "integer" },
+          "truePointsEarned": { "type": "integer" },
           "cumulativeUnlocks": { "type": "integer" },
           "cumulativePoints": { "type": "integer" },
           "cumulativeTruePoints": { "type": "integer" }
@@ -1631,7 +1640,7 @@
       },
       "GameLeaderboardsResponse": {
         "type": "object",
-        "required": ["gameId", "raGameId", "title", "members", "leaderboards"],
+        "required": ["gameId", "raGameId", "title", "leaderboardSyncStatus", "members", "leaderboards"],
         "properties": {
           "gameId": { "type": "string", "format": "uuid" },
           "raGameId": { "type": "integer" },
@@ -1652,6 +1661,7 @@
           "releasedAt": { "type": "string", "format": "date-time", "nullable": true },
           "metadataSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
           "leaderboardScoresSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "leaderboardSyncStatus": { "$ref": "#/components/schemas/GameLeaderboardSyncStatusDto" },
           "members": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/StandingMemberDto" }
@@ -1843,6 +1853,18 @@
           "friendRankOnes": { "type": "integer" }
         }
       },
+      "GameLeaderboardSyncStatusDto": {
+        "type": "object",
+        "required": ["tier", "leaderboardSyncIntervalMinutes", "leaderboardSyncIsDue", "leaderboardSyncForcedCold"],
+        "properties": {
+          "tier": { "type": "string", "description": "Hot or Cold leaderboard sync schedule tier." },
+          "groupLastPlayedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "leaderboardSyncNextDueAt": { "type": "string", "format": "date-time", "nullable": true },
+          "leaderboardSyncIntervalMinutes": { "type": "integer" },
+          "leaderboardSyncIsDue": { "type": "boolean" },
+          "leaderboardSyncForcedCold": { "type": "boolean", "description": "When true, an admin pinned this game to the cold schedule." }
+        }
+      },
       "DashboardGamePlayerAvatarDto": {
         "type": "object",
         "required": ["displayName", "raUsername", "avatarUrl"],
@@ -1854,7 +1876,7 @@
       },
       "DashboardGameDto": {
         "type": "object",
-        "required": ["id", "raGameId", "title", "leaderboardCount", "playersWithAvatars"],
+        "required": ["id", "raGameId", "title", "leaderboardCount", "playersWithAvatars", "leaderboardSyncStatus"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "raGameId": { "type": "integer" },
@@ -1870,8 +1892,7 @@
           "imageTitleUrl": { "type": "string", "nullable": true },
           "imageIngameUrl": { "type": "string", "nullable": true },
           "leaderboardCount": { "type": "integer" },
-          "maxGlobalEntryCount": { "type": "integer", "nullable": true },
-          "maxGlobalEntryCountLeaderboardTitle": { "type": "string", "nullable": true },
+          "totalRankedEntriesAcrossBoards": { "type": "integer", "nullable": true },
           "friendRankOneLeader": { "$ref": "#/components/schemas/DashboardGameLeaderDto", "nullable": true },
           "playersWithAvatars": {
             "type": "array",
@@ -1879,7 +1900,8 @@
           },
           "lastActivityAt": { "type": "string", "format": "date-time", "nullable": true },
           "leaderboardScoresSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
-          "totalAchievementsInCatalog": { "type": "integer", "nullable": true }
+          "totalAchievementsInCatalog": { "type": "integer", "nullable": true },
+          "leaderboardSyncStatus": { "$ref": "#/components/schemas/GameLeaderboardSyncStatusDto" }
         }
       },
       "RecentGroupGamePlayerDto": {
@@ -1935,7 +1957,7 @@
       },
       "AdminGameDto": {
         "type": "object",
-        "required": ["id", "raGameId", "title", "leaderboardCount", "sourceCount"],
+        "required": ["id", "raGameId", "title", "leaderboardCount", "sourceCount", "forceColdLeaderboardSync", "leaderboardSyncStatus"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "raGameId": { "type": "integer" },
@@ -1948,7 +1970,9 @@
           "imageIngameUrl": { "type": "string", "nullable": true },
           "leaderboardCount": { "type": "integer" },
           "sourceCount": { "type": "integer" },
-          "metadataSyncedAt": { "type": "string", "format": "date-time", "nullable": true }
+          "metadataSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "forceColdLeaderboardSync": { "type": "boolean" },
+          "leaderboardSyncStatus": { "$ref": "#/components/schemas/GameLeaderboardSyncStatusDto" }
         }
       },
       "GameSourceDto": {
@@ -1979,6 +2003,13 @@
         "required": ["raGameId"],
         "properties": {
           "raGameId": { "type": "integer" }
+        }
+      },
+      "PatchAdminGameLeaderboardSyncRequest": {
+        "type": "object",
+        "required": ["forceColdLeaderboardSync"],
+        "properties": {
+          "forceColdLeaderboardSync": { "type": "boolean" }
         }
       },
       "DashboardResponse": {

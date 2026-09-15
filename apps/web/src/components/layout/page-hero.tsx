@@ -6,11 +6,12 @@ type Props = {
   description?: ReactNode;
   className?: string;
   titleClassName?: string;
+  actions?: ReactNode;
 };
 
-export function PageHero({ title, description, className, titleClassName }: Props) {
-  return (
-    <section className={cn("space-y-2", className)}>
+export function PageHero({ title, description, className, titleClassName, actions }: Props) {
+  const heading = (
+    <div className="min-w-0 space-y-2">
       <h1
         className={cn(
           "font-[family-name:var(--font-display)] text-2xl tracking-tight text-[var(--accent-retro)] sm:text-3xl md:text-4xl",
@@ -20,6 +21,19 @@ export function PageHero({ title, description, className, titleClassName }: Prop
         {title}
       </h1>
       {description ? <div className="max-w-2xl text-muted-foreground">{description}</div> : null}
-    </section>
+    </div>
   );
+
+  if (actions) {
+    return (
+      <section className={cn(className)}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          {heading}
+          {actions}
+        </div>
+      </section>
+    );
+  }
+
+  return <section className={cn("space-y-2", className)}>{heading}</section>;
 }

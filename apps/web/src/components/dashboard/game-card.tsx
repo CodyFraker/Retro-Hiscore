@@ -1,4 +1,4 @@
-import { ChevronRight, ImageOff, Trash2 } from "lucide-react";
+import { ChevronRight, ImageOff, Trash2, TableProperties, Trophy, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ConsoleName } from "@/components/console-name";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { DashboardGameDto } from "@/generated/api-client";
 import { FormattedSyncTime } from "@/components/formatted-sync-time";
 import { LastSyncedLabel } from "@/components/sync/last-synced-label";
+import { LeaderboardSyncTierBadge } from "@/components/sync/leaderboard-sync-tier-badge";
 
 type Props = {
   game: DashboardGameDto;
@@ -19,10 +20,10 @@ export function GameCard({ game, onDelete, deleting }: Props) {
 
   return (
     <li>
-      <div className="flex items-stretch gap-2 pr-2">
+      <div className="flex items-stretch gap-2">
         <Link
           href={`/games/${game.raGameId}`}
-          className="flex min-w-0 flex-1 py-5 pl-4 transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="flex min-w-0 flex-1 items-center py-5 pl-4 transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <div className="flex min-w-0 flex-1 items-start gap-4">
             <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-secondary/40 steam-bevel-inset">
@@ -41,7 +42,11 @@ export function GameCard({ game, onDelete, deleting }: Props) {
               )}
             </div>
             <div className="min-w-0 flex-1">
+              
+              <div className="mt-1 flex flex-wrap items-center gap-2">
               <p className="truncate text-xl font-medium">{game.title}</p>
+                <LeaderboardSyncTierBadge status={game.leaderboardSyncStatus} />
+              </div>
               <p className="mt-1">
                 <ConsoleName
                   name={game.consoleName}
@@ -49,6 +54,7 @@ export function GameCard({ game, onDelete, deleting }: Props) {
                   fallback={`RA #${game.raGameId}`}
                 />
               </p>
+              
               {game.leaderboardScoresSyncedAt ? (
                 <div className="mt-0.5">
                   <LastSyncedLabel
@@ -62,11 +68,11 @@ export function GameCard({ game, onDelete, deleting }: Props) {
                 </p>
               ) : null}
             </div>
-            <ChevronRight
-              className="hidden size-4 shrink-0 text-muted-foreground sm:block"
-              aria-hidden
-            />
           </div>
+          <ChevronRight
+            className="mr-2 hidden size-8 shrink-0 text-muted-foreground sm:block"
+            aria-hidden
+          />
         </Link>
         {onDelete && (
           <Button
@@ -82,24 +88,28 @@ export function GameCard({ game, onDelete, deleting }: Props) {
           </Button>
         )}
       </div>
-      <div className="flex items-center justify-between gap-4 px-4 pb-4 pt-1">
+      <div className="flex items-center justify-between gap-4 px-4 pb-4 pt-1 max-h-8">
         <div className="min-w-0 flex-1">
-          <GameCardPlayerAvatars players={game.playersWithAvatars} />
+          <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="shrink-0">Players:</span>
+            <GameCardPlayerAvatars players={game.playersWithAvatars} />
+          </div>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-          <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+          <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground flex items-center gap-1">
+            <TableProperties className="size-4 mr-1" />
             {game.leaderboardCount === 0
               ? "Waiting for first sync"
               : `${game.leaderboardCount} boards`}
           </span>
-          {game.maxGlobalEntryCount != null && (
-            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-              {game.maxGlobalEntryCount.toLocaleString()} Entries
+          {game.totalRankedEntriesAcrossBoards != null && (
+            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground flex items-center gap-1">
+              <Users className="size-4 mr-1" /> {game.totalRankedEntriesAcrossBoards.toLocaleString()} Entries
             </span>
           )}
           {game.totalAchievementsInCatalog != null && (
-            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-              {game.totalAchievementsInCatalog} achievements
+            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground flex items-center gap-1">
+              <Trophy className="size-4 mr-1" /> {game.totalAchievementsInCatalog} achievements
             </span>
           )}
         </div>

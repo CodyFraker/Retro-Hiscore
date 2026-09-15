@@ -55,6 +55,22 @@ public class LeaderboardSyncScheduleTests
     }
 
     [Fact]
+    public void Evaluate_WhenForceCold_StaysColdDespiteRecentPlay()
+    {
+        // Arrange
+        var now = new DateTimeOffset(2026, 9, 14, 12, 0, 0, TimeSpan.Zero);
+        var lastSynced = now.AddMinutes(-5);
+        var played = now.AddHours(-1);
+
+        // Act
+        var result = LeaderboardSyncSchedule.Evaluate(now, lastSynced, played, Policy, forceColdLeaderboardSync: true);
+
+        // Assert
+        result.Tier.ShouldBe(LeaderboardSyncTier.Cold);
+        result.IsDue.ShouldBeFalse();
+    }
+
+    [Fact]
     public void Evaluate_WhenCold_UsesDailyInterval()
     {
         // Arrange

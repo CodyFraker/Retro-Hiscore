@@ -14,6 +14,7 @@ public static class GetGameLeaderboardsEndpoint
             int raGameId,
             AppDbContext db,
             IOptions<RaOptions> raOptions,
+            ISyncSettingsStore syncSettingsStore,
             CancellationToken ct) =>
         {
             var game = await db.Games.FirstOrDefaultAsync(g => g.RaGameId == raGameId, ct);
@@ -22,14 +23,9 @@ public static class GetGameLeaderboardsEndpoint
                 return Results.NotFound();
             }
 
-            var memberRows = await db.Members
-                .Where(m => m.RaUsername != null)
-                .OrderBy(m => m.RaUsername)
-                .Select(m => new { m.Id, m.RaUsername, DisplayName = m.DisplayName ?? m.RaUsername!, m.AvatarUrl })
-                .ToListAsync(ct);
-
-            var members = memberRows
-                .Select(m => new StandingMemberDto(m.Id, m.RaUsername!, m.DisplayName, m.AvatarUrl))
+            var engagedRows = await GameEngagedMembersQuery.GetAsync(db, game.Id, raGameId, ct);
+            var members = engagedRows
+                .Select(m => new StandingMemberDto(m.Id, m.RaUsername, m.DisplayName, m.AvatarUrl))
                 .ToList();
 
             var leaderboards = await db.Leaderboards
@@ -71,6 +67,18 @@ public static class GetGameLeaderboardsEndpoint
             var console = game.ConsoleId is null
                 ? null
                 : await db.Consoles.AsNoTracking().FirstOrDefaultAsync(c => c.RaConsoleId == game.ConsoleId, ct);
+
+            var syncStatusByGameId = await GameLeaderboardSyncStatusQuery.GetForGamesAsync(
+                db,
+                syncSettingsStore,
+                [new GameLeaderboardSyncStatusQuery.GameSyncInput(
+                    game.Id,
+                    game.RaGameId,
+                    game.LeaderboardScoresSyncedAt,
+                    game.ForceColdLeaderboardSync)],
+                ct);
+            var leaderboardSyncStatus = syncStatusByGameId[game.Id];
+
             return Results.Ok(new GameLeaderboardsResponse(
                 game.Id,
                 game.RaGameId,
@@ -87,12 +95,13 @@ public static class GetGameLeaderboardsEndpoint
                 game.ReleasedAt,
                 game.MetadataSyncedAt,
                 game.LeaderboardScoresSyncedAt,
+                leaderboardSyncStatus,
                 members,
                 response));
         })
         .WithName("GetGameLeaderboards")
         .WithTags("Games")
-        .WithSummary("Returns friend standings for every tracked leaderboard on a game.")
+        .WithSummary("Returns friend standings for every tracked leaderboard on a game (engaged members only), including hot/cold leaderboard sync schedule.")
         .RequireApiAuth();
 }
 
@@ -136,5 +145,6 @@ public sealed record GameLeaderboardsResponse(
     DateTimeOffset? ReleasedAt,
     DateTimeOffset? MetadataSyncedAt,
     DateTimeOffset? LeaderboardScoresSyncedAt,
+    GameLeaderboardSyncStatusDto LeaderboardSyncStatus,
     IReadOnlyList<StandingMemberDto> Members,
     IReadOnlyList<GameLeaderboardDto> Leaderboards);

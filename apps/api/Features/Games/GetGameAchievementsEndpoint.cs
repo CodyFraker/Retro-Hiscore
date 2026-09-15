@@ -30,16 +30,14 @@ public static class GetGameAchievementsEndpoint
 
         var mediaBaseUrl = raOptions.Value.MediaBaseUrl;
 
-        var memberRows = await db.Members
-            .AsNoTracking()
-            .Where(m => m.RaUsername != null)
-            .OrderBy(m => m.RaUsername)
+        var engagedRows = await GameEngagedMembersQuery.GetAsync(db, game.Id, raGameId, ct);
+        var memberRows = engagedRows
             .Select(m => new GameAchievementMemberDto(
                 m.Id,
-                m.RaUsername!,
-                m.DisplayName ?? m.RaUsername!,
+                m.RaUsername,
+                m.DisplayName,
                 m.AvatarUrl))
-            .ToListAsync(ct);
+            .ToList();
 
         var catalog = await db.RaAchievements
             .AsNoTracking()

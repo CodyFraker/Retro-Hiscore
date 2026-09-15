@@ -10,7 +10,7 @@ public static class GetMemberRaAchievementHistoryEndpoint
         => routes.MapGet("/api/members/{raUsername}/ra-achievement-history", HandleAsync)
         .WithName("GetMemberRaAchievementHistory")
         .WithTags("Members")
-        .WithSummary("Returns cumulative RetroAchievements unlock history for charting, ordered by unlock time.")
+        .WithSummary("Returns RetroAchievements unlock history for charting (cumulative totals and per-unlock points), ordered by unlock time.")
         .RequireApiAuth();
 
     private static async Task<IResult> HandleAsync(
@@ -72,6 +72,8 @@ public static class GetMemberRaAchievementHistoryEndpoint
             cumulativeTruePoints += unlock.TrueRatio;
             items.Add(new MemberRaAchievementHistoryItemDto(
                 unlock.DateEarned!.Value,
+                unlock.Points,
+                unlock.TrueRatio,
                 cumulativeUnlocks,
                 cumulativePoints,
                 cumulativeTruePoints));
@@ -83,6 +85,8 @@ public static class GetMemberRaAchievementHistoryEndpoint
 
 public sealed record MemberRaAchievementHistoryItemDto(
     DateTimeOffset EarnedAt,
+    int PointsEarned,
+    int TruePointsEarned,
     int CumulativeUnlocks,
     int CumulativePoints,
     int CumulativeTruePoints);

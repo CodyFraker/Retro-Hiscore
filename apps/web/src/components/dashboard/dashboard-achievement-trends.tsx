@@ -23,6 +23,8 @@ export function DashboardAchievementTrends({ items }: Props) {
       label="Unlocks"
       items={unlockSeries}
       stroke="var(--chart-3)"
+      yDomainMode="fromZero"
+      tickFormat="date"
     />
   );
 }

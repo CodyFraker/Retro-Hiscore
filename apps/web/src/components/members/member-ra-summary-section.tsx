@@ -2,21 +2,15 @@ import { MemberRaPresenceCard } from "@/components/members/member-ra-presence-ca
 import { MemberRaRecentAchievements } from "@/components/members/member-ra-recent-achievements";
 import { MemberRaRecentlyPlayed } from "@/components/members/member-ra-recently-played";
 import { MemberRaSummaryTrends } from "@/components/members/member-ra-summary-trends";
-import { MemberRaAchievementTrends } from "@/components/members/member-ra-achievement-trends";
 import { LastSyncedLabel } from "@/components/sync/last-synced-label";
-import type {
-  MemberRaAchievementHistoryItemDto,
-  MemberRaRankHistoryItemDto,
-  MemberRaSummaryResponse,
-} from "@/generated/api-client";
+import type { MemberRaRankHistoryItemDto, MemberRaSummaryResponse } from "@/generated/api-client";
 
 type Props = {
   data: MemberRaSummaryResponse;
   rankHistory: MemberRaRankHistoryItemDto[];
-  achievementHistory: MemberRaAchievementHistoryItemDto[];
 };
 
-export function MemberRaSummarySection({ data, rankHistory, achievementHistory }: Props) {
+export function MemberRaSummarySection({ data, rankHistory }: Props) {
   const showSoftcorePoints = (data.summary?.totalSoftcorePoints ?? 0) > 0;
 
   if (!data.available || !data.summary) {
@@ -31,7 +25,6 @@ export function MemberRaSummarySection({ data, rankHistory, achievementHistory }
             Progress over time
           </h3>
           <MemberRaSummaryTrends items={rankHistory} showSoftcorePoints={showSoftcorePoints} />
-          <MemberRaAchievementTrends items={achievementHistory} />
         </div>
       </section>
     );
@@ -66,7 +59,6 @@ export function MemberRaSummarySection({ data, rankHistory, achievementHistory }
           Progress over time
         </h3>
         <MemberRaSummaryTrends items={rankHistory} showSoftcorePoints={showSoftcorePoints} />
-        <MemberRaAchievementTrends items={achievementHistory} />
       </div>
     </section>
   );

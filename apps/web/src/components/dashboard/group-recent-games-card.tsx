@@ -1,14 +1,20 @@
-import { ImageOff } from "lucide-react";
+import { EyeOff, ImageOff } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { ConsoleName } from "@/components/console-name";
+import { GameCardPlayerAvatars } from "@/components/dashboard/game-card-player-avatars";
+import { RaGameModBadges } from "@/components/game/ra-game-mod-badges";
 import { FormattedSyncTime } from "@/components/formatted-sync-time";
-import { MemberRaGameLink } from "@/components/members/member-ra-game-link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RecentGroupGameDto } from "@/generated/api-client";
+import { parseRaGameTitle } from "@/lib/ra-game-title";
 
 type Props = {
   games: RecentGroupGameDto[];
 };
+
+const gameArtClassName =
+  "relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-secondary/40";
 
 export function GroupRecentGamesCard({ games }: Props) {
   return (
@@ -24,30 +30,50 @@ export function GroupRecentGamesCard({ games }: Props) {
         ) : (
           <ul className="divide-y divide-border">
             {games.map((game) => {
+              const { displayTitle, modTags } = parseRaGameTitle(game.title);
               const artUrl = game.imageBoxArtUrl ?? game.imageIconUrl;
+              const art = artUrl ? (
+                <Image src={artUrl} alt="" fill className="object-cover" sizes="56px" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-muted-foreground">
+                  <ImageOff className="size-4" />
+                </div>
+              );
+
               return (
                 <li key={game.raGameId} className="flex gap-3 py-3 first:pt-0 last:pb-0">
-                  <MemberRaGameLink
-                    raGameId={game.raGameId}
-                    isTracked={game.isTracked}
-                    className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-secondary/40"
-                  >
-                    {artUrl ? (
-                      <Image src={artUrl} alt="" fill className="object-cover" sizes="56px" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-muted-foreground">
-                        <ImageOff className="size-4" />
-                      </div>
-                    )}
-                  </MemberRaGameLink>
+                  {game.isTracked ? (
+                    <Link href={`/games/${game.raGameId}`} className={gameArtClassName}>
+                      {art}
+                    </Link>
+                  ) : (
+                    <div className={gameArtClassName}>{art}</div>
+                  )}
                   <div className="min-w-0 flex-1 space-y-1">
-                    <MemberRaGameLink
-                      raGameId={game.raGameId}
-                      isTracked={game.isTracked}
-                      className="line-clamp-2 text-sm font-medium leading-snug hover:text-[var(--accent-retro)]"
-                    >
-                      {game.title}
-                    </MemberRaGameLink>
+                    <div className="flex min-w-0 items-start gap-1.5">
+                      <div className="min-w-0 flex-1">
+                        {game.isTracked ? (
+                          <Link
+                            href={`/games/${game.raGameId}`}
+                            className="line-clamp-2 text-sm font-medium leading-snug hover:text-[var(--accent-retro)]"
+                          >
+                            {displayTitle}
+                          </Link>
+                        ) : (
+                          <p
+                            className="flex items-start gap-1.5 text-sm font-medium leading-snug text-foreground cursor-default"
+                            title="Not tracked yet"
+                          >
+                            <EyeOff
+                              className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
+                              aria-hidden
+                            />
+                            <span className="line-clamp-2 min-w-0">{displayTitle}</span>
+                          </p>
+                        )}
+                      </div>
+                      <RaGameModBadges modTags={modTags} />
+                    </div>
                     <ConsoleName
                       name={game.consoleName}
                       iconUrl={game.consoleIconUrl}
@@ -57,9 +83,13 @@ export function GroupRecentGamesCard({ games }: Props) {
                       <FormattedSyncTime value={game.lastPlayedAt} />
                     </p>
                     {game.players.length > 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        {game.players.map((p) => p.displayName).join(", ")}
-                      </p>
+                      <GameCardPlayerAvatars
+                        players={game.players.map((p) => ({
+                          raUsername: p.raUsername,
+                          displayName: p.displayName,
+                          avatarUrl: p.avatarUrl ?? "",
+                        }))}
+                      />
                     ) : null}
                   </div>
                 </li>

@@ -33,11 +33,11 @@ public sealed class LeaderboardSyncDispatcher(
             return 0;
         }
 
-        var activityByRaGameId = await db.MemberRecentGamePlays
-            .AsNoTracking()
-            .GroupBy(p => p.RaGameId)
-            .Select(g => new { RaGameId = g.Key, MaxLastPlayedAt = g.Max(p => p.LastPlayedAt) })
-            .ToDictionaryAsync(x => x.RaGameId, x => (DateTimeOffset?)x.MaxLastPlayedAt, cancellationToken);
+        var raGameIds = games.Select(g => g.RaGameId).ToList();
+        var activityByRaGameId = await GameLeaderboardSyncStatusQuery.LoadMaxLastPlayedByRaGameIdAsync(
+            db,
+            raGameIds,
+            cancellationToken);
 
         var enqueued = 0;
         var staggerIndex = 0;
@@ -49,7 +49,8 @@ public sealed class LeaderboardSyncDispatcher(
                 utcNow,
                 game.LeaderboardScoresSyncedAt,
                 maxPlayed,
-                policy);
+                policy,
+                game.ForceColdLeaderboardSync);
 
             if (!forceAll && !schedule.IsDue)
             {

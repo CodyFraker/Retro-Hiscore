@@ -88,13 +88,13 @@ public sealed record DashboardGameDto(
     string? ImageTitleUrl,
     string? ImageIngameUrl,
     int LeaderboardCount,
-    int? MaxGlobalEntryCount,
-    string? MaxGlobalEntryCountLeaderboardTitle,
+    int? TotalRankedEntriesAcrossBoards,
     DashboardGameLeaderDto? FriendRankOneLeader,
     IReadOnlyList<DashboardGamePlayerAvatarDto> PlayersWithAvatars,
     DateTimeOffset? LastActivityAt,
     DateTimeOffset? LeaderboardScoresSyncedAt,
-    int? TotalAchievementsInCatalog);
+    int? TotalAchievementsInCatalog,
+    GameLeaderboardSyncStatusDto LeaderboardSyncStatus);
 
 public sealed record RecentGroupGamePlayerDto(
     Guid MemberId,

@@ -250,3 +250,110 @@ export function countDistinctSyncTimestampsForBoardRanks(series: BoardRankSeries
   }
   return stamps.size;
 }
+
+export type GameMemberBoardRankSeries = {
+  raLeaderboardId: number;
+  leaderboardTitle: string;
+  points: { syncedAt: string; friendRank: number | null }[];
+};
+
+export function toGameMemberBoardRankSeries(
+  memberId: string,
+  items: GameHistoryItemDto[],
+): GameMemberBoardRankSeries[] {
+  const byBoard = new Map<number, GameMemberBoardRankSeries>();
+
+  for (const item of items) {
+    if (item.memberId !== memberId) {
+      continue;
+    }
+
+    let series = byBoard.get(item.raLeaderboardId);
+    if (!series) {
+      series = {
+        raLeaderboardId: item.raLeaderboardId,
+        leaderboardTitle: item.leaderboardTitle,
+        points: [],
+      };
+      byBoard.set(item.raLeaderboardId, series);
+    }
+
+    series.points.push({
+      syncedAt: item.syncedAt,
+      friendRank: item.friendRank ?? null,
+    });
+  }
+
+  return [...byBoard.values()]
+    .map((series) => ({
+      ...series,
+      points: dedupeBoardRankPoints(series.points),
+    }))
+    .filter((series) => series.points.some((point) => point.friendRank != null))
+    .sort((a, b) => a.leaderboardTitle.localeCompare(b.leaderboardTitle));
+}
+
+export function countDistinctSyncTimestampsForGameMemberBoards(
+  series: GameMemberBoardRankSeries[],
+): number {
+  const stamps = new Set<string>();
+  for (const board of series) {
+    for (const point of board.points) {
+      stamps.add(point.syncedAt);
+    }
+  }
+  return stamps.size;
+}
+
+export function memberLeadSeriesHasVariation(series: MemberLeadSeries[]): boolean {
+  const values = series.flatMap((member) => member.points.map((point) => point.friendRankOnes));
+  return new Set(values).size > 1;
+}
+
+export function gameMemberBoardRankSeriesHasVariation(series: GameMemberBoardRankSeries[]): boolean {
+  for (const board of series) {
+    const ranks = board.points
+      .map((point) => point.friendRank)
+      .filter((rank): rank is number => rank != null);
+    if (new Set(ranks).size > 1) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function gameDeltaMovementScore(delta: GameDelta): number {
+  const magnitudes = [
+    delta.friendRankDelta,
+    delta.globalRankDelta,
+    delta.scoreDelta,
+    delta.globalEntryCountDelta,
+  ].filter((value): value is number => value != null);
+
+  if (magnitudes.length === 0) {
+    return 0;
+  }
+
+  return Math.max(...magnitudes.map((value) => Math.abs(value)));
+}
+
+export function isGameDeltaMover(delta: GameDelta): boolean {
+  return gameDeltaMovementScore(delta) > 0;
+}
+
+export function sortGameDeltasByMovement(deltas: GameDelta[]): GameDelta[] {
+  return [...deltas].sort((a, b) => {
+    const byMovement = gameDeltaMovementScore(b) - gameDeltaMovementScore(a);
+    if (byMovement !== 0) {
+      return byMovement;
+    }
+    return (
+      a.leaderboardTitle.localeCompare(b.leaderboardTitle) ||
+      a.displayName.localeCompare(b.displayName)
+    );
+  });
+}
+
+export function indexGameDeltasByBoardMember(deltas: GameDelta[]): Map<string, GameDelta> {
+  return new Map(deltas.map((delta) => [`${delta.raLeaderboardId}:${delta.memberId}`, delta]));
+}

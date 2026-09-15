@@ -17,11 +17,20 @@ function game(overrides: Partial<DashboardGameDto> & Pick<DashboardGameDto, "raG
     imageTitleUrl: overrides.imageTitleUrl ?? null,
     imageIngameUrl: overrides.imageIngameUrl ?? null,
     leaderboardCount: overrides.leaderboardCount ?? 0,
-    maxGlobalEntryCount: overrides.maxGlobalEntryCount ?? null,
-    maxGlobalEntryCountLeaderboardTitle: overrides.maxGlobalEntryCountLeaderboardTitle ?? null,
+    totalRankedEntriesAcrossBoards: overrides.totalRankedEntriesAcrossBoards ?? null,
     friendRankOneLeader: overrides.friendRankOneLeader ?? null,
     playersWithAvatars: overrides.playersWithAvatars ?? [],
     lastActivityAt: overrides.lastActivityAt ?? null,
+    leaderboardScoresSyncedAt: overrides.leaderboardScoresSyncedAt ?? null,
+    totalAchievementsInCatalog: overrides.totalAchievementsInCatalog ?? null,
+    leaderboardSyncStatus: overrides.leaderboardSyncStatus ?? {
+      tier: "Cold",
+      groupLastPlayedAt: null,
+      leaderboardSyncNextDueAt: null,
+      leaderboardSyncIntervalMinutes: 1440,
+      leaderboardSyncIsDue: true,
+      leaderboardSyncForcedCold: false,
+    },
   };
 }
 
@@ -65,6 +74,16 @@ describe("sortDashboardGames", () => {
 
   it("sorts by board count descending", () => {
     const sorted = sortDashboardGames(games, "boards");
+    expect(sorted.map((g) => g.raGameId)).toEqual([2, 3, 1]);
+  });
+
+  it("sorts by total ranked entries descending", () => {
+    const populationGames = [
+      game({ raGameId: 1, title: "Alpha", totalRankedEntriesAcrossBoards: 100 }),
+      game({ raGameId: 2, title: "Beta", totalRankedEntriesAcrossBoards: 500 }),
+      game({ raGameId: 3, title: "Gamma", totalRankedEntriesAcrossBoards: 200 }),
+    ];
+    const sorted = sortDashboardGames(populationGames, "population");
     expect(sorted.map((g) => g.raGameId)).toEqual([2, 3, 1]);
   });
 });

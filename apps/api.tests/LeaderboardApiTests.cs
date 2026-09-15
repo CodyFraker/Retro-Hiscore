@@ -67,7 +67,7 @@ public class LeaderboardApiTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Sync_PersistsScores_AndLeavesMissingMembersEmpty()
+    public async Task Sync_PersistsScores_AndExcludesNonEngagedMembers()
     {
         // Arrange
         await _factory.SetMemberApiKeyAsync("ShrimpPoboy", "shrimp-test-key");
@@ -143,13 +143,108 @@ public class LeaderboardApiTests : IAsyncLifetime
         payload.Leaderboards.Count.ShouldBe(1);
         payload.Leaderboards[0].GlobalEntryCount.ShouldBe(10_247);
 
+        payload.Members.Count.ShouldBe(1);
+        payload.Members[0].RaUsername.ShouldBe("ShrimpPoboy");
+
         var shrimp = payload.Leaderboards[0].Standings.Single(s => s.RaUsername == "ShrimpPoboy");
         shrimp.Score.ShouldBe(352750);
         shrimp.FriendRank.ShouldBe(1);
+        payload.Leaderboards[0].Standings.Count.ShouldBe(1);
+    }
 
-        var missing = payload.Leaderboards[0].Standings.Where(s => s.RaUsername != "ShrimpPoboy").ToList();
-        missing.ShouldAllBe(s => s.Score == null);
-        missing.ShouldAllBe(s => s.FriendRank == null);
+    [Fact]
+    public async Task GetGameLeaderboards_ReturnsHotLeaderboardSyncStatus_WhenGroupPlayedRecently()
+    {
+        // Arrange
+        const int raGameId = 38130;
+        var recentPlay = DateTimeOffset.UtcNow.AddHours(-1);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            db.MemberRecentGamePlays.Add(new MemberRecentGamePlay
+            {
+                MemberId = shrimp.Id,
+                RaGameId = raGameId,
+                Title = "Pinball",
+                ConsoleId = 1,
+                ConsoleName = "Genesis",
+                LastPlayedAt = recentPlay,
+                NumAchieved = 2,
+                NumPossibleAchievements = 20,
+                SyncedAt = recentPlay
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var payload = await client.GetFromJsonAsync<GameLeaderboardsResponse>(
+            $"/api/games/{raGameId}/leaderboards",
+            JsonOptions);
+
+        // Assert
+        payload.ShouldNotBeNull();
+        payload!.LeaderboardSyncStatus.Tier.ShouldBe("Hot");
+        payload.LeaderboardSyncStatus.LeaderboardSyncIntervalMinutes.ShouldBe(15);
+        payload.LeaderboardSyncStatus.GroupLastPlayedAt.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task GetGameLeaderboards_IncludesMemberEngagedViaAchievementsOnly()
+    {
+        // Arrange
+        const int raGameId = 38130;
+        const int achievementId = 8001;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var game = await db.Games.SingleAsync(g => g.RaGameId == raGameId);
+            var member = await db.Members.SingleAsync(m => m.RaUsername == "beefboybilly");
+            db.Leaderboards.Add(new Leaderboard
+            {
+                GameId = game.Id,
+                RaLeaderboardId = 38130999,
+                Title = "Test board",
+                Format = "VALUE",
+                RankAsc = false
+            });
+            db.RaAchievements.Add(new RaAchievement
+            {
+                RaAchievementId = achievementId,
+                RaGameId = raGameId,
+                Title = "Engaged only",
+                Points = 5,
+                TrueRatio = 10,
+                DisplayOrder = 1
+            });
+            db.MemberRaAchievements.Add(new MemberRaAchievement
+            {
+                MemberId = member.Id,
+                RaAchievementId = achievementId,
+                DateEarned = DateTimeOffset.UtcNow
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient();
+
+        // Act
+        var payload = await client.GetFromJsonAsync<GameLeaderboardsResponse>(
+            $"/api/games/{raGameId}/leaderboards",
+            JsonOptions);
+
+        // Assert
+        payload.ShouldNotBeNull();
+        payload!.Members.Select(m => m.RaUsername).ShouldBe(["beefboybilly"]);
+        payload.Leaderboards.ShouldNotBeEmpty();
+        foreach (var board in payload.Leaderboards)
+        {
+            board.Standings.Count.ShouldBe(1);
+            board.Standings[0].RaUsername.ShouldBe("beefboybilly");
+            board.Standings[0].Score.ShouldBeNull();
+        }
     }
 
     [Fact]

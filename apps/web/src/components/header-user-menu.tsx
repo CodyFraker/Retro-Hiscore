@@ -1,7 +1,7 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, User } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 type Props = {
   displayName: string;
   avatarUrl?: string | null;
+  profileHref?: string | null;
 };
 
 function avatarFallbackInitials(name: string): string {
@@ -28,7 +29,7 @@ function avatarFallbackInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-export function HeaderUserMenu({ displayName, avatarUrl }: Props) {
+export function HeaderUserMenu({ displayName, avatarUrl, profileHref }: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -53,6 +54,12 @@ export function HeaderUserMenu({ displayName, avatarUrl }: Props) {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        {profileHref ? (
+          <DropdownMenuItem render={<Link href={profileHref} />}>
+            <User />
+            Profile
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem render={<Link href="/settings" />}>
           <Settings />
           Settings
