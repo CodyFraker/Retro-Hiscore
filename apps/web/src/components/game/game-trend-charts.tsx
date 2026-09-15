@@ -14,7 +14,6 @@ import { ChartEmptyState } from "@/components/charts/chart-empty-state";
 import { GameRankTrendSection } from "@/components/game/game-rank-trend-section";
 import { MemberAvatar } from "@/components/members/member-avatar";
 import type {
-  GameDelta,
   GameHistoryItemDto,
   GameLeaderboardDto,
   StandingMemberDto,
@@ -23,6 +22,7 @@ import { chartYDomain } from "@/lib/chart-y-domain";
 import {
   countDistinctSyncTimestampsForMemberLeads,
   memberLeadSeriesHasVariation,
+  type GameDelta,
   toMemberLeadSeries,
 } from "@/lib/game-history-series";
 

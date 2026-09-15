@@ -52,7 +52,8 @@ public class AdminGamesApiTests : IAsyncLifetime
         games.ShouldNotBeNull();
         games.Count.ShouldBeGreaterThan(0);
         games.ShouldAllBe(g => g.SourceCount >= 0);
-        games.ShouldAllBe(g => g.LeaderboardSyncStatus.Tier is "Hot" or "Cold");
+        games.ShouldAllBe(g =>
+            g.LeaderboardSyncStatus.Tier == "Hot" || g.LeaderboardSyncStatus.Tier == "Cold");
     }
 
     [Fact]
@@ -65,8 +66,8 @@ public class AdminGamesApiTests : IAsyncLifetime
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
-            var game = await db.Games.SingleAsync(g => g.RaGameId == raGameId);
-            game.LeaderboardScoresSyncedAt = DateTimeOffset.UtcNow.AddDays(-2);
+            var trackedGame = await db.Games.SingleAsync(g => g.RaGameId == raGameId);
+            trackedGame.LeaderboardScoresSyncedAt = DateTimeOffset.UtcNow.AddDays(-2);
             db.MemberRecentGamePlays.Add(new MemberRecentGamePlay
             {
                 MemberId = shrimp.Id,
