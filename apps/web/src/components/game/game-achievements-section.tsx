@@ -1,22 +1,32 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type {
+  DashboardAchievementActivityItemDto,
   GameAchievementDistributionResponse,
   GameAchievementsResponse,
 } from "@/generated/api-client";
+import { AchievementsActivityFeed } from "@/components/achievements/achievements-activity-feed";
+import { buildAchievementsQueryString } from "@/lib/achievements-params";
 import { LastSyncedLabel } from "@/components/sync/last-synced-label";
 import { GameAchievementDistributionChart } from "@/components/game/game-achievement-distribution-chart";
 import { GameAchievementGrid } from "@/components/game/game-achievement-grid";
-import { GameAchievementRecentUnlocks } from "@/components/game/game-achievement-recent-unlocks";
 import { GameAchievementSummary } from "@/components/game/game-achievement-summary";
 
 type Props = {
   achievements: GameAchievementsResponse;
   distribution: GameAchievementDistributionResponse;
+  recentUnlockActivity: DashboardAchievementActivityItemDto[];
+  raGameId: number;
 };
 
-export function GameAchievementsSection({ achievements, distribution }: Props) {
+export function GameAchievementsSection({
+  achievements,
+  distribution,
+  recentUnlockActivity,
+  raGameId,
+}: Props) {
   const [distMode, setDistMode] = useState<"softcore" | "hardcore">("softcore");
 
   return (
@@ -33,12 +43,24 @@ export function GameAchievementsSection({ achievements, distribution }: Props) {
         />
       </section>
 
-      {achievements.recentUnlocks.length > 0 && (
-        <section className="space-y-3">
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="steam-section-heading">Recent friend unlocks</h2>
-          <GameAchievementRecentUnlocks unlocks={achievements.recentUnlocks} />
-        </section>
-      )}
+          {recentUnlockActivity.length > 0 ? (
+            <Link
+              href={`/achievements${buildAchievementsQueryString({ game: raGameId })}`}
+              className="text-sm text-muted-foreground hover:text-[var(--accent-retro)]"
+            >
+              View all →
+            </Link>
+          ) : null}
+        </div>
+        <AchievementsActivityFeed
+          items={recentUnlockActivity}
+          variant="embedded"
+          showGameLink={false}
+        />
+      </section>
 
       <section className="space-y-3">
         <h2 className="steam-section-heading">Achievement grid</h2>

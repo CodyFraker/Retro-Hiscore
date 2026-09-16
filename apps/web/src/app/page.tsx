@@ -1,24 +1,27 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { AlertCircle } from "lucide-react";
+import { DashboardActivityPrimary } from "@/components/dashboard/dashboard-activity-primary";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
-import { TrackedGamesSection } from "@/components/dashboard/tracked-games-section";
+import { SetupReminderBanner } from "@/components/dashboard/setup-reminder-banner";
 import { DashboardPageSkeleton } from "@/components/layout/dashboard-page-skeleton";
 import type {
   DashboardAchievementActivityResponse,
-  DashboardAchievementHistoryResponse,
   DashboardAchievementSummaryResponse,
-  DashboardGamesResponse,
+  MembersSummaryDto,
+  DashboardGroupActivityResponse,
   DashboardResponse,
   GameOfTheWeekCurrentPollDto,
+  GameOfTheWeekHistoryItemDto,
 } from "@/generated/api-client";
+import { getServerSession } from "next-auth";
 import { getServerApiClient } from "@/lib/api";
+import { authOptions } from "@/lib/auth-options";
 import {
+  buildTrackedGamesQueryString,
   parseTrackedGamesPage,
   parseTrackedGamesSort,
-  trackedGamesOffset,
-  TRACKED_GAMES_PAGE_SIZE,
   type TrackedGamesSearchParams,
 } from "@/lib/tracked-games-params";
 
@@ -36,39 +39,80 @@ export default function HomePage({ searchParams }: Props) {
   );
 }
 
+function memberNeedsSyncReminder(
+  hasApiKey: boolean,
+  syncStatus: {
+    leaderboards: { lastSyncedAt?: string | null };
+    profile: { lastSyncedAt?: string | null };
+    achievements: { lastSyncedAt?: string | null };
+  } | null,
+): boolean {
+  if (!hasApiKey || !syncStatus) {
+    return false;
+  }
+  return (
+    !syncStatus.leaderboards.lastSyncedAt
+    && !syncStatus.profile.lastSyncedAt
+    && !syncStatus.achievements.lastSyncedAt
+  );
+}
+
 async function HomePageContent({ searchParams }: Props) {
   const params = await searchParams;
-  const pageNum = parseTrackedGamesPage(params.page);
-  const sort = parseTrackedGamesSort(params.sort);
-  const query = params.q?.trim() ?? "";
+  if (params.page || params.q || params.sort) {
+    const qs = buildTrackedGamesQueryString({
+      page: parseTrackedGamesPage(params.page),
+      q: params.q?.trim() || undefined,
+      sort: parseTrackedGamesSort(params.sort),
+    });
+    redirect(qs ? `/games?${qs}` : "/games");
+  }
 
   let dashboard: DashboardResponse | null = null;
-  let gamesPage: DashboardGamesResponse | null = null;
   let achievementActivity: DashboardAchievementActivityResponse | null = null;
-  let achievementHistory: DashboardAchievementHistoryResponse | null = null;
   let achievementSummary: DashboardAchievementSummaryResponse | null = null;
+  let membersSummary: MembersSummaryDto | null = null;
+  let isAdmin = false;
   let gameOfTheWeekPoll: GameOfTheWeekCurrentPollDto | null = null;
+  let gameOfTheWeekLastWinner: GameOfTheWeekHistoryItemDto | null = null;
+  let groupActivity: DashboardGroupActivityResponse | null = null;
+  let showSetupReminder = false;
   let error: string | null = null;
 
   try {
     const api = await getServerApiClient();
-    [dashboard, gamesPage, achievementActivity, achievementHistory, achievementSummary] =
-      await Promise.all([
+    const session = await getServerSession(authOptions);
+    isAdmin = session?.isAdmin === true;
+    [dashboard, achievementActivity, achievementSummary, membersSummary] = await Promise.all([
       api.getDashboard(),
-      api.getDashboardGames(
-        TRACKED_GAMES_PAGE_SIZE,
-        trackedGamesOffset(pageNum),
-        sort,
-        query || undefined,
-      ),
       api.getDashboardAchievementActivity(5),
-      api.getDashboardAchievementHistory(500),
       api.getDashboardAchievementSummary(),
+      api.getMembersSummary(),
     ]);
     try {
       gameOfTheWeekPoll = await api.getGameOfTheWeekCurrent();
     } catch {
       gameOfTheWeekPoll = null;
+    }
+    try {
+      const history = await api.getGameOfTheWeekHistory(1, 0);
+      gameOfTheWeekLastWinner = history.items[0] ?? null;
+    } catch {
+      gameOfTheWeekLastWinner = null;
+    }
+    try {
+      groupActivity = await api.getDashboardGroupActivity(8);
+    } catch {
+      groupActivity = null;
+    }
+    try {
+      const member = await api.getCurrentMember();
+      if (!member.needsOnboarding && member.hasApiKey) {
+        const syncStatus = await api.getMemberSelfSyncStatus();
+        showSetupReminder = memberNeedsSyncReminder(true, syncStatus);
+      }
+    } catch {
+      showSetupReminder = false;
     }
   } catch (err) {
     error = err instanceof Error ? err.message : "Failed to load dashboard";
@@ -86,28 +130,26 @@ async function HomePageContent({ searchParams }: Props) {
         </>
       )}
 
-      {!error && dashboard && gamesPage && (
-        <DashboardLayout
-          header={<DashboardHero />}
-          primary={
-            <TrackedGamesSection
-              basePath="/"
-              page={gamesPage}
-              query={query}
-              sort={sort}
-            />
-          }
-          sidebar={
-            <DashboardSidebar
-              championship={dashboard.championship}
-              recentGroupGames={dashboard.recentGroupGames}
-              achievementActivity={achievementActivity?.items ?? []}
-              achievementHistory={achievementHistory?.items ?? []}
-              achievementsSyncedAt={achievementSummary?.achievementsSyncedAt}
-              gameOfTheWeekPoll={gameOfTheWeekPoll}
-            />
-          }
-        />
+      {!error && dashboard && (
+        <>
+          {showSetupReminder ? <SetupReminderBanner /> : null}
+          <DashboardLayout
+            header={<DashboardHero />}
+            primary={
+              <DashboardActivityPrimary
+                championship={dashboard.championship}
+                memberCount={membersSummary?.memberCount ?? 0}
+                recentGroupGames={dashboard.recentGroupGames}
+                achievementActivity={achievementActivity?.items ?? []}
+                achievementsSyncedAt={achievementSummary?.achievementsSyncedAt}
+                gameOfTheWeekPoll={gameOfTheWeekPoll}
+                gameOfTheWeekLastWinner={gameOfTheWeekLastWinner}
+                groupActivity={groupActivity}
+                isAdmin={isAdmin}
+              />
+            }
+          />
+        </>
       )}
     </div>
   );

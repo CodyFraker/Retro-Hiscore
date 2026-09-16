@@ -35,6 +35,9 @@ type RowProps = {
   title: string;
   description: string;
   lastSyncedAt?: string | null;
+  lastSyncedPrefix?: string;
+  lastSyncedEmptyLabel?: string;
+  groupScoresLastSyncedAt?: string | null;
   cooldownUntil?: string | null;
   pending: boolean;
   onSync: () => void;
@@ -44,6 +47,9 @@ function SyncRow({
   title,
   description,
   lastSyncedAt,
+  lastSyncedPrefix,
+  lastSyncedEmptyLabel,
+  groupScoresLastSyncedAt,
   cooldownUntil,
   pending,
   onSync,
@@ -55,7 +61,18 @@ function SyncRow({
       <div className="min-w-0 space-y-1">
         <p className="font-medium">{title}</p>
         <p className="text-sm text-muted-foreground">{description}</p>
-        <LastSyncedLabel at={lastSyncedAt} />
+        <LastSyncedLabel
+          at={lastSyncedAt}
+          prefix={lastSyncedPrefix}
+          emptyLabel={lastSyncedEmptyLabel}
+        />
+        {groupScoresLastSyncedAt !== undefined ? (
+          <LastSyncedLabel
+            at={groupScoresLastSyncedAt}
+            prefix="Group scores last updated"
+            emptyLabel="Not yet"
+          />
+        ) : null}
         {cooldown ? <p className="text-xs text-amber-600 dark:text-amber-400">{cooldown}</p> : null}
       </div>
       <Button
@@ -121,9 +138,12 @@ export function SettingsMemberSyncSection({ hasApiKey, status }: Props) {
       </div>
 
       <SyncRow
-        title="Leaderboards"
-        description="Queue score refresh on every tracked game (uses your API key)."
+        title="Refresh all tracked games (your API key)"
+        description="The group refreshes leaderboard scores on a schedule. Use this button for an on-demand pull with your RetroAchievements API key."
         lastSyncedAt={status.leaderboards.lastSyncedAt}
+        lastSyncedPrefix="You last ran this"
+        lastSyncedEmptyLabel="Not yet"
+        groupScoresLastSyncedAt={status.leaderboards.groupScoresLastSyncedAt}
         cooldownUntil={status.leaderboards.cooldownUntil}
         pending={pending}
         onSync={() => run(triggerMemberSelfSyncLeaderboardsAction)}

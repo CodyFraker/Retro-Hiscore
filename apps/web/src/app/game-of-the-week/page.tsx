@@ -1,32 +1,47 @@
-import Link from "next/link";
 import { PageHero } from "@/components/layout/page-hero";
+import { GameOfTheWeekIdlePanel } from "@/components/game-of-the-week/game-of-the-week-idle-panel";
 import { GameOfTheWeekView } from "@/components/game-of-the-week/game-of-the-week-view";
+import type {
+  GameOfTheWeekCurrentPollDto,
+  GameOfTheWeekHistoryResponse,
+} from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
-export default async function GameOfTheWeekPage() {
+async function loadHistory(): Promise<GameOfTheWeekHistoryResponse> {
   try {
     const api = await getServerApiClient();
-    const poll = await api.getGameOfTheWeekCurrent();
+    return await api.getGameOfTheWeekHistory(20, 0);
+  } catch {
+    return { total: 0, offset: 0, limit: 20, items: [] };
+  }
+}
+
+export default async function GameOfTheWeekPage() {
+  const history = await loadHistory();
+  let currentPoll: GameOfTheWeekCurrentPollDto | null = null;
+
+  try {
+    const api = await getServerApiClient();
+    currentPoll = await api.getGameOfTheWeekCurrent();
+  } catch {
+    currentPoll = null;
+  }
+
+  if (currentPoll) {
     return (
       <div className="space-y-8">
         <PageHero title="Game of the week" />
-        <GameOfTheWeekView initialPoll={poll} />
-      </div>
-    );
-  } catch {
-    return (
-      <div className="space-y-4">
-        <PageHero title="Game of the week" />
-        <p className="text-muted-foreground">No poll is active right now.</p>
-        <p className="text-sm text-muted-foreground">
-          Check back when an admin starts the next vote.
-        </p>
-        <Link href="/" className="text-sm text-[var(--accent-retro)] hover:underline">
-          Back to dashboard
-        </Link>
+        <GameOfTheWeekView initialPoll={currentPoll} history={history.items} />
       </div>
     );
   }
+
+  return (
+    <div className="space-y-8">
+      <PageHero title="Game of the week" />
+      <GameOfTheWeekIdlePanel history={history.items} />
+    </div>
+  );
 }

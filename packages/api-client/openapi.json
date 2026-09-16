@@ -47,6 +47,25 @@
         }
       }
     },
+    "/api/dashboard/group-activity": {
+      "get": {
+        "operationId": "getDashboardGroupActivity",
+        "tags": ["Dashboard"],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DashboardGroupActivityResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/dashboard/achievement-activity": {
       "get": {
         "operationId": "getDashboardAchievementActivity",
@@ -517,6 +536,27 @@
         }
       }
     },
+    "/api/game-of-the-week/history": {
+      "get": {
+        "operationId": "getGameOfTheWeekHistory",
+        "tags": ["GameOfTheWeek"],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameOfTheWeekHistoryResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
     "/api/game-of-the-week/current/ballot": {
       "post": {
         "operationId": "postGameOfTheWeekBallot",
@@ -603,6 +643,28 @@
             }
           },
           "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/games/track-queue": {
+      "get": {
+        "operationId": "getGameTrackQueue",
+        "tags": ["Games"],
+        "parameters": [
+          { "name": "raGameId", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/GameTrackQueueItemDto" }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -927,6 +989,42 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/SyncStatusDto" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sync/health": {
+      "get": {
+        "operationId": "getSyncHealth",
+        "tags": ["Sync"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncHealthResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/search": {
+      "get": {
+        "operationId": "getSearch",
+        "tags": ["Search"],
+        "parameters": [
+          { "name": "q", "in": "query", "schema": { "type": "string" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchResponse" }
               }
             }
           }
@@ -1532,7 +1630,7 @@
       },
       "CurrentMemberDto": {
         "type": "object",
-        "required": ["id", "displayName", "boardsWithScore", "friendRankOnes", "hasApiKey", "needsOnboarding", "isAdmin"],
+        "required": ["id", "displayName", "boardsWithScore", "friendRankOnes", "hasApiKey", "needsOnboarding", "onboardingStep", "isAdmin"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "raUsername": { "type": "string", "nullable": true },
@@ -1543,6 +1641,7 @@
           "friendRankOnes": { "type": "integer" },
           "hasApiKey": { "type": "boolean" },
           "needsOnboarding": { "type": "boolean" },
+          "onboardingStep": { "type": "string" },
           "isAdmin": { "type": "boolean" }
         }
       },
@@ -1550,7 +1649,8 @@
         "type": "object",
         "properties": {
           "lastSyncedAt": { "type": "string", "format": "date-time", "nullable": true },
-          "cooldownUntil": { "type": "string", "format": "date-time", "nullable": true }
+          "cooldownUntil": { "type": "string", "format": "date-time", "nullable": true },
+          "groupScoresLastSyncedAt": { "type": "string", "format": "date-time", "nullable": true }
         }
       },
       "MemberSelfSyncStatusDto": {
@@ -2383,6 +2483,41 @@
           "ballotSlotsRemaining": { "type": "integer" }
         }
       },
+      "GameOfTheWeekHistoryItemDto": {
+        "type": "object",
+        "required": [
+          "pollId",
+          "startsAt",
+          "endsAt",
+          "isTracked",
+          "totalVotes"
+        ],
+        "properties": {
+          "pollId": { "type": "string", "format": "uuid" },
+          "startsAt": { "type": "string", "format": "date-time" },
+          "endsAt": { "type": "string", "format": "date-time" },
+          "closedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "winnerRaGameId": { "type": "integer", "nullable": true },
+          "winnerTitle": { "type": "string", "nullable": true },
+          "winnerConsoleName": { "type": "string", "nullable": true },
+          "winnerImageIcon": { "type": "string", "nullable": true },
+          "isTracked": { "type": "boolean" },
+          "totalVotes": { "type": "integer" }
+        }
+      },
+      "GameOfTheWeekHistoryResponse": {
+        "type": "object",
+        "required": ["total", "offset", "limit", "items"],
+        "properties": {
+          "total": { "type": "integer" },
+          "offset": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameOfTheWeekHistoryItemDto" }
+          }
+        }
+      },
       "PatchAdminGameLeaderboardSyncRequest": {
         "type": "object",
         "required": ["forceColdLeaderboardSync"],
@@ -2443,6 +2578,93 @@
           "badgeUrl": { "type": "string", "nullable": true },
           "dateEarned": { "type": "string", "format": "date-time", "nullable": true },
           "hardcoreEarned": { "type": "boolean" }
+        }
+      },
+      "DashboardGroupActivityItemDto": {
+        "type": "object",
+        "required": ["kind", "occurredAt", "title"],
+        "properties": {
+          "kind": { "type": "string" },
+          "occurredAt": { "type": "string", "format": "date-time" },
+          "title": { "type": "string" },
+          "subtitle": { "type": "string", "nullable": true },
+          "memberRaUsername": { "type": "string", "nullable": true },
+          "memberDisplayName": { "type": "string", "nullable": true },
+          "raGameId": { "type": "integer", "nullable": true },
+          "raLeaderboardId": { "type": "integer", "format": "int64", "nullable": true },
+          "friendRankDelta": { "type": "integer", "nullable": true },
+          "scoreDelta": { "type": "integer", "format": "int64", "nullable": true }
+        }
+      },
+      "DashboardGroupActivityResponse": {
+        "type": "object",
+        "required": ["windowUnavailable", "items"],
+        "properties": {
+          "windowUnavailable": { "type": "boolean" },
+          "windowStart": { "type": "string", "format": "date-time", "nullable": true },
+          "windowEnd": { "type": "string", "format": "date-time", "nullable": true },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DashboardGroupActivityItemDto" }
+          }
+        }
+      },
+      "GameTrackQueueItemDto": {
+        "type": "object",
+        "required": ["raGameId", "status", "enqueuedAt"],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string", "nullable": true },
+          "consoleName": { "type": "string", "nullable": true },
+          "status": { "type": "string" },
+          "enqueuedAt": { "type": "string", "format": "date-time" },
+          "resolvedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "MemberSelfSyncIssueDto": {
+        "type": "object",
+        "required": ["scope", "message", "occurredAt"],
+        "properties": {
+          "scope": { "type": "string" },
+          "message": { "type": "string" },
+          "occurredAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SyncHealthResponse": {
+        "type": "object",
+        "required": ["groupStatus", "leaderboardSyncInProgress", "memberIssues"],
+        "properties": {
+          "groupStatus": { "type": "string" },
+          "groupMessage": { "type": "string", "nullable": true },
+          "leaderboardSyncInProgress": { "type": "boolean" },
+          "leaderboardScoresLastSuccessAt": { "type": "string", "format": "date-time", "nullable": true },
+          "memberIssues": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberSelfSyncIssueDto" }
+          }
+        }
+      },
+      "SearchHitDto": {
+        "type": "object",
+        "required": ["kind", "title", "href"],
+        "properties": {
+          "kind": { "type": "string" },
+          "title": { "type": "string" },
+          "subtitle": { "type": "string", "nullable": true },
+          "href": { "type": "string" },
+          "raGameId": { "type": "integer", "nullable": true },
+          "raUsername": { "type": "string", "nullable": true },
+          "raLeaderboardId": { "type": "integer", "format": "int64", "nullable": true }
+        }
+      },
+      "SearchResponse": {
+        "type": "object",
+        "required": ["hits"],
+        "properties": {
+          "hits": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SearchHitDto" }
+          }
         }
       },
       "DashboardAchievementActivityResponse": {

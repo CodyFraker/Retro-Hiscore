@@ -3,23 +3,54 @@ import Link from "next/link";
 import { MemberAvatar } from "@/components/members/member-avatar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ChampionshipRowDto } from "@/generated/api-client";
+import { rivalryPath } from "@/lib/rivalry-path";
 
 type Props = {
   rows: ChampionshipRowDto[];
+  memberCount: number;
   limit?: number;
 };
 
-export function ChampionshipStandings({ rows, limit = 5 }: Props) {
+function championshipLeadMargin(rows: ChampionshipRowDto[]): number | null {
+  if (rows.length < 2 || rows[0].friendRankOnes <= 0) {
+    return null;
+  }
+  return rows[0].friendRankOnes - rows[1].friendRankOnes;
+}
+
+export function ChampionshipStandings({ rows, memberCount, limit = 5 }: Props) {
+  if (memberCount < 2) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Friend championship</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Championship standings appear when your group has two or more members.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (rows.length === 0) {
     return null;
   }
 
   const visibleRows = rows.slice(0, limit);
+  const margin = championshipLeadMargin(rows);
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="space-y-1">
         <CardTitle>Friend championship</CardTitle>
+        {margin != null && margin > 0 ? (
+          <p className="text-sm text-muted-foreground">
+            <span className="font-mono text-foreground">+{margin}</span> board lead
+            {margin === 1 ? "" : "s"} over 2nd
+          </p>
+        ) : null}
       </CardHeader>
       <CardContent className="px-0">
         <ul className="divide-y divide-border">
@@ -51,9 +82,20 @@ export function ChampionshipStandings({ rows, limit = 5 }: Props) {
           ))}
         </ul>
       </CardContent>
-      <CardFooter className="border-t max-h-8">
+      <CardFooter className="flex flex-wrap gap-3 border-t max-h-none py-3">
+        {rows.length >= 2 ? (
+          <Link
+            href={rivalryPath(rows[0].raUsername, rows[1].raUsername)}
+            className="text-sm text-muted-foreground hover:text-[var(--accent-retro)]"
+          >
+            #1 vs #2 rivalry
+          </Link>
+        ) : null}
+        <Link href="/rivalry" className="text-sm text-muted-foreground hover:text-[var(--accent-retro)]">
+          Head-to-head hub
+        </Link>
         <Link href="/members" className="text-sm text-muted-foreground hover:text-[var(--accent-retro)]">
-          See all members
+          All members
         </Link>
       </CardFooter>
     </Card>

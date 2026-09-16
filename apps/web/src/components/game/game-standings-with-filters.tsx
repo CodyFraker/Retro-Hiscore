@@ -49,7 +49,11 @@ export function GameStandingsWithFilters({ leaderboards, members }: Props) {
           No boards match your filters. Try turning off friend scores only or clearing the search.
         </p>
       ) : (
-        <GameStandingsSection leaderboards={filtered} members={members} />
+        <GameStandingsSection
+          leaderboards={filtered}
+          members={members}
+          compactEmptyScores={friendScoresOnly}
+        />
       )}
     </div>
   );

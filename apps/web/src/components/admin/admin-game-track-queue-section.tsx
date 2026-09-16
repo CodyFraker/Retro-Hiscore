@@ -56,7 +56,8 @@ export function AdminGameTrackQueueSection({ items }: Props) {
       <div>
         <h2 className="text-lg font-semibold">Track queue</h2>
         <p className="text-sm text-muted-foreground">
-          Games discovered from friend recent play. Nominate winners via Game of the week voting.
+          Games discovered from friend recent play. Winners are added via Game of the week or manual admin
+          tracking; dismiss items you do not want on the site.
         </p>
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

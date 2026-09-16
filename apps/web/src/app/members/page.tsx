@@ -1,7 +1,7 @@
 import { PageHero } from "@/components/layout/page-hero";
 import { MembersHubSummary } from "@/components/members/members-hub-summary";
 import { MembersRosterTable } from "@/components/members/members-roster-table";
-import { RivalryPicker } from "@/components/rivalry/rivalry-picker";
+import { HeadToHeadSection } from "@/components/rivalry/head-to-head-section";
 import type { MemberDto, MembersSummaryDto } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
 
@@ -32,14 +32,16 @@ export default async function MembersPage() {
         </p>
       )}
 
-      {!error && summary ? <MembersHubSummary summary={summary} /> : null}
+      {!error && summary ? (
+        <MembersHubSummary
+          summary={summary}
+          runnerUpFriendRankOnes={
+            members.length >= 2 ? members[1]?.friendRankOnes ?? null : null
+          }
+        />
+      ) : null}
 
-      {!error && members.length >= 2 && (
-        <section id="head-to-head" className="space-y-3">
-          <h2 className="steam-section-heading">Head-to-head</h2>
-          <RivalryPicker members={members} />
-        </section>
-      )}
+      {!error && members.length > 0 ? <HeadToHeadSection members={members} /> : null}
 
       {!error && members.length === 0 && (
         <p className="text-muted-foreground">No members seeded yet.</p>

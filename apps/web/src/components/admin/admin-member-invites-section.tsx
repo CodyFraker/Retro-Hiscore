@@ -19,7 +19,13 @@ export function AdminMemberInvitesSection({ initialInvites }: Props) {
   const router = useRouter();
   const [discordId, setDiscordId] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  function buildInviteMessage(id: string) {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return `You're invited to Retro Hiscore. Sign in with Discord (user ID ${id}), then open Settings to link your RetroAchievements username and API key.${origin ? ` ${origin}/settings` : ""}`;
+  }
 
   return (
     <section className="space-y-4">
@@ -44,6 +50,7 @@ export function AdminMemberInvitesSection({ initialInvites }: Props) {
               return;
             }
             setDiscordId("");
+            setInviteMessage(buildInviteMessage(discordId.trim()));
             router.refresh();
           });
         }}
@@ -70,6 +77,23 @@ export function AdminMemberInvitesSection({ initialInvites }: Props) {
       {error && (
         <p className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">{error}</p>
       )}
+
+      {inviteMessage ? (
+        <div className="space-y-2 rounded border border-border bg-muted/30 p-4 text-sm">
+          <p className="font-medium">Copy for Discord</p>
+          <p className="whitespace-pre-wrap text-muted-foreground">{inviteMessage}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void navigator.clipboard.writeText(inviteMessage);
+            }}
+          >
+            Copy message
+          </Button>
+        </div>
+      ) : null}
 
       <ResponsiveTable
         rows={initialInvites}

@@ -45,6 +45,7 @@ public static class GetCurrentMemberEndpoint
                 friendRankOnes,
                 HasApiKey: !string.IsNullOrWhiteSpace(member.RaApiKey),
                 NeedsOnboarding: MemberAuthHelper.NeedsOnboarding(member),
+                OnboardingStep: MemberAuthHelper.ResolveOnboardingStep(member),
                 IsAdmin: MemberAuthHelper.IsAdmin(member, discordId, authOptions.Value)));
         })
         .WithName("GetCurrentMember")
@@ -63,4 +64,5 @@ public sealed record CurrentMemberDto(
     int FriendRankOnes,
     bool HasApiKey,
     bool NeedsOnboarding,
+    string OnboardingStep,
     bool IsAdmin);

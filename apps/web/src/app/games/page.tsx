@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { AlertCircle } from "lucide-react";
 import { TrackedGamesSection } from "@/components/dashboard/tracked-games-section";
+import { GamesPendingTrackSection } from "@/components/games/games-pending-track-section";
 import { TrackedGamesToolbar } from "@/components/dashboard/tracked-games-toolbar";
 import { PageHero } from "@/components/layout/page-hero";
 import { getServerApiClient } from "@/lib/api";
@@ -24,10 +26,16 @@ export default async function GamesIndexPage({ searchParams }: Props) {
   const query = params.q?.trim() ?? "";
 
   let gamesPage;
+  let trackQueue: Awaited<ReturnType<Awaited<ReturnType<typeof getServerApiClient>>["getGameTrackQueue"]>> = [];
   let error: string | null = null;
 
   try {
     const api = await getServerApiClient();
+    try {
+      trackQueue = await api.getGameTrackQueue();
+    } catch {
+      trackQueue = [];
+    }
     gamesPage = await api.getDashboardGames(
       TRACKED_GAMES_PAGE_SIZE,
       trackedGamesOffset(pageNum),
@@ -43,7 +51,16 @@ export default async function GamesIndexPage({ searchParams }: Props) {
       <PageHero
         title="Tracked games"
         titleClassName="text-2xl sm:text-3xl md:text-4xl"
-        description="Friend leaderboard standings for every title your group tracks on RetroAchievements."
+        description={
+          <>
+            Friend leaderboard standings for every title your group tracks on RetroAchievements. New games enter
+            the catalog through{" "}
+            <Link href="/game-of-the-week" className="text-[var(--accent-retro)] hover:underline">
+              Game of the week
+            </Link>{" "}
+            voting and admin import — use search and sort to explore the full list.
+          </>
+        }
         actions={
           gamesPage && (gamesPage.total > 0 || query)
             ? (
@@ -70,6 +87,7 @@ export default async function GamesIndexPage({ searchParams }: Props) {
           />
         )
       )}
+      {!error ? <GamesPendingTrackSection items={trackQueue} /> : null}
     </div>
   );
 }

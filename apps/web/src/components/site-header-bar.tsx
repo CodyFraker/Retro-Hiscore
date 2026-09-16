@@ -5,7 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { GlobalSearch } from "@/components/layout/global-search";
+import { SyncHealthChip } from "@/components/layout/sync-health-chip";
 import { HeaderUserMenu } from "@/components/header-user-menu";
+import type { SyncHealthResponse } from "@/generated/api-client";
 import { SettingsLinkButton } from "@/components/settings-link-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { Button } from "@/components/ui/button";
@@ -23,6 +26,7 @@ type Props = {
   avatarUrl?: string | null;
   showAdminNav?: boolean;
   profileHref?: string | null;
+  syncHealth?: SyncHealthResponse | null;
 };
 
 type NavLink = {
@@ -33,7 +37,7 @@ type NavLink = {
 };
 
 const BASE_NAV_LINKS: NavLink[] = [
-  { href: "/", label: "Dashboard", match: (path) => path === "/" },
+  { href: "/", label: "Home", match: (path) => path === "/" },
   { href: "/games", label: "Games", match: (path) => path === "/games" || path.startsWith("/games/") },
   {
     href: "/game-of-the-week",
@@ -43,6 +47,11 @@ const BASE_NAV_LINKS: NavLink[] = [
   },
   { href: "/achievements", label: "Achievements", match: (path) => path === "/achievements" || path.startsWith("/achievements/") },
   { href: "/members", label: "Members", match: (path) => path === "/members" || path.startsWith("/members/") },
+  {
+    href: "/rivalry",
+    label: "Rivalry",
+    match: (path) => path === "/rivalry" || path.startsWith("/rivalry/"),
+  },
 ];
 
 const ADMIN_NAV_LINK: NavLink = {
@@ -118,6 +127,7 @@ export function SiteHeaderBar({
   avatarUrl,
   showAdminNav,
   profileHref,
+  syncHealth,
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -135,7 +145,9 @@ export function SiteHeaderBar({
           <NavLinks showAdminNav={showAdminNav} />
         </div>
 
-        <div className="hidden shrink-0 md:flex">
+        <div className="hidden shrink-0 items-center gap-2 md:flex">
+          <GlobalSearch />
+          {syncHealth ? <SyncHealthChip health={syncHealth} admin={showAdminNav} /> : null}
           <HeaderUserMenu
             displayName={displayName}
             avatarUrl={avatarUrl}
@@ -161,6 +173,8 @@ export function SiteHeaderBar({
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <div className="flex flex-col gap-6 overflow-y-auto px-4 pb-6">
+              <GlobalSearch />
+              {syncHealth ? <SyncHealthChip health={syncHealth} admin={showAdminNav} /> : null}
               <NavLinks onNavigate={() => setOpen(false)} showAdminNav={showAdminNav} />
               <Link
                 href={profileHref ?? "/settings"}

@@ -30,3 +30,21 @@ public sealed record PostGameOfTheWeekPollRequest(
     IReadOnlyList<int> RaGameIds);
 
 public sealed record GameOfTheWeekRaGameIdRequest(int RaGameId);
+
+public sealed record GameOfTheWeekHistoryItemDto(
+    Guid PollId,
+    DateTimeOffset StartsAt,
+    DateTimeOffset EndsAt,
+    DateTimeOffset? ClosedAt,
+    int? WinnerRaGameId,
+    string? WinnerTitle,
+    string? WinnerConsoleName,
+    string? WinnerImageIcon,
+    bool IsTracked,
+    int TotalVotes);
+
+public sealed record GameOfTheWeekHistoryResponse(
+    int Total,
+    int Offset,
+    int Limit,
+    IReadOnlyList<GameOfTheWeekHistoryItemDto> Items);

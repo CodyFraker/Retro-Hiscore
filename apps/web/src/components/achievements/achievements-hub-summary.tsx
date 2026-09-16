@@ -1,67 +1,38 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
-import { FormattedSyncTime } from "@/components/formatted-sync-time";
-import type { DashboardAchievementSummaryResponse } from "@/generated/api-client";
 
 type Props = {
-  summary: DashboardAchievementSummaryResponse;
+  hasFilters: boolean;
+  filteredTotal?: number;
+  filterContext?: string;
 };
 
-function Stat({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="min-w-[9rem] shrink-0 rounded-md border border-border bg-card px-4 py-3 sm:min-w-0">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
-    </div>
-  );
-}
-
-export function AchievementsHubSummary({ summary }: Props) {
-  const top = summary.topGameLast7Days;
-
-  const statItems = (
-    <>
-      <Stat label="Unlocks (7 days)" value={summary.unlocksLast7Days} />
-      <Stat label="Unlocks (30 days)" value={summary.unlocksLast30Days} />
-      <Stat label="Active members (7 days)" value={summary.activeMembersLast7Days} />
-      <Stat
-        label="Last unlock"
-        value={
-          summary.lastUnlockAt ? (
-            <span className="text-lg font-semibold">
-              <FormattedSyncTime value={summary.lastUnlockAt} />
-            </span>
-          ) : (
-            "—"
-          )
-        }
-      />
-    </>
-  );
+export function AchievementsHubSummary({ hasFilters, filteredTotal, filterContext }: Props) {
+  if (hasFilters) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {filteredTotal != null ? (
+          <>
+            <span className="font-mono text-foreground">{filteredTotal}</span> matching unlock
+            {filteredTotal === 1 ? "" : "s"}
+            {filterContext ? ` · ${filterContext}` : ""}
+            {" · "}
+          </>
+        ) : null}
+        Group stats on the{" "}
+        <Link href="/members" className="text-foreground underline-offset-4 hover:underline">
+          Members hub
+        </Link>
+        .
+      </p>
+    );
+  }
 
   return (
-    <div className="space-y-3">
-      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
-        {statItems}
-      </div>
-
-      {top ? (
-        <div className="rounded-md border border-border bg-card px-4 py-3 sm:col-span-2 lg:col-span-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Top game (7 days)
-          </p>
-          <p className="mt-1 text-sm">
-            <Link
-              href={`/games/${top.raGameId}`}
-              className="font-medium hover:text-[var(--accent-retro)]"
-            >
-              {top.title}
-            </Link>
-            <span className="text-muted-foreground"> · </span>
-            <span className="tabular-nums">{top.unlockCount} unlocks</span>
-          </p>
-        </div>
-      ) : null}
-    </div>
+    <p className="text-sm text-muted-foreground">
+      Group unlock stats ·{" "}
+      <Link href="/members" className="text-foreground underline-offset-4 hover:underline">
+        Members hub
+      </Link>
+    </p>
   );
 }

@@ -188,9 +188,9 @@ public class AdminGamesApiTests : IAsyncLifetime
 
         // Assert — delete
         deleteResponse.StatusCode.ShouldBe(HttpStatusCode.NoContent);
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        (await db.Games.AnyAsync(g => g.RaGameId == raGameId)).ShouldBeFalse();
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        (await verifyDb.Games.AnyAsync(g => g.RaGameId == raGameId)).ShouldBeFalse();
     }
 
     private void SetupRaMocks(int raGameId, bool includeMemberScore)

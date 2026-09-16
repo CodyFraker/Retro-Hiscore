@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { GameStats } from "@/lib/game-stats";
 import { StatGrid } from "@/components/layout/stat-grid";
 import { formatSyncTime } from "@/lib/format";
@@ -28,9 +29,12 @@ export function GameStatsStrip({ stats }: Props) {
               <span className="block font-mono text-xs">
                 {stats.busiestBoard.globalEntryCount.toLocaleString()}
               </span>
-              <span className="mt-0.5 block line-clamp-2 text-xs text-muted-foreground">
+              <Link
+                href={`/leaderboards/${stats.busiestBoard.raLeaderboardId}`}
+                className="mt-0.5 block line-clamp-2 text-xs text-muted-foreground hover:text-[var(--accent-retro)]"
+              >
                 {stats.busiestBoard.title}
-              </span>
+              </Link>
             </span>
           ) : (
             "—"

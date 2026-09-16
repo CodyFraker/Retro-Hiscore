@@ -23,6 +23,21 @@ public static class MemberAuthHelper
     public static bool NeedsOnboarding(Member member)
         => string.IsNullOrWhiteSpace(member.RaUsername) || string.IsNullOrWhiteSpace(member.RaApiKey);
 
+    public static string ResolveOnboardingStep(Member member)
+    {
+        if (string.IsNullOrWhiteSpace(member.RaUsername))
+        {
+            return "NeedsRaAccount";
+        }
+
+        if (string.IsNullOrWhiteSpace(member.RaApiKey))
+        {
+            return "NeedsApiKey";
+        }
+
+        return "Complete";
+    }
+
     public static string DisplayLabel(Member member)
         => member.DisplayName ?? member.RaUsername ?? "Pending";
 }

@@ -30,7 +30,8 @@ public sealed record MemberSelfSyncLeaderboardsResult(int Queued, int SkippedCoo
 
 public sealed record MemberSelfSyncScopeStatusDto(
     DateTimeOffset? LastSyncedAt,
-    DateTimeOffset? CooldownUntil);
+    DateTimeOffset? CooldownUntil,
+    DateTimeOffset? GroupScoresLastSyncedAt = null);
 
 public sealed record MemberSelfSyncStatusDto(
     MemberSelfSyncScopeStatusDto Leaderboards,
@@ -245,6 +246,15 @@ public sealed class MemberSelfSyncService(
             .Where(r => r.MemberId == member.Id && r.Kind == SyncKind.LeaderboardScores)
             .MaxAsync(r => (DateTimeOffset?)(r.FinishedAt ?? r.StartedAt), cancellationToken);
 
+        var groupLeaderboardsAt = await db.SyncRuns
+            .AsNoTracking()
+            .Where(r =>
+                r.MemberId == null
+                && r.Kind == SyncKind.LeaderboardScores
+                && r.Status == SyncRunStatus.Succeeded
+                && r.FinishedAt != null)
+            .MaxAsync(r => r.FinishedAt, cancellationToken);
+
         var rankAt = await db.MemberRaRankSnapshots
             .AsNoTracking()
             .Where(s => s.MemberId == member.Id)
@@ -268,7 +278,7 @@ public sealed class MemberSelfSyncService(
         IsAchievementsCooldownActive(member.Id, out var achCooldown);
 
         return new MemberSelfSyncStatusDto(
-            new MemberSelfSyncScopeStatusDto(leaderboardsAtValue, lbCooldown),
+            new MemberSelfSyncScopeStatusDto(leaderboardsAtValue, lbCooldown, groupLeaderboardsAt),
             new MemberSelfSyncScopeStatusDto(profileAt, profileCooldown),
             new MemberSelfSyncScopeStatusDto(achievementsAt, achCooldown));
     }

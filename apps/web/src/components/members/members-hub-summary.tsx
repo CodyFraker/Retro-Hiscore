@@ -6,6 +6,7 @@ import type { MembersSummaryDto } from "@/generated/api-client";
 
 type Props = {
   summary: MembersSummaryDto;
+  runnerUpFriendRankOnes?: number | null;
 };
 
 function Stat({ label, value }: { label: string; value: ReactNode }) {
@@ -17,7 +18,7 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-export function MembersHubSummary({ summary }: Props) {
+export function MembersHubSummary({ summary, runnerUpFriendRankOnes }: Props) {
   const leader = summary.championshipLeaderRaUsername;
   const top = summary.topGameLast7Days;
 
@@ -51,7 +52,7 @@ export function MembersHubSummary({ summary }: Props) {
         ) : null}
       </div>
 
-      {leader && summary.championshipLeaderDisplayName ? (
+      {summary.memberCount >= 2 && leader && summary.championshipLeaderDisplayName ? (
         <div className="rounded-md border border-border bg-card px-4 py-3 text-sm">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Friend championship leader
@@ -68,6 +69,17 @@ export function MembersHubSummary({ summary }: Props) {
                 {" "}
                 · {summary.championshipLeaderFriendRankOnes} board lead
                 {summary.championshipLeaderFriendRankOnes === 1 ? "" : "s"}
+                {runnerUpFriendRankOnes != null &&
+                summary.championshipLeaderFriendRankOnes > runnerUpFriendRankOnes ? (
+                  <>
+                    {" "}
+                    ·{" "}
+                    <span className="font-mono">
+                      +{summary.championshipLeaderFriendRankOnes - runnerUpFriendRankOnes}
+                    </span>{" "}
+                    over 2nd
+                  </>
+                ) : null}
               </span>
             ) : null}
           </p>

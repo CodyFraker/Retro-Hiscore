@@ -8,16 +8,29 @@ import type { DashboardAchievementActivityItemDto } from "@/generated/api-client
 
 type Props = {
   items: DashboardAchievementActivityItemDto[];
-  variant: "card" | "page";
+  variant: "card" | "page" | "embedded";
   emptyMessage?: string;
+  showMember?: boolean;
+  showGameLink?: boolean;
 };
 
 const defaultEmpty =
   "Shows up after achievement sync on tracked games. Run Admin → Sync achievements or member rank sync.";
 
-export function AchievementsActivityFeed({ items, variant, emptyMessage = defaultEmpty }: Props) {
-  const badgeSize = variant === "page" ? "h-12 w-12" : "h-10 w-10";
+export function AchievementsActivityFeed({
+  items,
+  variant,
+  emptyMessage = defaultEmpty,
+  showMember = true,
+  showGameLink = true,
+}: Props) {
+  const badgeSize =
+    variant === "page" ? "h-12 w-12" : variant === "embedded" ? "h-10 w-10" : "h-10 w-10";
   const badgeSizesAttr = variant === "page" ? "48px" : "40px";
+  const rowPadding =
+    variant === "page" ? "py-4" : variant === "embedded" ? "py-2 first:pt-0 last:pb-0" : "py-3 first:pt-0 last:pb-0";
+  const titleClass =
+    variant === "page" ? "text-base" : variant === "embedded" ? "text-sm" : "text-sm";
 
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground">{emptyMessage}</p>;
@@ -28,7 +41,7 @@ export function AchievementsActivityFeed({ items, variant, emptyMessage = defaul
       {items.map((item) => (
         <li
           key={`${item.memberId}-${item.raAchievementId}-${item.dateEarned}`}
-          className={`flex gap-3 ${variant === "page" ? "py-4" : "py-3 first:pt-0 last:pb-0"}`}
+          className={`flex gap-3 ${rowPadding}`}
         >
           <div className={`relative ${badgeSize} shrink-0 overflow-hidden rounded bg-secondary/40`}>
             {item.badgeUrl ? (
@@ -46,14 +59,18 @@ export function AchievementsActivityFeed({ items, variant, emptyMessage = defaul
             )}
           </div>
           <div className="min-w-0 flex-1 space-y-0.5">
-            <p className={`leading-snug ${variant === "page" ? "text-base" : "text-sm"}`}>
-              <Link
-                href={`/members/${encodeURIComponent(item.raUsername)}`}
-                className="font-medium hover:text-[var(--accent-retro)]"
-              >
-                {item.displayName}
-              </Link>
-              <span className="text-muted-foreground"> · </span>
+            <p className={`leading-snug ${titleClass}`}>
+              {showMember ? (
+                <>
+                  <Link
+                    href={`/members/${encodeURIComponent(item.raUsername)}`}
+                    className="font-medium hover:text-[var(--accent-retro)]"
+                  >
+                    {item.displayName}
+                  </Link>
+                  <span className="text-muted-foreground"> · </span>
+                </>
+              ) : null}
               <span>{item.title}</span>
               {variant === "page" ? (
                 <>
@@ -66,13 +83,15 @@ export function AchievementsActivityFeed({ items, variant, emptyMessage = defaul
                 </>
               ) : null}
             </p>
-            <MemberRaGameLink
-              raGameId={item.raGameId}
-              isTracked
-              className="text-xs text-muted-foreground hover:text-foreground hover:underline"
-            >
-              {item.gameTitle}
-            </MemberRaGameLink>
+            {showGameLink ? (
+              <MemberRaGameLink
+                raGameId={item.raGameId}
+                isTracked
+                className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+              >
+                {item.gameTitle}
+              </MemberRaGameLink>
+            ) : null}
             {item.dateEarned ? (
               <p className="text-xs text-muted-foreground">
                 <FormattedSyncTime value={item.dateEarned} />

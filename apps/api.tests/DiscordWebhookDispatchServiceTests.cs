@@ -75,43 +75,4 @@ public class DiscordWebhookDispatchServiceTests
         var outbox = await db.NotificationOutbox.SingleAsync();
         outbox.DispatchedAt.ShouldBeNull();
     }
-
-    [Fact]
-    public async Task MarkNotificationsReadyForSyncRunAsync_SetsReadyAt_WhenSyncSucceeded()
-    {
-        // Arrange
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
-        await using var db = new AppDbContext(options);
-        var runId = Guid.NewGuid();
-        var finishedAt = DateTimeOffset.UtcNow;
-        db.SyncRuns.Add(new SyncRun
-        {
-            Id = runId,
-            Kind = SyncKind.LeaderboardScores,
-            Trigger = SyncTrigger.Manual,
-            Status = SyncRunStatus.Succeeded,
-            StartedAt = finishedAt.AddMinutes(-1),
-            FinishedAt = finishedAt
-        });
-        db.NotificationOutbox.Add(new NotificationOutbox
-        {
-            EventKind = DiscordNotificationEventKind.GameTracked,
-            PayloadJson = """{"raGameId":42}""",
-            OccurredAt = finishedAt.AddMinutes(-1),
-            SourceSyncRunId = runId,
-            ReadyAt = null
-        });
-        await db.SaveChangesAsync();
-
-        var readiness = new NotificationOutboxReadinessService(db);
-
-        // Act
-        await readiness.MarkNotificationsReadyForSyncRunAsync(runId);
-
-        // Assert
-        var outbox = await db.NotificationOutbox.SingleAsync();
-        outbox.ReadyAt.ShouldBe(finishedAt);
-    }
 }

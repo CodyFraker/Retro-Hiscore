@@ -5,6 +5,30 @@ namespace RetroHiscore.Api.Features.Dashboard;
 
 public static class ActivityBuilder
 {
+    public sealed record GlobalSnapshotWindow(
+        DateTimeOffset CurrentSync,
+        DateTimeOffset PreviousSync,
+        bool Available);
+
+    public static async Task<GlobalSnapshotWindow?> TryResolveGlobalSnapshotWindowAsync(
+        AppDbContext db,
+        CancellationToken ct)
+    {
+        var syncStamps = await db.LeaderboardEntrySnapshots
+            .Select(s => s.SyncedAt)
+            .Distinct()
+            .OrderByDescending(s => s)
+            .Take(2)
+            .ToListAsync(ct);
+
+        if (syncStamps.Count < 2)
+        {
+            return null;
+        }
+
+        return new GlobalSnapshotWindow(syncStamps[0], syncStamps[1], true);
+    }
+
     public static Task<IReadOnlyList<ActivityItemDto>> BuildAsync(AppDbContext db, CancellationToken ct)
         => BuildForGameAsync(db, gameId: null, currentSyncedAt: null, ct);
 
@@ -48,20 +72,14 @@ public static class ActivityBuilder
         }
         else
         {
-            var syncStamps = await db.LeaderboardEntrySnapshots
-                .Select(s => s.SyncedAt)
-                .Distinct()
-                .OrderByDescending(s => s)
-                .Take(2)
-                .ToListAsync(ct);
-
-            if (syncStamps.Count < 2)
+            var window = await TryResolveGlobalSnapshotWindowAsync(db, ct);
+            if (window is null)
             {
                 return [];
             }
 
-            currentSync = syncStamps[0];
-            previousSync = syncStamps[1];
+            currentSync = window.CurrentSync;
+            previousSync = window.PreviousSync;
         }
 
         var snapshotsQuery = db.LeaderboardEntrySnapshots

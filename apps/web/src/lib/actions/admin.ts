@@ -3,7 +3,6 @@
 import type {
   AdminDiscordWebhookDetailDto,
   AdminGameDto,
-  DiscordNotificationEventKind,
   GameOfTheWeekCurrentPollDto,
   GameSourceDto,
   PatchAdminSyncSettingsRequest,

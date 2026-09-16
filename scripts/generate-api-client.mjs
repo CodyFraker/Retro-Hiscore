@@ -136,6 +136,37 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       );
     },
+    getDashboardGroupActivity: (limit?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<DashboardGroupActivityResponse>(
+        baseUrl,
+        \`/api/dashboard/group-activity\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getGameTrackQueue: (raGameId?: number) => {
+      const params = new URLSearchParams();
+      if (raGameId != null) params.set("raGameId", String(raGameId));
+      const qs = params.toString();
+      return request<GameTrackQueueItemDto[]>(
+        baseUrl,
+        \`/api/games/track-queue\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getSyncHealth: () =>
+      request<SyncHealthResponse>(baseUrl, "/api/sync/health", undefined, fetchImpl),
+    getSearch: (q: string, limit?: number) => {
+      const params = new URLSearchParams();
+      params.set("q", q);
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<SearchResponse>(baseUrl, \`/api/search?\${qs}\`, undefined, fetchImpl);
+    },
     getRivalry: (usernameA: string, usernameB: string) =>
       request<RivalryResponse>(
         baseUrl,
@@ -425,6 +456,18 @@ export function createApiClient(options: ApiClientOptions) {
     getAdminGames: () => request<AdminGameDto[]>(baseUrl, "/api/admin/games", undefined, fetchImpl),
     getGameOfTheWeekCurrent: () =>
       request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/game-of-the-week/current", undefined, fetchImpl),
+    getGameOfTheWeekHistory: (limit?: number, offset?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      if (offset != null) params.set("offset", String(offset));
+      const qs = params.toString();
+      return request<GameOfTheWeekHistoryResponse>(
+        baseUrl,
+        \`/api/game-of-the-week/history\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
     postGameOfTheWeekBallot: (raGameId: number) =>
       request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/game-of-the-week/current/ballot", {
         method: "POST",

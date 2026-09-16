@@ -60,15 +60,10 @@ function formatDuration(startedAt: string, finishedAt: string | null | undefined
   return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
-function truncateError(error: string | null | undefined, max = 80) {
-  if (!error) {
-    return null;
-  }
-  if (error.length <= max) {
-    return error;
-  }
-  return `${error.slice(0, max)}…`;
-}
+import {
+  summarizeAdminOperationalError,
+  truncateAdminError,
+} from "@/lib/admin-operational-error";
 
 type SyncRunRow = AdminOpsDto["recentRuns"][number];
 
@@ -89,10 +84,14 @@ function RunErrorCell({ error }: { error: string | null | undefined }) {
     return <span className="text-muted-foreground">—</span>;
   }
 
+  const summary = summarizeAdminOperationalError(error);
+
   return (
     <details>
-      <summary className="cursor-pointer text-xs">{truncateError(error)}</summary>
-      <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">{error}</p>
+      <summary className="cursor-pointer text-xs">{truncateAdminError(summary)}</summary>
+      {summary !== error ? (
+        <p className="mt-1 whitespace-pre-wrap break-words text-xs text-muted-foreground">{error}</p>
+      ) : null}
     </details>
   );
 }

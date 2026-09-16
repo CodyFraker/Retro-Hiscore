@@ -155,6 +155,32 @@ public class GameOfTheWeekApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetHistory_ExcludesPendingPollAndOrdersByClosedAt()
+    {
+        // Arrange
+        StubRaGame(70001, "Older Winner");
+        StubRaGame(70002, "Older Runner");
+        StubRaGame(71001, "Newer Winner");
+        StubRaGame(71002, "Newer Runner");
+        await CreateCompletedPollAsync(70001, 70002, winnerRaGameId: 70001, closedAt: DateTimeOffset.UtcNow.AddDays(-14));
+        await CreateClosedPendingPollAsync(71001, 71002, winnerRaGameId: 71001);
+
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.SecondAllowedDiscordUserId);
+
+        // Act
+        var response = await client.GetAsync("/api/game-of-the-week/history?limit=10");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var history = await response.Content.ReadFromJsonAsync<GameOfTheWeekHistoryResponse>();
+        history.ShouldNotBeNull();
+        history!.Total.ShouldBe(1);
+        history.Items.Count.ShouldBe(1);
+        history.Items[0].WinnerRaGameId.ShouldBe(70001);
+        history.Items[0].WinnerTitle.ShouldBe("Older Winner");
+    }
+
+    [Fact]
     public async Task WinnerTrackingJob_CreatesGameWhenRaSucceeds()
     {
         // Arrange
@@ -191,11 +217,14 @@ public class GameOfTheWeekApiTests : IAsyncLifetime
             });
     }
 
-    private async Task CreateOpenPollAsync(int[] raGameIds)
+    private async Task CreateOpenPollAsync(int[] raGameIds, bool stubGames = true)
     {
-        foreach (var id in raGameIds)
+        if (stubGames)
         {
-            StubRaGame(id, $"Game {id}");
+            foreach (var id in raGameIds)
+            {
+                StubRaGame(id, $"Game {id}");
+            }
         }
 
         var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
@@ -208,15 +237,33 @@ public class GameOfTheWeekApiTests : IAsyncLifetime
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
     }
 
+    private async Task CreateCompletedPollAsync(
+        int seedA,
+        int seedB,
+        int winnerRaGameId,
+        DateTimeOffset closedAt)
+    {
+        await CreateOpenPollAsync([seedA, seedB], stubGames: false);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var poll = await db.GameOfTheWeekPolls.OrderByDescending(p => p.CreatedAt).FirstAsync();
+        poll.ClosedAt = closedAt;
+        poll.WinnerRaGameId = winnerRaGameId;
+        poll.TrackingStatus = GameOfTheWeekTrackingStatus.Completed;
+        poll.EndsAt = closedAt.AddMinutes(-5);
+        await db.SaveChangesAsync();
+    }
+
     private async Task CreateClosedPendingPollAsync(int seedA, int seedB, int winnerRaGameId)
     {
         StubRaGame(seedA, $"Game {seedA}");
         StubRaGame(seedB, $"Game {seedB}");
-        await CreateOpenPollAsync([seedA, seedB]);
+        await CreateOpenPollAsync([seedA, seedB], stubGames: false);
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var poll = await db.GameOfTheWeekPolls.SingleAsync();
+        var poll = await db.GameOfTheWeekPolls.OrderByDescending(p => p.CreatedAt).FirstAsync();
         poll.ClosedAt = DateTimeOffset.UtcNow;
         poll.WinnerRaGameId = winnerRaGameId;
         poll.TrackingStatus = GameOfTheWeekTrackingStatus.Pending;

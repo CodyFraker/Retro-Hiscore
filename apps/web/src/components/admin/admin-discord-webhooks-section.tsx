@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import type {
-  AdminDiscordWebhookDetailDto,
   AdminDiscordWebhookSummaryDto,
   AdminNotificationDispatchRunDto,
   DiscordTokenCatalogDto,
 } from "@/generated/api-client";
 import { DiscordEmbedPreview } from "@/components/admin/discord-embed-preview";
+import { AdminRunErrorDetails } from "@/components/admin/admin-run-error-details";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -230,9 +230,13 @@ export function AdminDiscordWebhooksSection({ initialWebhooks, tokenCatalog, dis
               <div key={run.id} className="flex flex-wrap justify-between gap-2 border-b border-border pb-2">
                 <span>{run.status}</span>
                 <span className="text-muted-foreground">
-                  {run.postsSucceeded}/{run.postsFailed} failed · {run.eventsProcessed} events
+                  {run.postsSucceeded} sent · {run.postsFailed} failed · {run.eventsProcessed} events
                 </span>
-                {run.error ? <span className="w-full text-destructive">{run.error}</span> : null}
+                {run.error ? (
+                  <div className="w-full">
+                    <AdminRunErrorDetails error={run.error} />
+                  </div>
+                ) : null}
               </div>
             ))}
           </CardContent>

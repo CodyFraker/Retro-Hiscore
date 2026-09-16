@@ -108,7 +108,15 @@ export default async function AchievementsPage({ searchParams }: Props) {
             member={member || undefined}
           />
 
-          <AchievementsHubSummary summary={summary} />
+          <AchievementsHubSummary
+            hasFilters={hasFilters}
+            filteredTotal={hasFilters ? activity.total : undefined}
+            filterContext={
+              hasFilters
+                ? [gameTitle, memberLabel].filter(Boolean).join(" · ") || undefined
+                : undefined
+            }
+          />
 
           {hasFilters ? (
             <p className="text-sm text-muted-foreground">
@@ -144,7 +152,10 @@ export default async function AchievementsPage({ searchParams }: Props) {
             </Card>
 
             <div className="min-w-0 space-y-4">
-              <DashboardAchievementTrends items={history.items} />
+              <DashboardAchievementTrends
+                items={history.items}
+                weeklyUnlocks={summary.unlocksLast7Days}
+              />
             </div>
           </div>
         </>

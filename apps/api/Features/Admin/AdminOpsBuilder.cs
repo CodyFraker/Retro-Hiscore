@@ -62,7 +62,7 @@ public sealed class AdminOpsBuilder(
                     && r.FinishedAt == null,
                 cancellationToken);
 
-        var overallStatus = DeriveOverallStatus(latestLeaderboard);
+        var overallStatus = MapOpsStatus(SyncGroupHealthEvaluator.DeriveGroupStatus(latestLeaderboard));
 
         leaderboardSyncService.IsManualCooldownActive(out var manualCooldownUntil);
 
@@ -202,22 +202,13 @@ public sealed class AdminOpsBuilder(
         return results;
     }
 
-    private static string DeriveOverallStatus(SyncRun? latestLeaderboard)
-    {
-        if (latestLeaderboard is null)
+    private static string MapOpsStatus(string groupStatus)
+        => groupStatus switch
         {
-            return "Failing";
-        }
-
-        return latestLeaderboard.Status switch
-        {
-            SyncRunStatus.Succeeded => "OK",
-            SyncRunStatus.PartialSuccess => "Degraded",
-            SyncRunStatus.Failed => "Failing",
-            SyncRunStatus.Running => "OK",
-            _ => "Failing"
+            SyncGroupHealthEvaluator.StatusHealthy => "OK",
+            SyncGroupHealthEvaluator.StatusRateLimited => "Degraded",
+            _ => "Degraded"
         };
-    }
 }
 
 public sealed record AdminLastSyncByKindDto(

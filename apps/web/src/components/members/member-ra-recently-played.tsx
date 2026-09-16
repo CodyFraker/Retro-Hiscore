@@ -2,6 +2,7 @@ import { ImageOff } from "lucide-react";
 import Image from "next/image";
 import { ConsoleName } from "@/components/console-name";
 import { FormattedSyncTime } from "@/components/formatted-sync-time";
+import { Badge } from "@/components/ui/badge";
 import { MemberRaGameLink } from "@/components/members/member-ra-game-link";
 import { MemberRaUnlockedAchievementBadges } from "@/components/members/member-ra-unlocked-achievement-badges";
 import type { MemberRaRecentGameDto } from "@/generated/api-client";
@@ -9,9 +10,10 @@ import type { MemberRaRecentGameDto } from "@/generated/api-client";
 type Props = {
   games: MemberRaRecentGameDto[];
   excludeGameId?: number;
+  pendingRaGameIds?: ReadonlySet<number>;
 };
 
-export function MemberRaRecentlyPlayed({ games, excludeGameId }: Props) {
+export function MemberRaRecentlyPlayed({ games, excludeGameId, pendingRaGameIds }: Props) {
   const items = games.filter((g) => g.raGameId !== excludeGameId);
   if (items.length === 0) {
     return null;
@@ -31,6 +33,7 @@ export function MemberRaRecentlyPlayed({ games, excludeGameId }: Props) {
               <MemberRaGameLink
                 raGameId={game.raGameId}
                 isTracked={game.isTracked}
+                trackQueuePending={pendingRaGameIds?.has(game.raGameId) ?? false}
                 className="block space-y-2"
               >
                 <div className="relative aspect-square overflow-hidden rounded bg-secondary/40">
@@ -44,6 +47,9 @@ export function MemberRaRecentlyPlayed({ games, excludeGameId }: Props) {
                 </div>
                 <p className="line-clamp-2 text-sm font-medium leading-snug">{game.title}</p>
               </MemberRaGameLink>
+              {!game.isTracked && pendingRaGameIds?.has(game.raGameId) ? (
+                <Badge variant="outline" className="mt-1 text-xs">Requested for tracking</Badge>
+              ) : null}
               <ConsoleName
                 name={game.consoleName}
                 iconUrl={game.consoleIconUrl}

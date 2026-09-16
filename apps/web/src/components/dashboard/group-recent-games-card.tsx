@@ -11,12 +11,13 @@ import { parseRaGameTitle } from "@/lib/ra-game-title";
 
 type Props = {
   games: RecentGroupGameDto[];
+  isAdmin?: boolean;
 };
 
 const gameArtClassName =
   "relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-secondary/40";
 
-export function GroupRecentGamesCard({ games }: Props) {
+export function GroupRecentGamesCard({ games, isAdmin = false }: Props) {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -82,6 +83,20 @@ export function GroupRecentGamesCard({ games }: Props) {
                     <p className="text-xs text-muted-foreground">
                       <FormattedSyncTime value={game.lastPlayedAt} />
                     </p>
+                    {!game.isTracked ? (
+                      <p className="text-xs text-muted-foreground">
+                        {isAdmin ? (
+                          <Link
+                            href="/admin/games"
+                            className="text-foreground underline-offset-4 hover:underline"
+                          >
+                            Review in game track queue
+                          </Link>
+                        ) : (
+                          "Ask an admin to track this game."
+                        )}
+                      </p>
+                    ) : null}
                     {game.players.length > 0 ? (
                       <GameCardPlayerAvatars
                         players={game.players.map((p) => ({

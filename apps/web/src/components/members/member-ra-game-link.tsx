@@ -4,14 +4,29 @@ import type { ReactNode } from "react";
 type Props = {
   raGameId: number;
   isTracked: boolean;
+  trackQueuePending?: boolean;
   className?: string;
   children: ReactNode;
 };
 
-export function MemberRaGameLink({ raGameId, isTracked, className, children }: Props) {
+export function MemberRaGameLink({
+  raGameId,
+  isTracked,
+  trackQueuePending = false,
+  className,
+  children,
+}: Props) {
   if (isTracked) {
     return (
       <Link href={`/games/${raGameId}`} className={className}>
+        {children}
+      </Link>
+    );
+  }
+
+  if (trackQueuePending) {
+    return (
+      <Link href="/games#pending-track" className={className}>
         {children}
       </Link>
     );

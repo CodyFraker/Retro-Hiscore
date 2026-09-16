@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { ConsoleName } from "@/components/console-name";
 import { GameAchievementsSection } from "@/components/game/game-achievements-section";
 import { BoardWinSummary } from "@/components/game/board-win-summary";
+import { BoardWinRivalryLinks } from "@/components/game/board-win-rivalry-links";
 import { GameDeltaCallout } from "@/components/game/game-delta-callout";
 import { GameDetailTabs } from "@/components/game/game-detail-tabs";
 import { GameMetadata } from "@/components/game/game-metadata";
@@ -73,8 +74,10 @@ export default async function GamePage({ params }: Props) {
   let sources: Awaited<ReturnType<typeof api.getGameSources>>;
   let achievements: Awaited<ReturnType<typeof api.getGameAchievements>>;
   let achievementDistribution: Awaited<ReturnType<typeof api.getGameAchievementDistribution>>;
+  let recentUnlockActivity: Awaited<ReturnType<typeof api.getDashboardAchievementActivity>>;
+  let memberCount = 0;
   try {
-    [data, history, populationHistory, sources, achievements, achievementDistribution] =
+    [data, history, populationHistory, sources, achievements, achievementDistribution, recentUnlockActivity, memberCount] =
       await Promise.all([
         api.getGameLeaderboards(raGameId),
         api.getGameHistory(raGameId, 200, 0),
@@ -82,6 +85,8 @@ export default async function GamePage({ params }: Props) {
         api.getGameSources(raGameId),
         api.getGameAchievements(raGameId),
         api.getGameAchievementDistribution(raGameId),
+        api.getDashboardAchievementActivity(10, 0, raGameId),
+        api.getMembers().then((members) => members.length),
       ]);
   } catch {
     notFound();
@@ -172,7 +177,14 @@ export default async function GamePage({ params }: Props) {
                   <GameStandingsWithFilters leaderboards={data.leaderboards} members={data.members} />
                 </div>
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                  <BoardWinSummary rows={winRows} />
+                  <div className="space-y-3">
+                    <BoardWinSummary rows={winRows} />
+                    <BoardWinRivalryLinks
+                      rows={winRows}
+                      currentRaUsername={member.raUsername}
+                      memberCount={memberCount}
+                    />
+                  </div>
                   {recentBoards.length > 0 && (
                     <section className="space-y-3">
                       <h2 className="steam-section-heading">Recently updated</h2>
@@ -219,6 +231,8 @@ export default async function GamePage({ params }: Props) {
               <GameAchievementsSection
                 achievements={achievements}
                 distribution={achievementDistribution}
+                recentUnlockActivity={recentUnlockActivity.items}
+                raGameId={raGameId}
               />
             }
           />

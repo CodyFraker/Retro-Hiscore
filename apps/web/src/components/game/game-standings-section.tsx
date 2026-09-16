@@ -23,9 +23,18 @@ function hasNoScore(standing: FriendStandingDto | null | undefined): boolean {
   return !standing || standing.score == null;
 }
 
-function StandingScoreCell({ standing }: { standing: FriendStandingDto | undefined }) {
+function StandingScoreCell({
+  standing,
+  compactEmptyScores,
+}: {
+  standing: FriendStandingDto | undefined;
+  compactEmptyScores?: boolean;
+}) {
   const scoreText = formatStandingScore(standing);
   if (hasNoScore(standing)) {
+    if (compactEmptyScores) {
+      return <div>{scoreText}</div>;
+    }
     return (
       <div>
         <div>{scoreText}</div>
@@ -37,12 +46,24 @@ function StandingScoreCell({ standing }: { standing: FriendStandingDto | undefin
   return <div>{scoreText}</div>;
 }
 
+function leaderCellClass(standing: FriendStandingDto | undefined): string {
+  if (standing?.friendRank === 1) {
+    return "bg-[var(--accent-retro)]/10 ring-1 ring-inset ring-[var(--accent-retro)]/25";
+  }
+  return "";
+}
+
 type Props = {
   leaderboards: GameLeaderboardDto[];
   members: StandingMemberDto[];
+  compactEmptyScores?: boolean;
 };
 
-export function GameStandingsSection({ leaderboards, members }: Props) {
+export function GameStandingsSection({
+  leaderboards,
+  members,
+  compactEmptyScores = false,
+}: Props) {
   if (members.length === 0) {
     return (
       <p className="mt-8 text-sm text-muted-foreground">
@@ -105,8 +126,14 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
                 {members.map((member) => {
                   const standing = board.standings.find((s) => s.memberId === member.id);
                   return (
-                    <TableCell key={member.id} className="text-right font-mono text-sm">
-                      <StandingScoreCell standing={standing} />
+                    <TableCell
+                      key={member.id}
+                      className={`text-right font-mono text-sm ${leaderCellClass(standing)}`}
+                    >
+                      <StandingScoreCell
+                        standing={standing}
+                        compactEmptyScores={compactEmptyScores}
+                      />
                       <div className="text-xs text-muted-foreground">
                         <FriendRank
                           rank={standing?.friendRank}
@@ -165,8 +192,13 @@ export function GameStandingsSection({ leaderboards, members }: Props) {
                     />
                     <span className="truncate">{member.displayName}</span>
                   </Link>
-                  <div className="shrink-0 text-right font-mono text-sm">
-                    <StandingScoreCell standing={standing} />
+                  <div
+                    className={`shrink-0 rounded px-2 py-1 text-right font-mono text-sm ${leaderCellClass(standing)}`}
+                  >
+                    <StandingScoreCell
+                      standing={standing}
+                      compactEmptyScores={compactEmptyScores}
+                    />
                     <div className="text-xs text-muted-foreground">
                       <FriendRank
                         rank={standing?.friendRank}

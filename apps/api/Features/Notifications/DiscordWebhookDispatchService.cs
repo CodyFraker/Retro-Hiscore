@@ -142,7 +142,7 @@ public sealed class DiscordWebhookDispatchService(
                         entry.LastError = delivery.LastError;
                         run.PostsFailed++;
                         logger.LogError(ex, "Failed to dispatch outbox {OutboxId} for webhook {WebhookName}", entry.Id, webhook.Name);
-                        errors.Add($"{webhook.Name}: {ex.Message}");
+                        errors.Add($"{webhook.Name}: {AdminOperationalErrorFormatter.ForAdminDisplay(ex)}");
                     }
                 }
 
@@ -158,13 +158,15 @@ public sealed class DiscordWebhookDispatchService(
                 : run.PostsSucceeded > 0
                     ? SyncRunStatus.PartialSuccess
                     : SyncRunStatus.Failed;
-            run.Error = errors.Count == 0 ? null : string.Join("; ", errors.Take(5));
+            run.Error = errors.Count == 0
+                ? null
+                : string.Join("; ", errors.Take(5).Select(AdminOperationalErrorFormatter.ForAdminDisplay));
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Discord notification dispatch run failed");
             run.Status = SyncRunStatus.Failed;
-            run.Error = ex.Message;
+            run.Error = AdminOperationalErrorFormatter.ForAdminDisplay(ex);
         }
         finally
         {

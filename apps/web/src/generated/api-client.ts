@@ -21,12 +21,14 @@ export interface CurrentMemberDto {
   friendRankOnes: number;
   hasApiKey: boolean;
   needsOnboarding: boolean;
+  onboardingStep: string;
   isAdmin: boolean;
 }
 
 export interface MemberSelfSyncScopeStatusDto {
   lastSyncedAt?: string | null;
   cooldownUntil?: string | null;
+  groupScoresLastSyncedAt?: string | null;
 }
 
 export interface MemberSelfSyncStatusDto {
@@ -589,6 +591,26 @@ export interface GameOfTheWeekCurrentPollDto {
   ballotSlotsRemaining: number;
 }
 
+export interface GameOfTheWeekHistoryItemDto {
+  pollId: string;
+  startsAt: string;
+  endsAt: string;
+  closedAt?: string | null;
+  winnerRaGameId?: number | null;
+  winnerTitle?: string | null;
+  winnerConsoleName?: string | null;
+  winnerImageIcon?: string | null;
+  isTracked: boolean;
+  totalVotes: number;
+}
+
+export interface GameOfTheWeekHistoryResponse {
+  total: number;
+  offset: number;
+  limit: number;
+  items: GameOfTheWeekHistoryItemDto[];
+}
+
 export interface PatchAdminGameLeaderboardSyncRequest {
   forceColdLeaderboardSync: boolean;
 }
@@ -618,6 +640,63 @@ export interface DashboardAchievementActivityItemDto {
   badgeUrl?: string | null;
   dateEarned?: string | null;
   hardcoreEarned: boolean;
+}
+
+export interface DashboardGroupActivityItemDto {
+  kind: string;
+  occurredAt: string;
+  title: string;
+  subtitle?: string | null;
+  memberRaUsername?: string | null;
+  memberDisplayName?: string | null;
+  raGameId?: number | null;
+  raLeaderboardId?: number | null;
+  friendRankDelta?: number | null;
+  scoreDelta?: number | null;
+}
+
+export interface DashboardGroupActivityResponse {
+  windowUnavailable: boolean;
+  windowStart?: string | null;
+  windowEnd?: string | null;
+  items: DashboardGroupActivityItemDto[];
+}
+
+export interface GameTrackQueueItemDto {
+  raGameId: number;
+  title?: string | null;
+  consoleName?: string | null;
+  status: string;
+  enqueuedAt: string;
+  resolvedAt?: string | null;
+}
+
+export interface MemberSelfSyncIssueDto {
+  scope: string;
+  message: string;
+  occurredAt: string;
+}
+
+export interface SyncHealthResponse {
+  groupStatus: string;
+  groupMessage?: string | null;
+  leaderboardSyncInProgress: boolean;
+  leaderboardScoresLastSuccessAt?: string | null;
+  memberIssues: MemberSelfSyncIssueDto[];
+}
+
+export interface SearchHitDto {
+  kind: string;
+  title: string;
+  subtitle?: string | null;
+  href: string;
+  raGameId?: number | null;
+  raUsername?: string | null;
+  raLeaderboardId?: number | null;
+}
+
+export interface SearchResponse {
+  hits: SearchHitDto[];
 }
 
 export interface DashboardAchievementActivityResponse {
@@ -853,8 +932,11 @@ export interface RecurringJobSnapshotDto {
   configuredIntervalDays?: number | null;
 }
 
-export interface DiscordNotificationEventKind {
-}
+export type DiscordNotificationEventKind =
+  | "GameTracked"
+  | "LeaderboardFriendOvertake"
+  | "LeaderboardNewSubmission"
+  | "AchievementUnlocked";
 
 export interface AdminDiscordWebhookSummaryDto {
   id: string;
@@ -1045,6 +1127,37 @@ export function createApiClient(options: ApiClientOptions) {
         undefined,
         fetchImpl,
       );
+    },
+    getDashboardGroupActivity: (limit?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<DashboardGroupActivityResponse>(
+        baseUrl,
+        `/api/dashboard/group-activity${qs ? `?${qs}` : ""}`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getGameTrackQueue: (raGameId?: number) => {
+      const params = new URLSearchParams();
+      if (raGameId != null) params.set("raGameId", String(raGameId));
+      const qs = params.toString();
+      return request<GameTrackQueueItemDto[]>(
+        baseUrl,
+        `/api/games/track-queue${qs ? `?${qs}` : ""}`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getSyncHealth: () =>
+      request<SyncHealthResponse>(baseUrl, "/api/sync/health", undefined, fetchImpl),
+    getSearch: (q: string, limit?: number) => {
+      const params = new URLSearchParams();
+      params.set("q", q);
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<SearchResponse>(baseUrl, `/api/search?${qs}`, undefined, fetchImpl);
     },
     getRivalry: (usernameA: string, usernameB: string) =>
       request<RivalryResponse>(
@@ -1335,6 +1448,18 @@ export function createApiClient(options: ApiClientOptions) {
     getAdminGames: () => request<AdminGameDto[]>(baseUrl, "/api/admin/games", undefined, fetchImpl),
     getGameOfTheWeekCurrent: () =>
       request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/game-of-the-week/current", undefined, fetchImpl),
+    getGameOfTheWeekHistory: (limit?: number, offset?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      if (offset != null) params.set("offset", String(offset));
+      const qs = params.toString();
+      return request<GameOfTheWeekHistoryResponse>(
+        baseUrl,
+        `/api/game-of-the-week/history${qs ? `?${qs}` : ""}`,
+        undefined,
+        fetchImpl,
+      );
+    },
     postGameOfTheWeekBallot: (raGameId: number) =>
       request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/game-of-the-week/current/ballot", {
         method: "POST",

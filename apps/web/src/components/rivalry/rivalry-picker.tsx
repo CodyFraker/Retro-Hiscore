@@ -4,16 +4,23 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { MemberDto } from "@/generated/api-client";
+import { rivalryPath } from "@/lib/rivalry-path";
 
 type Props = {
   members: MemberDto[];
+  initialUsernameA?: string;
+  initialUsernameB?: string;
 };
 
-export function RivalryPicker({ members }: Props) {
+export function RivalryPicker({ members, initialUsernameA, initialUsernameB }: Props) {
   const router = useRouter();
   const selectable = members.filter((member) => member.raUsername);
-  const [usernameA, setUsernameA] = useState(selectable[0]?.raUsername ?? "");
-  const [usernameB, setUsernameB] = useState(selectable[1]?.raUsername ?? "");
+  const [usernameA, setUsernameA] = useState(
+    initialUsernameA ?? selectable[0]?.raUsername ?? "",
+  );
+  const [usernameB, setUsernameB] = useState(
+    initialUsernameB ?? selectable[1]?.raUsername ?? "",
+  );
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -21,9 +28,7 @@ export function RivalryPicker({ members }: Props) {
       return;
     }
 
-    router.push(
-      `/rivalry/${encodeURIComponent(usernameA)}/${encodeURIComponent(usernameB)}`,
-    );
+    router.push(rivalryPath(usernameA, usernameB));
   }
 
   if (selectable.length < 2) {

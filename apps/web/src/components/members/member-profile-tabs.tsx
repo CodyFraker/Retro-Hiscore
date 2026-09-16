@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
-import { QueryTabNav, resolveQueryTab } from "@/components/layout/query-tab-nav";
+import { MemberProfileHashSync } from "@/components/members/member-profile-hash-sync";
+import { QueryTabNav } from "@/components/layout/query-tab-nav";
 
 const TABS = [
   { id: "overview", label: "Overview" },
@@ -10,24 +10,17 @@ const TABS = [
   { id: "achievements", label: "Achievements" },
 ] as const;
 
-const TAB_IDS = TABS.map((t) => t.id);
-
 type Props = {
-  overview: ReactNode;
-  leaderboards: ReactNode;
-  achievements: ReactNode;
+  activeTab: string;
+  panel: ReactNode;
 };
 
-export function MemberProfileTabs({ overview, leaderboards, achievements }: Props) {
-  const searchParams = useSearchParams();
-  const activeTab = resolveQueryTab(searchParams.get("tab") ?? undefined, TAB_IDS, "overview");
-
+export function MemberProfileTabs({ activeTab, panel }: Props) {
   return (
     <div className="space-y-8">
+      <MemberProfileHashSync />
       <QueryTabNav tabs={[...TABS]} activeTab={activeTab} ariaLabel="Member profile sections" />
-      <div hidden={activeTab !== "overview"}>{overview}</div>
-      <div hidden={activeTab !== "leaderboards"}>{leaderboards}</div>
-      <div hidden={activeTab !== "achievements"}>{achievements}</div>
+      <div role="tabpanel">{panel}</div>
     </div>
   );
 }

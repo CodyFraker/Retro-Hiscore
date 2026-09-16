@@ -53,6 +53,40 @@ public class CurrentMemberSelfSyncApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetSyncStatus_ReturnsGroupLeaderboardSync_WhenSiteRunSucceeded()
+    {
+        // Arrange
+        var finishedAt = DateTimeOffset.UtcNow.AddHours(-2);
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.SyncRuns.Add(new SyncRun
+            {
+                Kind = SyncKind.LeaderboardScores,
+                Trigger = SyncTrigger.Scheduled,
+                Status = SyncRunStatus.Succeeded,
+                StartedAt = finishedAt.AddMinutes(-5),
+                FinishedAt = finishedAt,
+                MemberId = null
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
+
+        // Act
+        var status = await client.GetFromJsonAsync<MemberSelfSyncStatusDto>(
+            "/api/members/me/sync-status",
+            JsonOptions);
+
+        // Assert
+        status.ShouldNotBeNull();
+        status.Leaderboards.LastSyncedAt.ShouldBeNull();
+        status.Leaderboards.GroupScoresLastSyncedAt.ShouldNotBeNull();
+        status.Leaderboards.GroupScoresLastSyncedAt!.Value.ShouldBe(finishedAt, TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
     public async Task PostLeaderboards_WithoutApiKey_ReturnsForbidden()
     {
         // Arrange

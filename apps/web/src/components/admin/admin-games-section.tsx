@@ -61,7 +61,7 @@ export function AdminGamesSection({ games }: Props) {
             cellClassName: "text-sm",
             render: (game) => (
               <div className="space-y-1">
-                <LeaderboardSyncTierBadge status={game.leaderboardSyncStatus} />
+                <LeaderboardSyncTierBadge status={game.leaderboardSyncStatus} learnMoreHref="/admin/sync" />
                 <p className="text-xs text-muted-foreground">
                   {game.leaderboardSyncStatus.leaderboardSyncIsDue
                     ? "Due now"

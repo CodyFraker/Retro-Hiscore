@@ -1,6 +1,8 @@
 import { ApiKeyForm } from "@/components/settings/api-key-form";
-import { RaAccountForm } from "@/components/settings/ra-account-form";
+import { MemberSetupChecklist } from "@/components/settings/member-setup-checklist";
+import { SettingsOnboardingWizard } from "@/components/settings/settings-onboarding-wizard";
 import { SettingsMemberSyncSection } from "@/components/settings/settings-member-sync-section";
+import { SyncHealthAlert } from "@/components/settings/sync-health-alert";
 import { PageHero } from "@/components/layout/page-hero";
 import type { MemberSelfSyncStatusDto } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
@@ -12,7 +14,10 @@ export default async function SettingsPage() {
   let raUsername = "";
   let hasApiKey = false;
   let needsOnboarding = false;
+  let onboardingStep = "Complete";
   let syncStatus: MemberSelfSyncStatusDto | null = null;
+  let syncHealth: Awaited<ReturnType<Awaited<ReturnType<typeof getServerApiClient>>["getSyncHealth"]>> | null =
+    null;
   let error: string | null = null;
 
   try {
@@ -22,8 +27,18 @@ export default async function SettingsPage() {
     raUsername = member.raUsername ?? "";
     hasApiKey = member.hasApiKey ?? false;
     needsOnboarding = member.needsOnboarding ?? false;
+    onboardingStep = member.onboardingStep ?? "Complete";
     if (!needsOnboarding) {
-      syncStatus = await api.getMemberSelfSyncStatus();
+      try {
+        syncStatus = await api.getMemberSelfSyncStatus();
+      } catch {
+        syncStatus = null;
+      }
+    }
+    try {
+      syncHealth = await api.getSyncHealth();
+    } catch {
+      syncHealth = null;
     }
   } catch (err) {
     if (err instanceof Error && !err.message.includes("404")) {
@@ -51,16 +66,29 @@ export default async function SettingsPage() {
       )}
 
       {!error && linked && needsOnboarding && (
-        <section className="space-y-4 rounded border border-border p-5">
-          <p className="text-sm text-muted-foreground">
-            Finish setup with your RetroAchievements username and API key.
-          </p>
-          <RaAccountForm />
-        </section>
+        <>
+          <MemberSetupChecklist
+            needsOnboarding={needsOnboarding}
+            hasApiKey={hasApiKey}
+            syncStatus={syncStatus}
+          />
+          <SettingsOnboardingWizard
+            onboardingStep={onboardingStep}
+            raUsername={raUsername}
+            hasApiKey={hasApiKey}
+          />
+        </>
       )}
 
       {!error && linked && !needsOnboarding && (
         <>
+          {syncHealth ? <SyncHealthAlert health={syncHealth} /> : null}
+          <MemberSetupChecklist
+            needsOnboarding={needsOnboarding}
+            hasApiKey={hasApiKey}
+            syncStatus={syncStatus}
+            emphasizeSync
+          />
           <section className="space-y-4 rounded border border-border p-5">
             <div>
               <p className="text-sm text-muted-foreground">Linked RetroAchievements account</p>

@@ -4,7 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import type { GameOfTheWeekCurrentPollDto } from "@/generated/api-client";
+import type {
+  GameOfTheWeekCurrentPollDto,
+  GameOfTheWeekHistoryItemDto,
+} from "@/generated/api-client";
+import { GameOfTheWeekPastWeeks } from "@/components/game-of-the-week/game-of-the-week-past-weeks";
 import { Button } from "@/components/ui/button";
 import { parseRaGameIdInput } from "@/lib/dashboard-games";
 import {
@@ -17,9 +21,10 @@ const PHASE_OPEN = 1;
 
 type Props = {
   initialPoll: GameOfTheWeekCurrentPollDto;
+  history?: GameOfTheWeekHistoryItemDto[];
 };
 
-export function GameOfTheWeekView({ initialPoll }: Props) {
+export function GameOfTheWeekView({ initialPoll, history = [] }: Props) {
   const router = useRouter();
   const [poll, setPoll] = useState(initialPoll);
   const [ballotInput, setBallotInput] = useState("");
@@ -42,6 +47,11 @@ export function GameOfTheWeekView({ initialPoll }: Props) {
         <p className="text-sm text-muted-foreground">
           {new Date(poll.startsAt).toLocaleString()} – {new Date(poll.endsAt).toLocaleString()}
         </p>
+        {poll.phase === PHASE_SCHEDULED ? (
+          <p className="text-sm text-muted-foreground">
+            Voting opens {new Date(poll.startsAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+          </p>
+        ) : null}
         {poll.winnerRaGameId != null && poll.phase !== PHASE_OPEN && poll.phase !== PHASE_SCHEDULED ? (
           <p className="text-sm">
             Winner:{" "}
@@ -165,6 +175,13 @@ export function GameOfTheWeekView({ initialPoll }: Props) {
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
+
+      {history.length > 0 ? (
+        <section className="space-y-3 border-t border-border pt-8">
+          <h2 className="text-lg font-semibold">Past weeks</h2>
+          <GameOfTheWeekPastWeeks items={history} />
+        </section>
+      ) : null}
     </div>
   );
 }
