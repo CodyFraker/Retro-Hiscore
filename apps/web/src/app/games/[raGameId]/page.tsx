@@ -14,7 +14,7 @@ import { GamePopulationTrendCharts } from "@/components/game/game-population-tre
 import { GameRefreshButton } from "@/components/game/game-refresh-button";
 import { LeaderboardSyncTierBadge } from "@/components/sync/leaderboard-sync-tier-badge";
 import { GameSourcesSection } from "@/components/game/game-sources-section";
-import { GameStandingsSection } from "@/components/game/game-standings-section";
+import { GameStandingsWithFilters } from "@/components/game/game-standings-with-filters";
 import { GameStatsStrip } from "@/components/game/game-stats-strip";
 import { GameTrendCharts } from "@/components/game/game-trend-charts";
 import { RetroachievementsLink } from "@/components/game/retroachievements-link";
@@ -105,12 +105,12 @@ export default async function GamePage({ params }: Props) {
         </Link>
 
         {data.imageTitleUrl && (
-          <div className="relative hidden h-28 w-full overflow-hidden rounded border border-border sm:block">
+          <div className="relative hidden aspect-[21/9] max-h-32 w-full overflow-hidden rounded border border-border bg-secondary/30 sm:block sm:max-h-36">
             <Image
               src={data.imageTitleUrl}
               alt=""
               fill
-              className="object-cover object-center"
+              className="object-contain object-center"
               sizes="(max-width: 768px) 100vw, 1152px"
               priority
             />
@@ -143,7 +143,7 @@ export default async function GamePage({ params }: Props) {
               </p>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
+          <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
             <LeaderboardSyncTierBadge status={data.leaderboardSyncStatus} />
             <GameRefreshButton
               raGameId={data.raGameId}
@@ -169,7 +169,7 @@ export default async function GamePage({ params }: Props) {
               <>
                 <GameStatsStrip stats={stats} />
                 <div className="md:overflow-x-auto">
-                  <GameStandingsSection leaderboards={data.leaderboards} members={data.members} />
+                  <GameStandingsWithFilters leaderboards={data.leaderboards} members={data.members} />
                 </div>
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                   <BoardWinSummary rows={winRows} />

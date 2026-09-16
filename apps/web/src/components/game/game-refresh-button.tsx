@@ -31,8 +31,12 @@ export function GameRefreshButton({ raGameId, hasApiKey, leaderboardScoresSynced
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
-      <Button type="button" disabled={pending} onClick={() => {
+    <div className="flex w-full flex-col items-stretch gap-1 sm:items-end">
+      <Button
+        type="button"
+        className="w-full sm:w-auto"
+        disabled={pending}
+        onClick={() => {
         startTransition(async () => {
           const result = await triggerGameRefreshAction(raGameId);
           setMessage(result.message);

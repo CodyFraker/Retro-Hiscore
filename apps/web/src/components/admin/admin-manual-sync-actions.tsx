@@ -15,7 +15,8 @@ import {
   triggerMetadataSyncAction,
   triggerScoreSyncAction,
 } from "@/lib/actions/sync";
-import { findLastSyncByKind, formatLastSyncByKind } from "@/lib/sync-last-run";
+import { FormattedLastSyncRun } from "@/components/formatted-last-sync-run";
+import { findLastSyncByKind } from "@/lib/sync-last-run";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Props = {
@@ -27,7 +28,9 @@ export function AdminManualSyncActions({ lastSyncByKind, scoreRefreshDisabledRea
   const [forceConsoleIcons, setForceConsoleIcons] = useState(false);
   const [rowMessage, setRowMessage] = useState<string | null>(null);
 
-  const last = (kind: string) => formatLastSyncByKind(findLastSyncByKind(lastSyncByKind, kind));
+  const lastRun = (kind: string) => (
+    <FormattedLastSyncRun entry={findLastSyncByKind(lastSyncByKind, kind)} />
+  );
 
   const leaderboardDisabled = Boolean(scoreRefreshDisabledReason);
 
@@ -48,7 +51,7 @@ export function AdminManualSyncActions({ lastSyncByKind, scoreRefreshDisabledRea
         <AdminSyncActionRow
           title="Refresh scores (all games)"
           description="Enqueue a full leaderboard sync for every tracked game."
-          lastRunLabel={last("LeaderboardScores")}
+          lastRun={lastRun("LeaderboardScores")}
           footerMessage={leaderboardDisabled ? scoreRefreshDisabledReason : rowMessage}
           actions={
             <AdminSyncTriggerButton
@@ -64,7 +67,7 @@ export function AdminManualSyncActions({ lastSyncByKind, scoreRefreshDisabledRea
         <AdminSyncActionRow
           title="Sync due games only"
           description="Enqueue leaderboard sync only for games that are due (same as the scheduled dispatcher)."
-          lastRunLabel={last("LeaderboardScores")}
+          lastRun={lastRun("LeaderboardScores")}
           footerMessage={leaderboardDisabled ? scoreRefreshDisabledReason : undefined}
           actions={
             <AdminSyncTriggerButton
@@ -81,7 +84,7 @@ export function AdminManualSyncActions({ lastSyncByKind, scoreRefreshDisabledRea
         <AdminSyncActionRow
           title="Sync member activity"
           description="Refresh recently played games for all members and update the game track queue."
-          lastRunLabel={last("MemberActivity")}
+          lastRun={lastRun("MemberActivity")}
           actions={
             <AdminSyncTriggerButton
               label="Sync activity"
@@ -95,7 +98,7 @@ export function AdminManualSyncActions({ lastSyncByKind, scoreRefreshDisabledRea
         <AdminSyncActionRow
           title="Sync member achievements"
           description="Refresh achievement catalog and unlocks for all members on every tracked game."
-          lastRunLabel={last("MemberAchievements")}
+          lastRun={lastRun("MemberAchievements")}
           actions={
             <AdminSyncTriggerButton
               label="Sync achievements"
@@ -109,7 +112,7 @@ export function AdminManualSyncActions({ lastSyncByKind, scoreRefreshDisabledRea
         <AdminSyncActionRow
           title="Sync member RA ranks"
           description="Refresh RetroAchievements site rank snapshots used in championship standings."
-          lastRunLabel={last("MemberRank")}
+          lastRun={lastRun("MemberRank")}
           actions={
             <AdminSyncTriggerButton
               label="Sync ranks"
@@ -124,7 +127,7 @@ export function AdminManualSyncActions({ lastSyncByKind, scoreRefreshDisabledRea
         <AdminSyncActionRow
           title="Refresh game art"
           description="Update titles, box art, and metadata for all tracked games from RetroAchievements."
-          lastRunLabel={last("GameMetadata")}
+          lastRun={lastRun("GameMetadata")}
           actions={
             <AdminSyncTriggerButton
               label="Refresh game art"
@@ -138,7 +141,7 @@ export function AdminManualSyncActions({ lastSyncByKind, scoreRefreshDisabledRea
         <AdminSyncActionRow
           title="Refresh console icons"
           description="Download system icons for consoles used by tracked games and recent activity."
-          lastRunLabel={last("ConsoleIcons")}
+          lastRun={lastRun("ConsoleIcons")}
           actions={
             <div className="flex flex-col items-stretch gap-2 sm:items-end">
               <label className="flex items-center gap-2 text-xs font-normal text-muted-foreground">

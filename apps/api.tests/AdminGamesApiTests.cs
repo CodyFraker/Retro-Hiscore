@@ -161,15 +161,18 @@ public class AdminGamesApiTests : IAsyncLifetime
         SetupRaMocks(raGameId, includeMemberScore: false);
         var admin = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
-        // Act — add
-        var addResponse = await admin.PostAsJsonAsync("/api/admin/games", new PostAdminGameRequest(raGameId));
-        var created = await addResponse.Content.ReadFromJsonAsync<AdminGameDto>(JsonOptions);
-
-        // Assert — add
-        addResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
-        created.ShouldNotBeNull();
-        created!.RaGameId.ShouldBe(raGameId);
-        created.SourceCount.ShouldBe(0);
+        using (var seedScope = _factory.Services.CreateScope())
+        {
+            var db = seedScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Games.Add(new Game
+            {
+                RaGameId = raGameId,
+                Title = "New Adventure",
+                ConsoleId = 3,
+                ConsoleName = "SNES"
+            });
+            await db.SaveChangesAsync();
+        }
 
         // Act — refresh
         var refreshResponse = await admin.PostAsync($"/api/admin/games/{raGameId}/refresh", null);

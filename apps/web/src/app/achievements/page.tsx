@@ -125,8 +125,8 @@ export default async function AchievementsPage({ searchParams }: Props) {
             </p>
           ) : null}
 
-          <div className="grid gap-8 lg:grid-cols-[1fr_minmax(280px,360px)]">
-            <Card>
+          <div className="grid min-w-0 gap-8 lg:grid-cols-[1fr_minmax(280px,360px)]">
+            <Card className="min-w-0">
               <CardHeader className="space-y-2 pb-2">
                 <CardTitle>Unlock feed</CardTitle>
                 <AchievementPointsLegend />
@@ -143,7 +143,7 @@ export default async function AchievementsPage({ searchParams }: Props) {
               </CardContent>
             </Card>
 
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               <DashboardAchievementTrends items={history.items} />
             </div>
           </div>

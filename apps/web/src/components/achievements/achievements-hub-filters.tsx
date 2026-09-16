@@ -37,8 +37,8 @@ export function AchievementsHubFilters({ games, members, gameId, member }: Props
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-      <label className="flex flex-col gap-1">
+    <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+      <label className="flex w-full flex-col gap-1 sm:w-auto">
         <span className="text-xs font-medium text-muted-foreground">Game</span>
         <select
           value={gameId ?? ""}
@@ -49,7 +49,7 @@ export function AchievementsHubFilters({ games, members, gameId, member }: Props
               member,
             });
           }}
-          className="h-8 min-w-0 rounded-md bg-input px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-w-[12rem]"
+          className="h-8 w-full min-w-0 rounded-md bg-input px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-w-[12rem]"
         >
           <option value="">All tracked games</option>
           {games.map((game) => (
@@ -59,7 +59,7 @@ export function AchievementsHubFilters({ games, members, gameId, member }: Props
           ))}
         </select>
       </label>
-      <label className="flex flex-col gap-1">
+      <label className="flex w-full flex-col gap-1 sm:w-auto">
         <span className="text-xs font-medium text-muted-foreground">Member</span>
         <select
           value={member ?? ""}
@@ -70,7 +70,7 @@ export function AchievementsHubFilters({ games, members, gameId, member }: Props
               member: raw || undefined,
             });
           }}
-          className="h-8 min-w-0 rounded-md bg-input px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-w-[12rem]"
+          className="h-8 w-full min-w-0 rounded-md bg-input px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-w-[12rem]"
         >
           <option value="">All members</option>
           {members.map((m) => (

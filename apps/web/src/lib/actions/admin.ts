@@ -1,7 +1,10 @@
 "use server";
 
 import type {
+  AdminDiscordWebhookDetailDto,
   AdminGameDto,
+  DiscordNotificationEventKind,
+  GameOfTheWeekCurrentPollDto,
   GameSourceDto,
   PatchAdminSyncSettingsRequest,
   UpsertGameSourceRequest,
@@ -56,13 +59,29 @@ export async function postAdminGameAction(raGameId: number): Promise<AddAdminGam
   }
 }
 
-export async function approveAdminGameTrackQueueItemAction(id: string): Promise<AdminActionResult> {
+export type PostAdminGameOfTheWeekPollResult =
+  | { ok: true; poll: GameOfTheWeekCurrentPollDto }
+  | { ok: false; error: string };
+
+export async function postAdminGameOfTheWeekPollAction(
+  startsAt: string,
+  endsAt: string,
+  raGameIds: number[],
+): Promise<PostAdminGameOfTheWeekPollResult> {
+  if (raGameIds.length < 2) {
+    return { ok: false, error: "Provide at least two RetroAchievements game ids." };
+  }
+
   try {
     const api = await getServerApiClient();
-    await api.postAdminGameTrackQueueApprove(id);
-    return { ok: true };
+    const poll = await api.postAdminGameOfTheWeekPoll({
+      startsAt,
+      endsAt,
+      raGameIds,
+    });
+    return { ok: true, poll };
   } catch (error) {
-    return { ok: false, error: actionErrorMessage(error, "Approve failed") };
+    return { ok: false, error: actionErrorMessage(error, "Failed to start poll") };
   }
 }
 
@@ -123,6 +142,76 @@ export async function deleteAdminGameSourceAction(
     return { ok: true };
   } catch (error) {
     return { ok: false, error: actionErrorMessage(error, "Delete failed") };
+  }
+}
+
+export type SaveAdminDiscordWebhookInput = {
+  id: string | null;
+  name: string;
+  enabled: boolean;
+  webhookUrl: string;
+  digestIntervalMinutes: number;
+  payloadTemplateJson: string;
+  eventKinds: string[];
+};
+
+export async function getAdminDiscordWebhookAction(
+  id: string,
+): Promise<{ ok: true; webhook: AdminDiscordWebhookDetailDto } | { ok: false; error: string }> {
+  try {
+    const api = await getServerApiClient();
+    const webhook = await api.getAdminDiscordWebhook(id);
+    return { ok: true, webhook };
+  } catch (error) {
+    return { ok: false, error: actionErrorMessage(error, "Failed to load webhook") };
+  }
+}
+
+export async function saveAdminDiscordWebhookAction(
+  input: SaveAdminDiscordWebhookInput,
+): Promise<AdminActionResult> {
+  try {
+    const api = await getServerApiClient();
+    const body = {
+      name: input.name.trim(),
+      enabled: input.enabled,
+      webhookUrl: input.webhookUrl.trim(),
+      digestIntervalMinutes: input.digestIntervalMinutes,
+      payloadTemplateJson: input.payloadTemplateJson,
+      eventKinds: input.eventKinds,
+      allowedRaGameIds: null,
+    };
+    if (input.id) {
+      await api.putAdminDiscordWebhook(input.id, body);
+    } else {
+      await api.postAdminDiscordWebhook(body);
+    }
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: actionErrorMessage(error, "Failed to save webhook") };
+  }
+}
+
+export async function deleteAdminDiscordWebhookAction(id: string): Promise<AdminActionResult> {
+  try {
+    const api = await getServerApiClient();
+    await api.deleteAdminDiscordWebhook(id);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: actionErrorMessage(error, "Failed to delete webhook") };
+  }
+}
+
+export async function postAdminDiscordWebhookTestAction(
+  id: string,
+  eventKind: string,
+): Promise<AdminActionResult> {
+  try {
+    const api = await getServerApiClient();
+    await api.postAdminDiscordWebhookTest(id, { eventKind });
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: actionErrorMessage(error, "Test webhook failed") };
   }
 }
 

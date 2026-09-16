@@ -71,7 +71,9 @@ Requires Docker Desktop (or Docker Engine). The API job mounts `/var/run/docker.
 
 ## Tracked games
 
-Games are added when members link RA accounts and sync runs (recent games → track queue → admin approval), or when an admin adds a game manually. No default game list is seeded at startup.
+Games are added when they **win game-of-the-week voting**. Admins start a poll (start/end dates, at least two seed games on the ballot); members can add games until five slots are filled and cast one changeable vote each. When voting ends, an untracked winner is synced onto the site (retried until RetroAchievements is available). Already-tracked games can appear on the ballot and win again without re-import.
+
+The track queue still lists games discovered from friend recent play (for awareness); it does not add games to the site directly.
 
 Leaderboard sync uses Hangfire recurring jobs (member activity, leaderboard dispatch, member RA rank, game metadata). Admins tune intervals and hot/cold per-game policy on **Admin → Sync schedules**. The dispatcher enqueues **per-game** jobs when each game is due (hot vs cold based on recent play). Members refresh scores per game from the game page (requires API key). Admins can enqueue all games via **Refresh scores** in the account menu.
 

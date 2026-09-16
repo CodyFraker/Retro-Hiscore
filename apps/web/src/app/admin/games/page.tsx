@@ -1,4 +1,4 @@
-import { AddGameForm } from "@/components/add-game-form";
+import Link from "next/link";
 import { AdminGameTrackQueueSection } from "@/components/admin/admin-game-track-queue-section";
 import { AdminGamesSection } from "@/components/admin/admin-games-section";
 import { getServerApiClient } from "@/lib/api";
@@ -28,11 +28,16 @@ export default async function AdminGamesPage() {
 
   return (
     <div className="space-y-10">
-      <section className="space-y-3 rounded border border-border p-5">
-        <h2 className="text-lg font-semibold">Add game</h2>
-        <AddGameForm />
+      <section className="space-y-2 rounded border border-border p-5 text-sm text-muted-foreground">
+        <p>
+          New games are tracked when they win{" "}
+          <Link href="/admin/game-of-the-week" className="text-foreground hover:text-[var(--accent-retro)]">
+            game-of-the-week
+          </Link>{" "}
+          voting.
+        </p>
       </section>
-      
+
       <AdminGameTrackQueueSection items={queue} />
 
       <AdminGamesSection games={games} />

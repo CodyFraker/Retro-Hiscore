@@ -8,7 +8,10 @@ export function findLastSyncByKind(
   return entries.find((entry) => entry.kind === kind);
 }
 
-export function formatLastSyncByKind(entry: AdminLastSyncByKindDto | undefined): string {
+export function formatLastSyncByKind(
+  entry: AdminLastSyncByKindDto | undefined,
+  formatTime: (value: string | null | undefined) => string = formatSyncTime,
+): string {
   if (!entry?.startedAt && !entry?.finishedAt) {
     return "Never synced";
   }
@@ -16,6 +19,6 @@ export function formatLastSyncByKind(entry: AdminLastSyncByKindDto | undefined):
   if (!at) {
     return "Never synced";
   }
-  const time = formatSyncTime(at);
+  const time = formatTime(at);
   return entry.status ? `${time} (${entry.status})` : time;
 }

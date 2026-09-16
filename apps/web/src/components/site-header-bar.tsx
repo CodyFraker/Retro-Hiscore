@@ -28,15 +28,21 @@ type Props = {
 type NavLink = {
   href: string;
   label: string;
+  shortLabel?: string;
   match: (pathname: string) => boolean;
 };
 
 const BASE_NAV_LINKS: NavLink[] = [
   { href: "/", label: "Dashboard", match: (path) => path === "/" },
   { href: "/games", label: "Games", match: (path) => path === "/games" || path.startsWith("/games/") },
+  {
+    href: "/game-of-the-week",
+    label: "Game of the week",
+    shortLabel: "GOTW",
+    match: (path) => path === "/game-of-the-week",
+  },
   { href: "/achievements", label: "Achievements", match: (path) => path === "/achievements" || path.startsWith("/achievements/") },
   { href: "/members", label: "Members", match: (path) => path === "/members" || path.startsWith("/members/") },
-  { href: "/settings", label: "Settings", match: (path) => path === "/settings" || path.startsWith("/settings/") },
 ];
 
 const ADMIN_NAV_LINK: NavLink = {
@@ -77,7 +83,7 @@ function NavLinks({
   return (
     <nav
       className={cn(
-        "flex gap-1 md:gap-5",
+        "flex gap-1 md:gap-3 lg:gap-5",
         onNavigate ? "flex-col" : "flex-col md:flex-row md:flex-nowrap md:justify-center md:overflow-x-auto",
       )}
       aria-label="Main"
@@ -92,7 +98,14 @@ function NavLinks({
             className={navLinkClassName(active, Boolean(onNavigate))}
             aria-current={active ? "page" : undefined}
           >
-            {link.label}
+            {onNavigate || !link.shortLabel ? (
+              link.label
+            ) : (
+              <>
+                <span className="lg:hidden">{link.shortLabel}</span>
+                <span className="hidden lg:inline">{link.label}</span>
+              </>
+            )}
           </Link>
         );
       })}

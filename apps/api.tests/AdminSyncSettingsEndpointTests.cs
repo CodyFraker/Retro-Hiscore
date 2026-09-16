@@ -56,7 +56,7 @@ public class AdminSyncSettingsEndpointTests : IAsyncLifetime
         body.Leaderboard.HotIntervalMinutes.ShouldBe(15);
         body.Leaderboard.ColdIntervalMinutes.ShouldBe(1440);
         body.Leaderboard.HotActivityWindowHours.ShouldBe(168);
-        body.RecurringJobs.Count.ShouldBe(5);
+        body.RecurringJobs.Count.ShouldBe(7);
         body.RecurringJobs.Single(j => j.JobId == SyncRecurringJobIds.LeaderboardDispatch).IntervalMinutes.ShouldBe(5);
         body.RecurringJobs.Single(j => j.JobId == SyncRecurringJobIds.GameMetadata).IntervalDays.ShouldBe(7);
     }

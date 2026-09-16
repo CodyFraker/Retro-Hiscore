@@ -22,11 +22,79 @@ namespace RetroHiscore.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.DiscordWebhookConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.PrimitiveCollection<int[]>("AllowedRaGameIds")
+                        .HasColumnType("integer[]");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DigestIntervalMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LastDispatchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("PayloadTemplateJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WebhookUrlProtected")
+                        .IsRequired()
+                        .HasMaxLength(4096)
+                        .HasColumnType("character varying(4096)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DiscordWebhookConfigs");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.DiscordWebhookEventSubscription", b =>
+                {
+                    b.Property<Guid>("WebhookConfigId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("EventKind")
+                        .HasColumnType("integer");
+
+                    b.HasKey("WebhookConfigId", "EventKind");
+
+                    b.ToTable("DiscordWebhookEventSubscriptions");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.Game", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("AchievementDistributionHardcoreJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AchievementDistributionSoftcoreJson")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("AchievementDistributionSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("AchievementProgressSyncedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("ConsoleId")
                         .HasColumnType("integer");
@@ -38,6 +106,9 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Property<string>("Developer")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("ForceColdLeaderboardSync")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Genre")
                         .HasMaxLength(256)
@@ -59,23 +130,8 @@ namespace RetroHiscore.Api.Data.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<DateTimeOffset?>("AchievementDistributionSyncedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("AchievementDistributionHardcoreJson")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AchievementDistributionSoftcoreJson")
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset?>("AchievementProgressSyncedAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<DateTimeOffset?>("LeaderboardScoresSyncedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("ForceColdLeaderboardSync")
-                        .HasColumnType("boolean");
 
                     b.Property<DateTimeOffset?>("MetadataSyncedAt")
                         .HasColumnType("timestamp with time zone");
@@ -183,6 +239,119 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.HasIndex("RaGameId", "Status");
 
                     b.ToTable("GameTrackQueues");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameOfTheWeekBallotEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("AddedByMemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("AddedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ConsoleName")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ImageIcon")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid>("PollId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RaGameId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AddedByMemberId");
+
+                    b.HasIndex("PollId", "RaGameId")
+                        .IsUnique();
+
+                    b.HasIndex("PollId", "SortOrder")
+                        .IsUnique();
+
+                    b.ToTable("GameOfTheWeekBallotEntries");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameOfTheWeekPoll", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreatedByMemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("EndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TrackingStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("WinnerRaGameId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClosedAt");
+
+                    b.HasIndex("CreatedByMemberId");
+
+                    b.HasIndex("StartsAt", "EndsAt");
+
+                    b.ToTable("GameOfTheWeekPolls");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameOfTheWeekVote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CastAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PollId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RaGameId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemberId");
+
+                    b.HasIndex("PollId", "MemberId")
+                        .IsUnique();
+
+                    b.ToTable("GameOfTheWeekVotes");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.Leaderboard", b =>
@@ -356,14 +525,6 @@ namespace RetroHiscore.Api.Data.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<string>("RaUlid")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("RaUsername")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
-
                     b.Property<string>("RaPresenceGameTitle")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -380,6 +541,14 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Property<string>("RaStatus")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<string>("RaUlid")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("RaUsername")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.HasKey("Id");
 
@@ -506,6 +675,109 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.HasIndex("RaGameId");
 
                     b.ToTable("MemberRecentGamePlays");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.NotificationDispatchRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("EventsProcessed")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PostsFailed")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PostsSucceeded")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartedAt");
+
+                    b.ToTable("NotificationDispatchRuns");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.NotificationOutbox", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("DispatchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EventKind")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ReadyAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("SourceSyncRunId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DispatchedAt", "OccurredAt");
+
+                    b.HasIndex("DispatchedAt", "ReadyAt");
+
+                    b.HasIndex("SourceSyncRunId");
+
+                    b.ToTable("NotificationOutbox");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.NotificationOutboxDelivery", b =>
+                {
+                    b.Property<Guid>("OutboxId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WebhookConfigId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("DispatchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.HasKey("OutboxId", "WebhookConfigId");
+
+                    b.HasIndex("WebhookConfigId");
+
+                    b.ToTable("NotificationOutboxDeliveries");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.RaAchievement", b =>
@@ -673,6 +945,17 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.ToTable("SyncRuns");
                 });
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.DiscordWebhookEventSubscription", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.DiscordWebhookConfig", "WebhookConfig")
+                        .WithMany("EventSubscriptions")
+                        .HasForeignKey("WebhookConfigId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("WebhookConfig");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.GameSource", b =>
                 {
                     b.HasOne("RetroHiscore.Api.Domain.Game", "Game")
@@ -691,6 +974,51 @@ namespace RetroHiscore.Api.Data.Migrations
                         .HasForeignKey("ResolvedByMemberId");
 
                     b.Navigation("ResolvedByMember");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameOfTheWeekBallotEntry", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "AddedByMember")
+                        .WithMany()
+                        .HasForeignKey("AddedByMemberId");
+
+                    b.HasOne("RetroHiscore.Api.Domain.GameOfTheWeekPoll", "Poll")
+                        .WithMany("BallotEntries")
+                        .HasForeignKey("PollId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AddedByMember");
+
+                    b.Navigation("Poll");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameOfTheWeekPoll", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "CreatedByMember")
+                        .WithMany()
+                        .HasForeignKey("CreatedByMemberId");
+
+                    b.Navigation("CreatedByMember");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameOfTheWeekVote", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RetroHiscore.Api.Domain.GameOfTheWeekPoll", "Poll")
+                        .WithMany("Votes")
+                        .HasForeignKey("PollId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
+
+                    b.Navigation("Poll");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.Leaderboard", b =>
@@ -794,6 +1122,35 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Navigation("Member");
                 });
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.NotificationOutbox", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.SyncRun", "SourceSyncRun")
+                        .WithMany()
+                        .HasForeignKey("SourceSyncRunId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("SourceSyncRun");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.NotificationOutboxDelivery", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.NotificationOutbox", "Outbox")
+                        .WithMany()
+                        .HasForeignKey("OutboxId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RetroHiscore.Api.Domain.DiscordWebhookConfig", "WebhookConfig")
+                        .WithMany()
+                        .HasForeignKey("WebhookConfigId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Outbox");
+
+                    b.Navigation("WebhookConfig");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.SyncRun", b =>
                 {
                     b.HasOne("RetroHiscore.Api.Domain.Game", "Game")
@@ -811,11 +1168,23 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Navigation("Member");
                 });
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.DiscordWebhookConfig", b =>
+                {
+                    b.Navigation("EventSubscriptions");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.Game", b =>
                 {
                     b.Navigation("Leaderboards");
 
                     b.Navigation("Sources");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameOfTheWeekPoll", b =>
+                {
+                    b.Navigation("BallotEntries");
+
+                    b.Navigation("Votes");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.Leaderboard", b =>

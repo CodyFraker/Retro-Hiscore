@@ -423,15 +423,35 @@ export function createApiClient(options: ApiClientOptions) {
         body: JSON.stringify(body),
       }, fetchImpl),
     getAdminGames: () => request<AdminGameDto[]>(baseUrl, "/api/admin/games", undefined, fetchImpl),
-    getAdminGameTrackQueue: () =>
-      request<AdminGameTrackQueueItemDto[]>(baseUrl, "/api/admin/game-track-queue", undefined, fetchImpl),
-    postAdminGameTrackQueueApprove: (id: string) =>
-      request<AdminGameTrackQueueItemDto>(
+    getGameOfTheWeekCurrent: () =>
+      request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/game-of-the-week/current", undefined, fetchImpl),
+    postGameOfTheWeekBallot: (raGameId: number) =>
+      request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/game-of-the-week/current/ballot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raGameId }),
+      }, fetchImpl),
+    putGameOfTheWeekVote: (raGameId: number) =>
+      request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/game-of-the-week/current/vote", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raGameId }),
+      }, fetchImpl),
+    postAdminGameOfTheWeekPoll: (body: PostGameOfTheWeekPollRequest) =>
+      request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/admin/game-of-the-week/polls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
+    getAdminGameOfTheWeekCurrentPoll: () =>
+      request<GameOfTheWeekCurrentPollDto>(
         baseUrl,
-        \`/api/admin/game-track-queue/\${id}/approve\`,
-        { method: "POST" },
+        "/api/admin/game-of-the-week/polls/current",
+        undefined,
         fetchImpl,
       ),
+    getAdminGameTrackQueue: () =>
+      request<AdminGameTrackQueueItemDto[]>(baseUrl, "/api/admin/game-track-queue", undefined, fetchImpl),
     postAdminGameTrackQueueReject: (id: string) =>
       request<AdminGameTrackQueueItemDto>(
         baseUrl,
@@ -502,6 +522,49 @@ export function createApiClient(options: ApiClientOptions) {
         },
         fetchImpl,
       ),
+    getAdminDiscordWebhookTokenCatalog: () =>
+      request<DiscordTokenCatalogDto>(baseUrl, "/api/admin/discord-webhooks/token-catalog", undefined, fetchImpl),
+    getAdminDiscordWebhookDispatchRuns: (limit?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<AdminNotificationDispatchRunDto[]>(
+        baseUrl,
+        \`/api/admin/discord-webhooks/dispatch-runs\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getAdminDiscordWebhooks: () =>
+      request<AdminDiscordWebhookSummaryDto[]>(baseUrl, "/api/admin/discord-webhooks", undefined, fetchImpl),
+    getAdminDiscordWebhook: (id: string) =>
+      request<AdminDiscordWebhookDetailDto>(baseUrl, \`/api/admin/discord-webhooks/\${id}\`, undefined, fetchImpl),
+    postAdminDiscordWebhook: (body: UpsertDiscordWebhookRequest) =>
+      request<AdminDiscordWebhookDetailDto>(baseUrl, "/api/admin/discord-webhooks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
+    putAdminDiscordWebhook: (id: string, body: UpsertDiscordWebhookRequest) =>
+      request<AdminDiscordWebhookDetailDto>(baseUrl, \`/api/admin/discord-webhooks/\${id}\`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
+    deleteAdminDiscordWebhook: (id: string) =>
+      request<void>(baseUrl, \`/api/admin/discord-webhooks/\${id}\`, { method: "DELETE" }, fetchImpl),
+    postAdminDiscordWebhookPreview: (id: string, body: PreviewDiscordWebhookRequest) =>
+      request<PreviewDiscordWebhookResponse>(baseUrl, \`/api/admin/discord-webhooks/\${id}/preview\`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
+    postAdminDiscordWebhookTest: (id: string, body: TestDiscordWebhookRequest) =>
+      request<void>(baseUrl, \`/api/admin/discord-webhooks/\${id}/test\`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
   };
 }
 

@@ -555,6 +555,40 @@ export interface PostAdminGameRequest {
   raGameId: number;
 }
 
+export interface GameOfTheWeekRaGameIdRequest {
+  raGameId: number;
+}
+
+export interface PostGameOfTheWeekPollRequest {
+  startsAt: string;
+  endsAt: string;
+  raGameIds: number[];
+}
+
+export interface GameOfTheWeekBallotItemDto {
+  raGameId: number;
+  title: string;
+  consoleName?: string | null;
+  imageIcon?: string | null;
+  sortOrder: number;
+  isTracked: boolean;
+  voteCount: number;
+  addedByMemberId?: string | null;
+}
+
+export interface GameOfTheWeekCurrentPollDto {
+  pollId: string;
+  phase: number;
+  startsAt: string;
+  endsAt: string;
+  closedAt?: string | null;
+  winnerRaGameId?: number | null;
+  trackingStatus: number;
+  myVoteRaGameId?: number | null;
+  ballot: GameOfTheWeekBallotItemDto[];
+  ballotSlotsRemaining: number;
+}
+
 export interface PatchAdminGameLeaderboardSyncRequest {
   forceColdLeaderboardSync: boolean;
 }
@@ -604,7 +638,7 @@ export interface DashboardAchievementSummaryResponse {
   unlocksLast30Days: number;
   activeMembersLast7Days: number;
   lastUnlockAt?: string | null;
-  topGameLast7Days?: unknown | null;
+  topGameLast7Days?: DashboardAchievementTopGameDto | null;
   achievementsSyncedAt?: string | null;
 }
 
@@ -817,6 +851,79 @@ export interface RecurringJobSnapshotDto {
   lastJobState?: string | null;
   configuredIntervalMinutes?: number | null;
   configuredIntervalDays?: number | null;
+}
+
+export interface DiscordNotificationEventKind {
+}
+
+export interface AdminDiscordWebhookSummaryDto {
+  id: string;
+  name: string;
+  enabled: boolean;
+  webhookUrlMasked: string;
+  digestIntervalMinutes: number;
+  eventKinds: string[];
+  updatedAt: string;
+}
+
+export interface AdminDiscordWebhookDetailDto {
+  id: string;
+  name: string;
+  enabled: boolean;
+  webhookUrlMasked: string;
+  digestIntervalMinutes: number;
+  payloadTemplateJson: string;
+  eventKinds: string[];
+  allowedRaGameIds?: number[] | null;
+  updatedAt: string;
+}
+
+export interface UpsertDiscordWebhookRequest {
+  name: string;
+  enabled: boolean;
+  webhookUrl: string;
+  digestIntervalMinutes: number;
+  payloadTemplateJson: string;
+  eventKinds: string[];
+  allowedRaGameIds?: number[] | null;
+}
+
+export interface DiscordTokenCatalogDto {
+  events: DiscordTokenCatalogEntryDto[];
+}
+
+export interface DiscordTokenCatalogEntryDto {
+  eventKind: string;
+  tokens: DiscordTokenCatalogTokenDto[];
+}
+
+export interface DiscordTokenCatalogTokenDto {
+  code: string;
+  label: string;
+}
+
+export interface PreviewDiscordWebhookRequest {
+  eventKind: string;
+  payloadTemplateJson?: string | null;
+}
+
+export interface PreviewDiscordWebhookResponse {
+  renderedPayloadJson: string;
+}
+
+export interface TestDiscordWebhookRequest {
+  eventKind: string;
+}
+
+export interface AdminNotificationDispatchRunDto {
+  id: string;
+  status: string;
+  startedAt: string;
+  finishedAt?: string | null;
+  error?: string | null;
+  eventsProcessed: number;
+  postsSucceeded: number;
+  postsFailed: number;
 }
 
 export interface AdminSyncSettingsDto {
@@ -1226,15 +1333,35 @@ export function createApiClient(options: ApiClientOptions) {
         body: JSON.stringify(body),
       }, fetchImpl),
     getAdminGames: () => request<AdminGameDto[]>(baseUrl, "/api/admin/games", undefined, fetchImpl),
-    getAdminGameTrackQueue: () =>
-      request<AdminGameTrackQueueItemDto[]>(baseUrl, "/api/admin/game-track-queue", undefined, fetchImpl),
-    postAdminGameTrackQueueApprove: (id: string) =>
-      request<AdminGameTrackQueueItemDto>(
+    getGameOfTheWeekCurrent: () =>
+      request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/game-of-the-week/current", undefined, fetchImpl),
+    postGameOfTheWeekBallot: (raGameId: number) =>
+      request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/game-of-the-week/current/ballot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raGameId }),
+      }, fetchImpl),
+    putGameOfTheWeekVote: (raGameId: number) =>
+      request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/game-of-the-week/current/vote", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raGameId }),
+      }, fetchImpl),
+    postAdminGameOfTheWeekPoll: (body: PostGameOfTheWeekPollRequest) =>
+      request<GameOfTheWeekCurrentPollDto>(baseUrl, "/api/admin/game-of-the-week/polls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
+    getAdminGameOfTheWeekCurrentPoll: () =>
+      request<GameOfTheWeekCurrentPollDto>(
         baseUrl,
-        `/api/admin/game-track-queue/${id}/approve`,
-        { method: "POST" },
+        "/api/admin/game-of-the-week/polls/current",
+        undefined,
         fetchImpl,
       ),
+    getAdminGameTrackQueue: () =>
+      request<AdminGameTrackQueueItemDto[]>(baseUrl, "/api/admin/game-track-queue", undefined, fetchImpl),
     postAdminGameTrackQueueReject: (id: string) =>
       request<AdminGameTrackQueueItemDto>(
         baseUrl,
@@ -1305,6 +1432,49 @@ export function createApiClient(options: ApiClientOptions) {
         },
         fetchImpl,
       ),
+    getAdminDiscordWebhookTokenCatalog: () =>
+      request<DiscordTokenCatalogDto>(baseUrl, "/api/admin/discord-webhooks/token-catalog", undefined, fetchImpl),
+    getAdminDiscordWebhookDispatchRuns: (limit?: number) => {
+      const params = new URLSearchParams();
+      if (limit != null) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request<AdminNotificationDispatchRunDto[]>(
+        baseUrl,
+        `/api/admin/discord-webhooks/dispatch-runs${qs ? `?${qs}` : ""}`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getAdminDiscordWebhooks: () =>
+      request<AdminDiscordWebhookSummaryDto[]>(baseUrl, "/api/admin/discord-webhooks", undefined, fetchImpl),
+    getAdminDiscordWebhook: (id: string) =>
+      request<AdminDiscordWebhookDetailDto>(baseUrl, `/api/admin/discord-webhooks/${id}`, undefined, fetchImpl),
+    postAdminDiscordWebhook: (body: UpsertDiscordWebhookRequest) =>
+      request<AdminDiscordWebhookDetailDto>(baseUrl, "/api/admin/discord-webhooks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
+    putAdminDiscordWebhook: (id: string, body: UpsertDiscordWebhookRequest) =>
+      request<AdminDiscordWebhookDetailDto>(baseUrl, `/api/admin/discord-webhooks/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
+    deleteAdminDiscordWebhook: (id: string) =>
+      request<void>(baseUrl, `/api/admin/discord-webhooks/${id}`, { method: "DELETE" }, fetchImpl),
+    postAdminDiscordWebhookPreview: (id: string, body: PreviewDiscordWebhookRequest) =>
+      request<PreviewDiscordWebhookResponse>(baseUrl, `/api/admin/discord-webhooks/${id}/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
+    postAdminDiscordWebhookTest: (id: string, body: TestDiscordWebhookRequest) =>
+      request<void>(baseUrl, `/api/admin/discord-webhooks/${id}/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }, fetchImpl),
   };
 }
 

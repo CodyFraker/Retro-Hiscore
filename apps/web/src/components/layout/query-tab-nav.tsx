@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import {
+  ScrollableTabItem,
+  ScrollableTabList,
+  TabLinkLabel,
+} from "@/components/layout/scrollable-tab-list";
 import { cn } from "@/lib/utils";
 
 export type QueryTab = {
   id: string;
   label: string;
+  shortLabel?: string;
 };
 
 type Props = {
@@ -32,29 +38,27 @@ export function QueryTabNav({ tabs, activeTab, paramName = "tab", ariaLabel }: P
   }
 
   return (
-    <nav className="border-b border-border" aria-label={ariaLabel}>
-      <ul className="-mb-px flex gap-4 overflow-x-auto sm:gap-6">
-        {tabs.map((tab) => {
-          const active = tab.id === activeTab;
-          return (
-            <li key={tab.id} className="shrink-0">
-              <Link
-                href={hrefFor(tab.id)}
-                className={cn(
-                  "inline-block border-b-2 pb-3 text-sm font-medium whitespace-nowrap transition-colors",
-                  active
-                    ? "border-[var(--accent-retro)] text-foreground"
-                    : "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
-                )}
-                aria-current={active ? "page" : undefined}
-              >
-                {tab.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <ScrollableTabList ariaLabel={ariaLabel} listClassName="-mb-px">
+      {tabs.map((tab) => {
+        const active = tab.id === activeTab;
+        return (
+          <ScrollableTabItem key={tab.id}>
+            <Link
+              href={hrefFor(tab.id)}
+              className={cn(
+                "inline-block border-b-2 pb-3 text-sm font-medium whitespace-nowrap transition-colors",
+                active
+                  ? "border-[var(--accent-retro)] text-foreground"
+                  : "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
+              )}
+              aria-current={active ? "page" : undefined}
+            >
+              <TabLinkLabel label={tab.label} shortLabel={tab.shortLabel} />
+            </Link>
+          </ScrollableTabItem>
+        );
+      })}
+    </ScrollableTabList>
   );
 }
 

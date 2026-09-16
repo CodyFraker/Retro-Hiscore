@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Admin;
@@ -90,50 +91,70 @@ public sealed class SyncSettingsStore(AppDbContext db) : ISyncSettingsStore
 
     private async Task EnsureRecurringJobsSeededAsync(CancellationToken cancellationToken)
     {
-        if (await db.SyncRecurringJobs.AnyAsync(cancellationToken))
+        var existingIds = await db.SyncRecurringJobs
+            .AsNoTracking()
+            .Select(j => j.JobId)
+            .ToListAsync(cancellationToken);
+        var existing = existingIds.ToHashSet(StringComparer.Ordinal);
+
+        var now = DateTimeOffset.UtcNow;
+        var addedAny = false;
+        foreach (var (jobId, displayName, intervalMinutes, intervalDays) in DefaultRecurringJobs)
+        {
+            if (existing.Contains(jobId))
+            {
+                continue;
+            }
+
+            db.SyncRecurringJobs.Add(new SyncRecurringJob
+            {
+                JobId = jobId,
+                DisplayName = displayName,
+                IntervalMinutes = intervalMinutes,
+                IntervalDays = intervalDays,
+                UpdatedAt = now
+            });
+            addedAny = true;
+        }
+
+        if (!addedAny)
         {
             return;
         }
 
-        var now = DateTimeOffset.UtcNow;
-        db.SyncRecurringJobs.AddRange(
-            new SyncRecurringJob
-            {
-                JobId = SyncRecurringJobIds.MemberActivity,
-                DisplayName = "Member activity",
-                IntervalMinutes = 15,
-                UpdatedAt = now
-            },
-            new SyncRecurringJob
-            {
-                JobId = SyncRecurringJobIds.LeaderboardDispatch,
-                DisplayName = "Leaderboard dispatch",
-                IntervalMinutes = 5,
-                UpdatedAt = now
-            },
-            new SyncRecurringJob
-            {
-                JobId = SyncRecurringJobIds.MemberRank,
-                DisplayName = "Member RA rank",
-                IntervalMinutes = 60,
-                UpdatedAt = now
-            },
-            new SyncRecurringJob
-            {
-                JobId = SyncRecurringJobIds.GameMetadata,
-                DisplayName = "Game metadata",
-                IntervalDays = 7,
-                UpdatedAt = now
-            },
-            new SyncRecurringJob
-            {
-                JobId = SyncRecurringJobIds.MemberAchievements,
-                DisplayName = "Member achievements",
-                IntervalMinutes = 360,
-                UpdatedAt = now
-            });
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsSyncRecurringJobUniqueViolation(ex))
+        {
+            DetachAddedSyncRecurringJobs();
+        }
     }
+
+    private static readonly (string JobId, string DisplayName, int? IntervalMinutes, int? IntervalDays)[] DefaultRecurringJobs =
+    [
+        (SyncRecurringJobIds.MemberActivity, "Member activity", 15, null),
+        (SyncRecurringJobIds.LeaderboardDispatch, "Leaderboard dispatch", 5, null),
+        (SyncRecurringJobIds.MemberRank, "Member RA rank", 60, null),
+        (SyncRecurringJobIds.GameMetadata, "Game metadata", null, 7),
+        (SyncRecurringJobIds.MemberAchievements, "Member achievements", 360, null),
+        (SyncRecurringJobIds.DiscordNotificationDispatch, "Discord notification dispatch", 5, null),
+        (SyncRecurringJobIds.GameOfTheWeek, "Game of the week", 5, null)
+    ];
+
+    private void DetachAddedSyncRecurringJobs()
+    {
+        foreach (var entry in db.ChangeTracker.Entries<SyncRecurringJob>()
+                     .Where(e => e.State == EntityState.Added)
+                     .ToList())
+        {
+            entry.State = EntityState.Detached;
+        }
+    }
+
+    private static bool IsSyncRecurringJobUniqueViolation(DbUpdateException ex)
+        => ex.InnerException is PostgresException pg && pg.SqlState == PostgresErrorCodes.UniqueViolation;
 
     private static void ValidateLeaderboard(PatchLeaderboardSyncSettingsRequest leaderboard)
     {
@@ -193,6 +214,24 @@ public sealed class SyncSettingsStore(AppDbContext db) : ISyncSettingsStore
                 }
 
                 job.IntervalMinutes = achievementMinutes;
+                break;
+            case SyncRecurringJobIds.DiscordNotificationDispatch:
+                if (item.IntervalMinutes is not { } discordMinutes
+                    || discordMinutes is < 1 or > 60)
+                {
+                    throw new SyncSettingsValidationException("Discord notification dispatch interval must be between 1 and 60 minutes.");
+                }
+
+                job.IntervalMinutes = discordMinutes;
+                break;
+            case SyncRecurringJobIds.GameOfTheWeek:
+                if (item.IntervalMinutes is not { } gotwMinutes
+                    || gotwMinutes is < 1 or > 60)
+                {
+                    throw new SyncSettingsValidationException("Game of the week interval must be between 1 and 60 minutes.");
+                }
+
+                job.IntervalMinutes = gotwMinutes;
                 break;
             default:
                 throw new SyncSettingsValidationException($"Unknown recurring job '{job.JobId}'.");

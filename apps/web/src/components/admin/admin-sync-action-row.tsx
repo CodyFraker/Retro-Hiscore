@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 type Props = {
   title: string;
   description: string;
-  lastRunLabel: string;
+  lastRun: ReactNode;
   actions: ReactNode;
   footerMessage?: string | null;
 };
@@ -11,7 +11,7 @@ type Props = {
 export function AdminSyncActionRow({
   title,
   description,
-  lastRunLabel,
+  lastRun,
   actions,
   footerMessage,
 }: Props) {
@@ -20,9 +20,7 @@ export function AdminSyncActionRow({
       <div className="min-w-0 flex-1 space-y-1">
         <p className="font-medium">{title}</p>
         <p className="text-sm text-muted-foreground">{description}</p>
-        <p className="text-xs text-muted-foreground" title={lastRunLabel}>
-          Last run: {lastRunLabel}
-        </p>
+        <p className="text-xs text-muted-foreground">Last run: {lastRun}</p>
         {footerMessage ? (
           <p className="text-xs text-muted-foreground">{footerMessage}</p>
         ) : null}

@@ -2,6 +2,7 @@ using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
+using RetroHiscore.Api.Features.GameOfTheWeek;
 
 namespace RetroHiscore.Api.Features.Sync;
 
@@ -51,6 +52,18 @@ public sealed class RecurringSyncJobRegistrar(IRecurringJobManager recurringJobs
                     job.JobId,
                     x => x.RunScheduledAsync(CancellationToken.None),
                     SyncRecurringJobCron.ForMinuteInterval(job.IntervalMinutes ?? 360, 1, 60 * 24));
+                break;
+            case SyncRecurringJobIds.DiscordNotificationDispatch:
+                recurringJobs.AddOrUpdate<DiscordNotificationDispatchJob>(
+                    job.JobId,
+                    x => x.RunScheduledAsync(CancellationToken.None),
+                    SyncRecurringJobCron.ForMinuteInterval(job.IntervalMinutes ?? 5, 1, 60));
+                break;
+            case SyncRecurringJobIds.GameOfTheWeek:
+                recurringJobs.AddOrUpdate<GameOfTheWeekPollJob>(
+                    job.JobId,
+                    x => x.RunScheduledAsync(CancellationToken.None),
+                    SyncRecurringJobCron.ForMinuteInterval(job.IntervalMinutes ?? 5, 1, 60));
                 break;
             default:
                 throw new InvalidOperationException($"Unsupported recurring job id '{job.JobId}'.");

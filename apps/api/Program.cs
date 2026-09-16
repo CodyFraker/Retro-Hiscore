@@ -6,9 +6,11 @@ using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Features.Admin;
 using RetroHiscore.Api.Features.Auth;
 using RetroHiscore.Api.Features.Dashboard;
+using RetroHiscore.Api.Features.GameOfTheWeek;
 using RetroHiscore.Api.Features.Games;
 using RetroHiscore.Api.Features.Leaderboards;
 using RetroHiscore.Api.Features.Members;
+using RetroHiscore.Api.Features.Admin.DiscordWebhooks;
 using RetroHiscore.Api.Features.Notifications;
 using RetroHiscore.Api.Features.Rivalry;
 using RetroHiscore.Api.Features.Ra;
@@ -27,6 +29,7 @@ builder.Services.Configure<ConsoleIconSyncOptions>(builder.Configuration.GetSect
 builder.Services.Configure<HangfireDashboardOptions>(builder.Configuration.GetSection(HangfireDashboardOptions.SectionName));
 builder.Services.Configure<ScalarDashboardOptions>(builder.Configuration.GetSection(ScalarDashboardOptions.SectionName));
 builder.Services.Configure<NotificationOptions>(builder.Configuration.GetSection(NotificationOptions.SectionName));
+builder.Services.AddDataProtection();
 builder.Services.AddRetroHiscoreAuth(builder.Configuration, isTesting);
 
 var connectionString = builder.Configuration.GetConnectionString("Default")
@@ -43,7 +46,7 @@ builder.Services.AddHttpClient<IConsoleIconDownloader, ConsoleIconDownloader>(cl
 {
     client.Timeout = TimeSpan.FromSeconds(30);
 });
-builder.Services.AddHttpClient(nameof(DiscordNotificationService));
+builder.Services.AddHttpClient(nameof(DiscordWebhookClient));
 
 builder.Services.AddScoped<IRaApiKeyPool, RaApiKeyPool>();
 builder.Services.AddScoped<ILeaderboardSyncService, LeaderboardSyncService>();
@@ -59,9 +62,23 @@ builder.Services.AddScoped<IGameTrackQueueService, GameTrackQueueService>();
 builder.Services.AddScoped<IMemberRecentGamesSyncService, MemberRecentGamesSyncService>();
 builder.Services.AddScoped<IGameMetadataSyncService, GameMetadataSyncService>();
 builder.Services.AddScoped<IConsoleIconSyncService, ConsoleIconSyncService>();
-builder.Services.AddScoped<IDiscordNotificationService, DiscordNotificationService>();
+builder.Services.AddSingleton<IWebhookUrlProtector, WebhookUrlProtector>();
+builder.Services.AddScoped<IDiscordWebhookTemplateRenderer, DiscordWebhookTemplateRenderer>();
+builder.Services.AddScoped<IDiscordWebhookPayloadValidator, DiscordWebhookPayloadValidator>();
+builder.Services.AddScoped<IDiscordWebhookClient, DiscordWebhookClient>();
+builder.Services.AddScoped<INotificationOutboxWriter, NotificationOutboxWriter>();
+builder.Services.AddScoped<INotificationOutboxReadinessService, NotificationOutboxReadinessService>();
+builder.Services.AddScoped<ILeaderboardSyncNotificationService, LeaderboardSyncNotificationService>();
+builder.Services.AddScoped<IDiscordWebhookDispatchService, DiscordWebhookDispatchService>();
+builder.Services.AddScoped<IDiscordWebhookStore, DiscordWebhookStore>();
 builder.Services.AddScoped<AdminOpsBuilder>();
 builder.Services.AddScoped<ISyncSettingsStore, SyncSettingsStore>();
+builder.Services.AddScoped<IGameOfTheWeekRaGameResolver, GameOfTheWeekRaGameResolver>();
+builder.Services.AddScoped<IGameOfTheWeekPollService, GameOfTheWeekPollService>();
+builder.Services.AddScoped<IGameOfTheWeekBallotService, GameOfTheWeekBallotService>();
+builder.Services.AddScoped<IGameOfTheWeekVoteService, GameOfTheWeekVoteService>();
+builder.Services.AddScoped<IGameOfTheWeekCloseService, GameOfTheWeekCloseService>();
+builder.Services.AddScoped<IGameOfTheWeekWinnerTrackingService, GameOfTheWeekWinnerTrackingService>();
 if (isTesting)
 {
     builder.Services.AddSingleton<IAdminSchedulerReader, NullAdminSchedulerReader>();
@@ -79,6 +96,8 @@ builder.Services.AddTransient<LeaderboardSyncDispatchJob>();
 builder.Services.AddTransient<GameLeaderboardSyncJob>();
 builder.Services.AddTransient<MemberGameLeaderboardSyncJob>();
 builder.Services.AddTransient<GameMetadataSyncJob>();
+builder.Services.AddTransient<DiscordNotificationDispatchJob>();
+builder.Services.AddTransient<GameOfTheWeekPollJob>();
 if (isTesting)
 {
     builder.Services.AddSingleton<ILeaderboardSyncJobEnqueuer, NullLeaderboardSyncJobEnqueuer>();
@@ -216,7 +235,6 @@ app.MapPatchAdminSyncSettings();
 app.MapGetAdminGames();
 app.MapPostAdminGame();
 app.MapGetAdminGameTrackQueue();
-app.MapPostAdminGameTrackQueueApprove();
 app.MapPostAdminGameTrackQueueReject();
 app.MapDeleteAdminGame();
 app.MapPostAdminGameRefresh();
@@ -230,7 +248,21 @@ app.MapGetAdminMemberInvites();
 app.MapPostAdminMemberInvite();
 app.MapDeleteAdminMemberInvite();
 app.MapPatchAdminMemberIsAdmin();
+app.MapGetAdminDiscordWebhookTokenCatalog();
+app.MapGetAdminDiscordWebhookDispatchRuns();
+app.MapGetAdminDiscordWebhooks();
+app.MapPostAdminDiscordWebhook();
+app.MapGetAdminDiscordWebhook();
+app.MapPutAdminDiscordWebhook();
+app.MapDeleteAdminDiscordWebhook();
+app.MapPostAdminDiscordWebhookPreview();
+app.MapPostAdminDiscordWebhookTest();
 app.MapPutMemberRaAccount();
+app.MapGetGameOfTheWeekCurrent();
+app.MapPostGameOfTheWeekBallot();
+app.MapPutGameOfTheWeekVote();
+app.MapPostAdminGameOfTheWeekPoll();
+app.MapGetAdminGameOfTheWeekCurrentPoll();
 
 app.Run();
 

@@ -88,28 +88,30 @@ export function GameCard({ game, onDelete, deleting }: Props) {
           </Button>
         )}
       </div>
-      <div className="flex items-center justify-between gap-4 px-4 pb-4 pt-1 max-h-8">
-        <div className="min-w-0 flex-1">
-          <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="shrink-0">Players:</span>
-            <GameCardPlayerAvatars players={game.playersWithAvatars} />
-          </div>
+      <div className="flex flex-col gap-2 px-4 pb-4 pt-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+          <span className="shrink-0">Players:</span>
+          <GameCardPlayerAvatars players={game.playersWithAvatars} />
         </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-          <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground flex items-center gap-1">
-            <TableProperties className="size-4 mr-1" />
+        <div className="flex flex-wrap items-center gap-1.5 justify-start sm:justify-end">
+          <span className="flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+            <TableProperties className="size-4 shrink-0" aria-hidden />
             {game.leaderboardCount === 0
               ? "Waiting for first sync"
               : `${game.leaderboardCount} boards`}
           </span>
           {game.totalRankedEntriesAcrossBoards != null && (
-            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground flex items-center gap-1">
-              <Users className="size-4 mr-1" /> {game.totalRankedEntriesAcrossBoards.toLocaleString()} Entries
+            <span className="flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+              <Users className="size-4 shrink-0" aria-hidden />
+              {game.totalRankedEntriesAcrossBoards.toLocaleString()}
+              <span className="sr-only sm:not-sr-only"> Entries</span>
             </span>
           )}
           {game.totalAchievementsInCatalog != null && (
-            <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground flex items-center gap-1">
-              <Trophy className="size-4 mr-1" /> {game.totalAchievementsInCatalog} achievements
+            <span className="flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+              <Trophy className="size-4 shrink-0" aria-hidden />
+              {game.totalAchievementsInCatalog}
+              <span className="sr-only sm:not-sr-only"> achievements</span>
             </span>
           )}
         </div>

@@ -21,6 +21,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GameTrackQueue> GameTrackQueues => Set<GameTrackQueue>();
     public DbSet<SyncLeaderboardSettings> SyncLeaderboardSettings => Set<SyncLeaderboardSettings>();
     public DbSet<SyncRecurringJob> SyncRecurringJobs => Set<SyncRecurringJob>();
+    public DbSet<DiscordWebhookConfig> DiscordWebhookConfigs => Set<DiscordWebhookConfig>();
+    public DbSet<DiscordWebhookEventSubscription> DiscordWebhookEventSubscriptions =>
+        Set<DiscordWebhookEventSubscription>();
+    public DbSet<NotificationOutbox> NotificationOutbox => Set<NotificationOutbox>();
+    public DbSet<NotificationOutboxDelivery> NotificationOutboxDeliveries => Set<NotificationOutboxDelivery>();
+    public DbSet<NotificationDispatchRun> NotificationDispatchRuns => Set<NotificationDispatchRun>();
+    public DbSet<GameOfTheWeekPoll> GameOfTheWeekPolls => Set<GameOfTheWeekPoll>();
+    public DbSet<GameOfTheWeekBallotEntry> GameOfTheWeekBallotEntries => Set<GameOfTheWeekBallotEntry>();
+    public DbSet<GameOfTheWeekVote> GameOfTheWeekVotes => Set<GameOfTheWeekVote>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -176,6 +185,79 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(x => x.JobId);
             e.Property(x => x.JobId).HasMaxLength(64);
             e.Property(x => x.DisplayName).HasMaxLength(128).IsRequired();
+        });
+
+        modelBuilder.Entity<DiscordWebhookConfig>(e =>
+        {
+            e.Property(x => x.Name).HasMaxLength(128).IsRequired();
+            e.Property(x => x.WebhookUrlProtected).HasMaxLength(4096).IsRequired();
+            e.Property(x => x.PayloadTemplateJson).IsRequired();
+        });
+
+        modelBuilder.Entity<DiscordWebhookEventSubscription>(e =>
+        {
+            e.HasKey(x => new { x.WebhookConfigId, x.EventKind });
+            e.HasOne(x => x.WebhookConfig)
+                .WithMany(x => x.EventSubscriptions)
+                .HasForeignKey(x => x.WebhookConfigId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<NotificationOutbox>(e =>
+        {
+            e.HasIndex(x => new { x.DispatchedAt, x.OccurredAt });
+            e.HasIndex(x => new { x.DispatchedAt, x.ReadyAt });
+            e.Property(x => x.PayloadJson).IsRequired();
+            e.Property(x => x.LastError).HasMaxLength(4000);
+            e.HasOne(x => x.SourceSyncRun)
+                .WithMany()
+                .HasForeignKey(x => x.SourceSyncRunId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<NotificationOutboxDelivery>(e =>
+        {
+            e.HasKey(x => new { x.OutboxId, x.WebhookConfigId });
+            e.Property(x => x.LastError).HasMaxLength(4000);
+            e.HasOne(x => x.Outbox)
+                .WithMany()
+                .HasForeignKey(x => x.OutboxId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.WebhookConfig)
+                .WithMany()
+                .HasForeignKey(x => x.WebhookConfigId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<NotificationDispatchRun>(e =>
+        {
+            e.Property(x => x.Error).HasMaxLength(4000);
+            e.HasIndex(x => x.StartedAt);
+        });
+
+        modelBuilder.Entity<GameOfTheWeekPoll>(e =>
+        {
+            e.HasIndex(x => new { x.StartsAt, x.EndsAt });
+            e.HasIndex(x => x.ClosedAt);
+            e.HasOne(x => x.CreatedByMember).WithMany().HasForeignKey(x => x.CreatedByMemberId);
+        });
+
+        modelBuilder.Entity<GameOfTheWeekBallotEntry>(e =>
+        {
+            e.HasIndex(x => new { x.PollId, x.RaGameId }).IsUnique();
+            e.HasIndex(x => new { x.PollId, x.SortOrder }).IsUnique();
+            e.Property(x => x.Title).HasMaxLength(256);
+            e.Property(x => x.ConsoleName).HasMaxLength(128);
+            e.Property(x => x.ImageIcon).HasMaxLength(256);
+            e.HasOne(x => x.Poll).WithMany(x => x.BallotEntries).HasForeignKey(x => x.PollId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.AddedByMember).WithMany().HasForeignKey(x => x.AddedByMemberId);
+        });
+
+        modelBuilder.Entity<GameOfTheWeekVote>(e =>
+        {
+            e.HasIndex(x => new { x.PollId, x.MemberId }).IsUnique();
+            e.HasOne(x => x.Poll).WithMany(x => x.Votes).HasForeignKey(x => x.PollId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Member).WithMany().HasForeignKey(x => x.MemberId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

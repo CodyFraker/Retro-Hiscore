@@ -7,10 +7,7 @@ import { DataFieldList } from "@/components/layout/data-field-list";
 import { ResponsiveTable } from "@/components/layout/responsive-table";
 import { FormattedSyncTime } from "@/components/formatted-sync-time";
 import { Button } from "@/components/ui/button";
-import {
-  approveAdminGameTrackQueueItemAction,
-  rejectAdminGameTrackQueueItemAction,
-} from "@/lib/actions/admin";
+import { rejectAdminGameTrackQueueItemAction } from "@/lib/actions/admin";
 
 type Props = {
   items: AdminGameTrackQueueItemDto[];
@@ -42,10 +39,10 @@ export function AdminGameTrackQueueSection({ items }: Props) {
     return null;
   }
 
-  function runAction(action: () => Promise<{ ok: true } | { ok: false; error: string }>) {
+  function runReject(id: string) {
     setError(null);
     startTransition(async () => {
-      const result = await action();
+      const result = await rejectAdminGameTrackQueueItemAction(id);
       if (!result.ok) {
         setError(result.error);
         return;
@@ -59,7 +56,7 @@ export function AdminGameTrackQueueSection({ items }: Props) {
       <div>
         <h2 className="text-lg font-semibold">Track queue</h2>
         <p className="text-sm text-muted-foreground">
-          Games discovered from friend recent play. Approve to track on the site.
+          Games discovered from friend recent play. Nominate winners via Game of the week voting.
         </p>
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -94,12 +91,15 @@ export function AdminGameTrackQueueSection({ items }: Props) {
             cellClassName: "text-right",
             render: (item) =>
               item.status === 0 ? (
-                <QueueActions
-                  pending={pending}
-                  stacked={false}
-                  onApprove={() => runAction(() => approveAdminGameTrackQueueItemAction(item.id))}
-                  onReject={() => runAction(() => rejectAdminGameTrackQueueItemAction(item.id))}
-                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() => runReject(item.id)}
+                >
+                  Dismiss
+                </Button>
               ) : (
                 <span className="text-sm text-muted-foreground">—</span>
               ),
@@ -121,13 +121,16 @@ export function AdminGameTrackQueueSection({ items }: Props) {
               ]}
             />
             {item.status === 0 ? (
-              <QueueActions
-                className="mt-3"
-                pending={pending}
-                stacked
-                onApprove={() => runAction(() => approveAdminGameTrackQueueItemAction(item.id))}
-                onReject={() => runAction(() => rejectAdminGameTrackQueueItemAction(item.id))}
-              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="mt-3 w-full"
+                disabled={pending}
+                onClick={() => runReject(item.id)}
+              >
+                Dismiss
+              </Button>
             ) : null}
           </li>
         )}
@@ -136,49 +139,5 @@ export function AdminGameTrackQueueSection({ items }: Props) {
         <p className="text-sm text-muted-foreground">No pending items.</p>
       ) : null}
     </section>
-  );
-}
-
-function QueueActions({
-  pending,
-  onApprove,
-  onReject,
-  stacked = false,
-  className,
-}: {
-  pending: boolean;
-  onApprove: () => void;
-  onReject: () => void;
-  stacked?: boolean;
-  className?: string;
-}) {
-  return (
-    <div
-      className={
-        stacked
-          ? `flex flex-col gap-2 ${className ?? ""}`
-          : `flex justify-end gap-2 ${className ?? ""}`
-      }
-    >
-      <Button
-        type="button"
-        size="sm"
-        className={stacked ? "w-full" : undefined}
-        disabled={pending}
-        onClick={onApprove}
-      >
-        Approve
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className={stacked ? "w-full" : undefined}
-        disabled={pending}
-        onClick={onReject}
-      >
-        Reject
-      </Button>
-    </div>
   );
 }

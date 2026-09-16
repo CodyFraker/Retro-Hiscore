@@ -9,7 +9,7 @@ type Props = {
 
 function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-md border border-border bg-card px-4 py-3">
+    <div className="min-w-[9rem] shrink-0 rounded-md border border-border bg-card px-4 py-3 sm:min-w-0">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
     </div>
@@ -19,8 +19,8 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
 export function AchievementsHubSummary({ summary }: Props) {
   const top = summary.topGameLast7Days;
 
-  return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+  const statItems = (
+    <>
       <Stat label="Unlocks (7 days)" value={summary.unlocksLast7Days} />
       <Stat label="Unlocks (30 days)" value={summary.unlocksLast30Days} />
       <Stat label="Active members (7 days)" value={summary.activeMembersLast7Days} />
@@ -36,6 +36,15 @@ export function AchievementsHubSummary({ summary }: Props) {
           )
         }
       />
+    </>
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
+        {statItems}
+      </div>
+
       {top ? (
         <div className="rounded-md border border-border bg-card px-4 py-3 sm:col-span-2 lg:col-span-4">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

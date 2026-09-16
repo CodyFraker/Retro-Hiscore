@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Games;
+using RetroHiscore.Api.Features.Notifications;
 using RetroHiscore.Api.Features.Ra;
 
 namespace RetroHiscore.Api.Features.Sync;
@@ -33,6 +34,7 @@ public sealed class MemberRaGameProgressSyncService(
     IRaApiClient raApiClient,
     IRaApiKeyPool apiKeyPool,
     IConsoleIconDownloader badgeDownloader,
+    INotificationOutboxWriter notificationOutboxWriter,
     IOptions<RaOptions> raOptions,
     ILogger<MemberRaGameProgressSyncService> logger) : IMemberRaGameProgressSyncService
 {
@@ -110,7 +112,8 @@ public sealed class MemberRaGameProgressSyncService(
                 if (!string.IsNullOrWhiteSpace(achievement.DateEarned))
                 {
                     await EnsureMemberUnlockAsync(
-                        member.Id,
+                        member,
+                        raGameId,
                         achievement,
                         syncedAt,
                         cancellationToken);
@@ -218,14 +221,15 @@ public sealed class MemberRaGameProgressSyncService(
     }
 
     private async Task EnsureMemberUnlockAsync(
-        Guid memberId,
+        Member member,
+        int raGameId,
         RaGameAchievementProgressDto source,
         DateTimeOffset syncedAt,
         CancellationToken cancellationToken)
     {
         var exists = await db.MemberRaAchievements
             .AnyAsync(
-                m => m.MemberId == memberId && m.RaAchievementId == source.Id,
+                m => m.MemberId == member.Id && m.RaAchievementId == source.Id,
                 cancellationToken);
 
         if (exists)
@@ -235,7 +239,7 @@ public sealed class MemberRaGameProgressSyncService(
 
         db.MemberRaAchievements.Add(new MemberRaAchievement
         {
-            MemberId = memberId,
+            MemberId = member.Id,
             RaAchievementId = source.Id,
             DateEarned = ParseRaDateTime(source.DateEarned),
             DateEarnedHardcore = ParseRaDateTime(source.DateEarnedHardcore),
@@ -243,6 +247,30 @@ public sealed class MemberRaGameProgressSyncService(
         });
 
         await db.SaveChangesAsync(cancellationToken);
+
+        var gameTitle = await db.Games
+            .AsNoTracking()
+            .Where(g => g.RaGameId == raGameId)
+            .Select(g => g.Title)
+            .FirstOrDefaultAsync(cancellationToken) ?? $"Game #{raGameId}";
+
+        var earnedAt = ParseRaDateTime(source.DateEarned) ?? syncedAt;
+        var payload = new AchievementUnlockedNotificationPayload(
+            member.Id,
+            member.RaUsername ?? "",
+            member.DisplayName ?? member.RaUsername ?? "",
+            raGameId,
+            gameTitle,
+            source.Id,
+            source.Title ?? $"Achievement #{source.Id}",
+            source.Points,
+            !string.IsNullOrWhiteSpace(source.DateEarnedHardcore),
+            earnedAt);
+
+        await notificationOutboxWriter.EnqueueAsync(
+            DiscordNotificationEventKind.AchievementUnlocked,
+            payload,
+            cancellationToken);
     }
 
     private static DateTimeOffset? ParseRaDateTime(string? value)

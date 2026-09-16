@@ -11,7 +11,17 @@ namespace RetroHiscore.Api.Features.Sync;
 
 public interface ILeaderboardSyncService
 {
-    Task<SyncRun> SyncGameWithRunAsync(Game game, SyncTrigger trigger, CancellationToken cancellationToken = default);
+    Task<SyncRun> SyncGameWithRunAsync(
+        Game game,
+        SyncTrigger trigger,
+        bool enqueueGameTrackedNotification = false,
+        CancellationToken cancellationToken = default);
+    Task<SyncRun> SyncGameForMembersWithRunAsync(
+        Game game,
+        IReadOnlyCollection<Guid> memberIds,
+        SyncTrigger trigger,
+        bool enqueueGameTrackedNotification = false,
+        CancellationToken cancellationToken = default);
     Task<SyncRun> SyncMemberGameWithRunAsync(
         Game game,
         Member member,
@@ -31,9 +41,11 @@ public sealed class LeaderboardSyncService(
     AppDbContext db,
     IRaApiClient raApiClient,
     IRaApiKeyPool apiKeyPool,
-    IDiscordNotificationService notificationService,
+    ILeaderboardSyncNotificationService leaderboardSyncNotificationService,
     IMemberRaGameProgressSyncService memberRaGameProgressSync,
     IGameAchievementDistributionSyncService achievementDistributionSync,
+    INotificationOutboxWriter notificationOutboxWriter,
+    INotificationOutboxReadinessService notificationOutboxReadiness,
     IOptions<RaOptions> raOptions,
     IOptions<SyncOptions> syncOptions,
     ILogger<LeaderboardSyncService> logger) : ILeaderboardSyncService
@@ -95,6 +107,7 @@ public sealed class LeaderboardSyncService(
     public async Task<SyncRun> SyncGameWithRunAsync(
         Game game,
         SyncTrigger trigger,
+        bool enqueueGameTrackedNotification = false,
         CancellationToken cancellationToken = default)
     {
         var run = new SyncRun
@@ -107,6 +120,16 @@ public sealed class LeaderboardSyncService(
         };
         db.SyncRuns.Add(run);
         await db.SaveChangesAsync(cancellationToken);
+
+        if (enqueueGameTrackedNotification)
+        {
+            await GameTrackedNotificationHelper.EnqueuePendingForSyncRunAsync(
+                db,
+                notificationOutboxWriter,
+                game.Id,
+                run.Id,
+                cancellationToken);
+        }
 
         var syncedAt = DateTimeOffset.UtcNow;
         var errors = new List<string>();
@@ -122,8 +145,7 @@ public sealed class LeaderboardSyncService(
                 game.LeaderboardScoresSyncedAt = syncedAt;
             }
 
-            var activity = await ActivityBuilder.BuildForGameAsync(db, game.Id, syncedAt, cancellationToken);
-            await notificationService.NotifyActivityAsync(activity, cancellationToken);
+            await leaderboardSyncNotificationService.EnqueueForGameAsync(game.Id, syncedAt, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -135,6 +157,68 @@ public sealed class LeaderboardSyncService(
         {
             run.FinishedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
+            await notificationOutboxReadiness.MarkNotificationsReadyForSyncRunAsync(run.Id, cancellationToken);
+        }
+
+        return run;
+    }
+
+    public async Task<SyncRun> SyncGameForMembersWithRunAsync(
+        Game game,
+        IReadOnlyCollection<Guid> memberIds,
+        SyncTrigger trigger,
+        bool enqueueGameTrackedNotification = false,
+        CancellationToken cancellationToken = default)
+    {
+        var run = new SyncRun
+        {
+            Kind = SyncKind.LeaderboardScores,
+            Trigger = trigger,
+            Status = SyncRunStatus.Running,
+            StartedAt = DateTimeOffset.UtcNow,
+            GameId = game.Id
+        };
+        db.SyncRuns.Add(run);
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (enqueueGameTrackedNotification)
+        {
+            await GameTrackedNotificationHelper.EnqueuePendingForSyncRunAsync(
+                db,
+                notificationOutboxWriter,
+                game.Id,
+                run.Id,
+                cancellationToken);
+        }
+
+        var syncedAt = DateTimeOffset.UtcNow;
+        var errors = new List<string>();
+        var ids = memberIds.Count == 0 ? null : memberIds;
+
+        try
+        {
+            await SyncGameForMembersInternalAsync(game, ids, syncedAt, errors, cancellationToken);
+            run.Status = errors.Count == 0 ? SyncRunStatus.Succeeded : SyncRunStatus.PartialSuccess;
+            run.Error = errors.Count == 0 ? null : string.Join("; ", errors);
+
+            if (run.Status is SyncRunStatus.Succeeded or SyncRunStatus.PartialSuccess)
+            {
+                game.LeaderboardScoresSyncedAt = syncedAt;
+            }
+
+            await leaderboardSyncNotificationService.EnqueueForGameAsync(game.Id, syncedAt, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Game leaderboard sync failed for {RaGameId}", game.RaGameId);
+            run.Status = SyncRunStatus.Failed;
+            run.Error = ex.Message;
+        }
+        finally
+        {
+            run.FinishedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+            await notificationOutboxReadiness.MarkNotificationsReadyForSyncRunAsync(run.Id, cancellationToken);
         }
 
         return run;
@@ -216,8 +300,7 @@ public sealed class LeaderboardSyncService(
             run.Status = errors.Count == 0 ? SyncRunStatus.Succeeded : SyncRunStatus.PartialSuccess;
             run.Error = errors.Count == 0 ? null : string.Join("; ", errors);
 
-            var activity = await ActivityBuilder.BuildForGameAsync(db, game.Id, syncedAt, cancellationToken);
-            await notificationService.NotifyActivityAsync(activity, cancellationToken);
+            await leaderboardSyncNotificationService.EnqueueForGameAsync(game.Id, syncedAt, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -229,6 +312,7 @@ public sealed class LeaderboardSyncService(
         {
             run.FinishedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
+            await notificationOutboxReadiness.MarkNotificationsReadyForSyncRunAsync(run.Id, cancellationToken);
         }
 
         return run;

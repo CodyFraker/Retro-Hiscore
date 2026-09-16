@@ -11,6 +11,7 @@ import type {
   DashboardAchievementSummaryResponse,
   DashboardGamesResponse,
   DashboardResponse,
+  GameOfTheWeekCurrentPollDto,
 } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
 import {
@@ -46,6 +47,7 @@ async function HomePageContent({ searchParams }: Props) {
   let achievementActivity: DashboardAchievementActivityResponse | null = null;
   let achievementHistory: DashboardAchievementHistoryResponse | null = null;
   let achievementSummary: DashboardAchievementSummaryResponse | null = null;
+  let gameOfTheWeekPoll: GameOfTheWeekCurrentPollDto | null = null;
   let error: string | null = null;
 
   try {
@@ -63,6 +65,11 @@ async function HomePageContent({ searchParams }: Props) {
       api.getDashboardAchievementHistory(500),
       api.getDashboardAchievementSummary(),
     ]);
+    try {
+      gameOfTheWeekPoll = await api.getGameOfTheWeekCurrent();
+    } catch {
+      gameOfTheWeekPoll = null;
+    }
   } catch (err) {
     error = err instanceof Error ? err.message : "Failed to load dashboard";
   }
@@ -97,6 +104,7 @@ async function HomePageContent({ searchParams }: Props) {
               achievementActivity={achievementActivity?.items ?? []}
               achievementHistory={achievementHistory?.items ?? []}
               achievementsSyncedAt={achievementSummary?.achievementsSyncedAt}
+              gameOfTheWeekPoll={gameOfTheWeekPoll}
             />
           }
         />

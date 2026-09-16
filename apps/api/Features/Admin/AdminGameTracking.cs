@@ -56,10 +56,18 @@ public static class AdminGameTracking
 
         if (syncMemberScores)
         {
-            await leaderboardSync.SyncGameAsync(game, ct);
-        }
+            await leaderboardSync.SyncGameWithRunAsync(
+                game,
+                SyncTrigger.Manual,
+                enqueueGameTrackedNotification: true,
+                ct);
 
-        if (game.ConsoleId is int consoleId)
+            if (game.ConsoleId is int consoleId)
+            {
+                await consoleIconSync.EnsureConsoleIconAsync(consoleId, ct);
+            }
+        }
+        else if (game.ConsoleId is int consoleId)
         {
             await consoleIconSync.EnsureConsoleIconAsync(consoleId, ct);
         }

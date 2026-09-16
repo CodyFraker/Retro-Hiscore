@@ -1,7 +1,3 @@
-using Microsoft.Extensions.Options;
-using RetroHiscore.Api.Data;
-using RetroHiscore.Api.Features.Ra;
-using RetroHiscore.Api.Features.Sync;
 using RetroHiscore.Api.Infrastructure;
 
 namespace RetroHiscore.Api.Features.Admin;
@@ -9,36 +5,13 @@ namespace RetroHiscore.Api.Features.Admin;
 public static class PostAdminGameEndpoint
 {
     public static RouteHandlerBuilder MapPostAdminGame(this IEndpointRouteBuilder routes)
-        => routes.MapPost("/api/admin/games", async (
-            PostAdminGameRequest request,
-            AppDbContext db,
-            IRaApiClient raApiClient,
-            IRaApiKeyPool apiKeyPool,
-            ILeaderboardSyncService leaderboardSync,
-            IConsoleIconSyncService consoleIconSync,
-            IOptions<RaOptions> raOptions,
-            ISyncSettingsStore syncSettingsStore,
-            CancellationToken ct) =>
-        {
-            var (game, error) = await AdminGameTracking.AddGameAsync(
-                request.RaGameId,
-                db,
-                raApiClient,
-                apiKeyPool,
-                leaderboardSync,
-                consoleIconSync,
-                raOptions,
-                ct);
-            if (error is not null)
+        => routes.MapPost("/api/admin/games", (PostAdminGameRequest request) =>
+            Results.Conflict(new
             {
-                return error;
-            }
-
-            var dto = await AdminGameMapper.ToDtoAsync(db, game!, raOptions, syncSettingsStore, ct);
-            return Results.Created($"/api/admin/games/{game!.RaGameId}", dto);
-        })
+                message = "Games are tracked when they win game-of-the-week voting. Start a poll under Admin → Game of the week."
+            }))
         .WithName("PostAdminGame")
         .WithTags("Admin")
-        .WithSummary("Track a new RetroAchievements game by id and sync its metadata and member scores.")
+        .WithSummary("Direct game tracking is disabled; use game-of-the-week voting instead.")
         .RequireAdmin();
 }

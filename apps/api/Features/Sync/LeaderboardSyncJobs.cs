@@ -3,6 +3,7 @@ using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
+using RetroHiscore.Api.Features.Notifications;
 
 namespace RetroHiscore.Api.Features.Sync;
 
@@ -38,6 +39,14 @@ public sealed class LeaderboardSyncDispatchJob(ILeaderboardSyncDispatcher dispat
         => dispatcher.DispatchDueGamesAsync(SyncTrigger.Scheduled, forceAll: false, cancellationToken);
 }
 
+public sealed class DiscordNotificationDispatchJob(IDiscordWebhookDispatchService dispatchService)
+{
+    [DisableConcurrentExecution(timeoutInSeconds: 60 * 10)]
+    [AutomaticRetry(Attempts = 0)]
+    public Task RunScheduledAsync(CancellationToken cancellationToken = default)
+        => dispatchService.DispatchPendingAsync(cancellationToken);
+}
+
 public sealed class GameLeaderboardSyncJob(
     AppDbContext db,
     ILeaderboardSyncService leaderboardSync,
@@ -64,7 +73,7 @@ public sealed class GameLeaderboardSyncJob(
                 return;
             }
 
-            await leaderboardSync.SyncGameWithRunAsync(game, trigger, cancellationToken);
+            await leaderboardSync.SyncGameWithRunAsync(game, trigger, cancellationToken: cancellationToken);
         }
         finally
         {

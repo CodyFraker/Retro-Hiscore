@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
     <div className="space-y-8">
       <PageHero
         title="Admin"
-        description="Manage members, sync schedules, and tracked games for your group."
+        description="Manage members, sync schedules, tracked games, and Discord webhooks for your group."
       />
       <AdminTabNav />
       {children}

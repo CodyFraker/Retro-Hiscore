@@ -500,6 +500,112 @@
         }
       }
     },
+    "/api/game-of-the-week/current": {
+      "get": {
+        "operationId": "getGameOfTheWeekCurrent",
+        "tags": ["GameOfTheWeek"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameOfTheWeekCurrentPollDto" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/game-of-the-week/current/ballot": {
+      "post": {
+        "operationId": "postGameOfTheWeekBallot",
+        "tags": ["GameOfTheWeek"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GameOfTheWeekRaGameIdRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameOfTheWeekCurrentPollDto" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/game-of-the-week/current/vote": {
+      "put": {
+        "operationId": "putGameOfTheWeekVote",
+        "tags": ["GameOfTheWeek"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GameOfTheWeekRaGameIdRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameOfTheWeekCurrentPollDto" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/game-of-the-week/polls": {
+      "post": {
+        "operationId": "postAdminGameOfTheWeekPoll",
+        "tags": ["Admin"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PostGameOfTheWeekPollRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameOfTheWeekCurrentPollDto" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/game-of-the-week/polls/current": {
+      "get": {
+        "operationId": "getAdminGameOfTheWeekCurrentPoll",
+        "tags": ["Admin"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameOfTheWeekCurrentPollDto" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
     "/api/games": {
       "get": {
         "operationId": "getGames",
@@ -1139,6 +1245,218 @@
               }
             }
           },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/api/admin/discord-webhooks/token-catalog": {
+      "get": {
+        "operationId": "getAdminDiscordWebhookTokenCatalog",
+        "tags": ["Admin"],
+        "summary": "Lists injectable tokens per Discord notification event kind.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DiscordTokenCatalogDto" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/api/admin/discord-webhooks/dispatch-runs": {
+      "get": {
+        "operationId": "getAdminDiscordWebhookDispatchRuns",
+        "tags": ["Admin"],
+        "summary": "Lists recent Discord notification dispatch runs.",
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AdminNotificationDispatchRunDto" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/api/admin/discord-webhooks": {
+      "get": {
+        "operationId": "getAdminDiscordWebhooks",
+        "tags": ["Admin"],
+        "summary": "Lists configured Discord webhooks.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/AdminDiscordWebhookSummaryDto" }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      },
+      "post": {
+        "operationId": "postAdminDiscordWebhook",
+        "tags": ["Admin"],
+        "summary": "Creates a Discord webhook configuration.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpsertDiscordWebhookRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminDiscordWebhookDetailDto" }
+              }
+            }
+          },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/api/admin/discord-webhooks/{id}": {
+      "get": {
+        "operationId": "getAdminDiscordWebhook",
+        "tags": ["Admin"],
+        "summary": "Returns a Discord webhook configuration.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminDiscordWebhookDetailDto" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      },
+      "put": {
+        "operationId": "putAdminDiscordWebhook",
+        "tags": ["Admin"],
+        "summary": "Updates a Discord webhook configuration.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpsertDiscordWebhookRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminDiscordWebhookDetailDto" }
+              }
+            }
+          },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAdminDiscordWebhook",
+        "tags": ["Admin"],
+        "summary": "Deletes a Discord webhook configuration.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "No Content" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/api/admin/discord-webhooks/{id}/preview": {
+      "post": {
+        "operationId": "postAdminDiscordWebhookPreview",
+        "tags": ["Admin"],
+        "summary": "Renders a webhook embed template with sample event data.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PreviewDiscordWebhookRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PreviewDiscordWebhookResponse" }
+              }
+            }
+          },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" },
+          "403": { "description": "Forbidden" }
+        }
+      }
+    },
+    "/api/admin/discord-webhooks/{id}/test": {
+      "post": {
+        "operationId": "postAdminDiscordWebhookTest",
+        "tags": ["Admin"],
+        "summary": "Sends a test Discord webhook using sample event data.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TestDiscordWebhookRequest" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "No Content" },
+          "400": { "description": "Bad Request" },
           "401": { "description": "Unauthorized" },
           "403": { "description": "Forbidden" }
         }
@@ -2005,6 +2323,66 @@
           "raGameId": { "type": "integer" }
         }
       },
+      "GameOfTheWeekRaGameIdRequest": {
+        "type": "object",
+        "required": ["raGameId"],
+        "properties": {
+          "raGameId": { "type": "integer" }
+        }
+      },
+      "PostGameOfTheWeekPollRequest": {
+        "type": "object",
+        "required": ["startsAt", "endsAt", "raGameIds"],
+        "properties": {
+          "startsAt": { "type": "string", "format": "date-time" },
+          "endsAt": { "type": "string", "format": "date-time" },
+          "raGameIds": {
+            "type": "array",
+            "items": { "type": "integer" }
+          }
+        }
+      },
+      "GameOfTheWeekBallotItemDto": {
+        "type": "object",
+        "required": ["raGameId", "title", "sortOrder", "isTracked", "voteCount"],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "consoleName": { "type": "string", "nullable": true },
+          "imageIcon": { "type": "string", "nullable": true },
+          "sortOrder": { "type": "integer" },
+          "isTracked": { "type": "boolean" },
+          "voteCount": { "type": "integer" },
+          "addedByMemberId": { "type": "string", "format": "uuid", "nullable": true }
+        }
+      },
+      "GameOfTheWeekCurrentPollDto": {
+        "type": "object",
+        "required": [
+          "pollId",
+          "phase",
+          "startsAt",
+          "endsAt",
+          "trackingStatus",
+          "ballot",
+          "ballotSlotsRemaining"
+        ],
+        "properties": {
+          "pollId": { "type": "string", "format": "uuid" },
+          "phase": { "type": "integer" },
+          "startsAt": { "type": "string", "format": "date-time" },
+          "endsAt": { "type": "string", "format": "date-time" },
+          "closedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "winnerRaGameId": { "type": "integer", "nullable": true },
+          "trackingStatus": { "type": "integer" },
+          "myVoteRaGameId": { "type": "integer", "nullable": true },
+          "ballot": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameOfTheWeekBallotItemDto" }
+          },
+          "ballotSlotsRemaining": { "type": "integer" }
+        }
+      },
       "PatchAdminGameLeaderboardSyncRequest": {
         "type": "object",
         "required": ["forceColdLeaderboardSync"],
@@ -2097,10 +2475,7 @@
           "unlocksLast30Days": { "type": "integer" },
           "activeMembersLast7Days": { "type": "integer" },
           "lastUnlockAt": { "type": "string", "format": "date-time", "nullable": true },
-          "topGameLast7Days": {
-            "nullable": true,
-            "allOf": [{ "$ref": "#/components/schemas/DashboardAchievementTopGameDto" }]
-          },
+          "topGameLast7Days": { "$ref": "#/components/schemas/DashboardAchievementTopGameDto", "nullable": true },
           "achievementsSyncedAt": { "type": "string", "format": "date-time", "nullable": true }
         }
       },
@@ -2464,6 +2839,122 @@
           "lastJobState": { "type": "string", "nullable": true },
           "configuredIntervalMinutes": { "type": "integer", "nullable": true },
           "configuredIntervalDays": { "type": "integer", "nullable": true }
+        }
+      },
+      "DiscordNotificationEventKind": {
+        "type": "string",
+        "enum": ["GameTracked", "LeaderboardFriendOvertake", "LeaderboardNewSubmission", "AchievementUnlocked"]
+      },
+      "AdminDiscordWebhookSummaryDto": {
+        "type": "object",
+        "required": ["id", "name", "enabled", "webhookUrlMasked", "digestIntervalMinutes", "eventKinds", "updatedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "webhookUrlMasked": { "type": "string" },
+          "digestIntervalMinutes": { "type": "integer" },
+          "eventKinds": { "type": "array", "items": { "type": "string" } },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AdminDiscordWebhookDetailDto": {
+        "type": "object",
+        "required": ["id", "name", "enabled", "webhookUrlMasked", "digestIntervalMinutes", "payloadTemplateJson", "eventKinds", "updatedAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "webhookUrlMasked": { "type": "string" },
+          "digestIntervalMinutes": { "type": "integer" },
+          "payloadTemplateJson": { "type": "string" },
+          "eventKinds": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "allowedRaGameIds": { "type": "array", "items": { "type": "integer" }, "nullable": true },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UpsertDiscordWebhookRequest": {
+        "type": "object",
+        "required": ["name", "enabled", "webhookUrl", "digestIntervalMinutes", "payloadTemplateJson", "eventKinds"],
+        "properties": {
+          "name": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "webhookUrl": { "type": "string" },
+          "digestIntervalMinutes": { "type": "integer" },
+          "payloadTemplateJson": { "type": "string" },
+          "eventKinds": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "allowedRaGameIds": { "type": "array", "items": { "type": "integer" }, "nullable": true }
+        }
+      },
+      "DiscordTokenCatalogDto": {
+        "type": "object",
+        "required": ["events"],
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DiscordTokenCatalogEntryDto" }
+          }
+        }
+      },
+      "DiscordTokenCatalogEntryDto": {
+        "type": "object",
+        "required": ["eventKind", "tokens"],
+        "properties": {
+          "eventKind": { "type": "string" },
+          "tokens": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/DiscordTokenCatalogTokenDto" }
+          }
+        }
+      },
+      "DiscordTokenCatalogTokenDto": {
+        "type": "object",
+        "required": ["code", "label"],
+        "properties": {
+          "code": { "type": "string" },
+          "label": { "type": "string" }
+        }
+      },
+      "PreviewDiscordWebhookRequest": {
+        "type": "object",
+        "required": ["eventKind"],
+        "properties": {
+          "eventKind": { "type": "string" },
+          "payloadTemplateJson": { "type": "string", "nullable": true }
+        }
+      },
+      "PreviewDiscordWebhookResponse": {
+        "type": "object",
+        "required": ["renderedPayloadJson"],
+        "properties": {
+          "renderedPayloadJson": { "type": "string" }
+        }
+      },
+      "TestDiscordWebhookRequest": {
+        "type": "object",
+        "required": ["eventKind"],
+        "properties": {
+          "eventKind": { "type": "string" }
+        }
+      },
+      "AdminNotificationDispatchRunDto": {
+        "type": "object",
+        "required": ["id", "status", "startedAt", "eventsProcessed", "postsSucceeded", "postsFailed"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "status": { "type": "string" },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "finishedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "error": { "type": "string", "nullable": true },
+          "eventsProcessed": { "type": "integer" },
+          "postsSucceeded": { "type": "integer" },
+          "postsFailed": { "type": "integer" }
         }
       },
       "AdminSyncSettingsDto": {
