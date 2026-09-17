@@ -62,6 +62,20 @@ export type PostAdminGameOfTheWeekPollResult =
   | { ok: true; poll: GameOfTheWeekCurrentPollDto }
   | { ok: false; error: string };
 
+export type PostAdminGameOfTheWeekClosePollResult =
+  | { ok: true; poll: GameOfTheWeekCurrentPollDto }
+  | { ok: false; error: string };
+
+export async function postAdminGameOfTheWeekClosePollAction(): Promise<PostAdminGameOfTheWeekClosePollResult> {
+  try {
+    const api = await getServerApiClient();
+    const poll = await api.postAdminGameOfTheWeekClosePoll();
+    return { ok: true, poll };
+  } catch (error) {
+    return { ok: false, error: actionErrorMessage(error, "Failed to close poll") };
+  }
+}
+
 export async function postAdminGameOfTheWeekPollAction(
   startsAt: string,
   endsAt: string,
@@ -91,6 +105,16 @@ export async function rejectAdminGameTrackQueueItemAction(id: string): Promise<A
     return { ok: true };
   } catch (error) {
     return { ok: false, error: actionErrorMessage(error, "Reject failed") };
+  }
+}
+
+export async function trackAdminGameTrackQueueItemAction(id: string): Promise<AddAdminGameResult> {
+  try {
+    const api = await getServerApiClient();
+    const game = await api.postAdminGameTrackQueueTrack(id);
+    return { ok: true, game };
+  } catch (error) {
+    return { ok: false, error: formatAddGameError(error) };
   }
 }
 

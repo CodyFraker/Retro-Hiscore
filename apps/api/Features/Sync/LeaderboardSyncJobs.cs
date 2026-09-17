@@ -55,7 +55,7 @@ public sealed class GameLeaderboardSyncJob(
     private static readonly ConcurrentDictionary<int, SemaphoreSlim> GameLocks = new();
 
     [AutomaticRetry(Attempts = 0)]
-    public async Task RunFullGameAsync(int raGameId, SyncTrigger trigger, CancellationToken cancellationToken = default)
+    public async Task RunGameShellAsync(int raGameId, SyncTrigger trigger, CancellationToken cancellationToken = default)
     {
         var semaphore = GameLocks.GetOrAdd(raGameId, _ => new SemaphoreSlim(1, 1));
         if (!await semaphore.WaitAsync(0, cancellationToken))
@@ -73,7 +73,7 @@ public sealed class GameLeaderboardSyncJob(
                 return;
             }
 
-            await leaderboardSync.SyncGameWithRunAsync(game, trigger, cancellationToken: cancellationToken);
+            await leaderboardSync.SyncGameShellWithRunAsync(game, trigger, cancellationToken: cancellationToken);
         }
         finally
         {

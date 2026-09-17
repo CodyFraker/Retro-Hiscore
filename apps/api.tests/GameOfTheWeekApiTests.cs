@@ -181,6 +181,59 @@ public class GameOfTheWeekApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetCurrent_ReturnsVotersPerBallotItem()
+    {
+        // Arrange
+        await CreateOpenPollAsync([45001, 45002]);
+        var adminClient = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
+        var memberClient = _factory.CreateAuthenticatedClient(AuthTestHelper.SecondAllowedDiscordUserId);
+        await adminClient.PutAsJsonAsync(
+            "/api/game-of-the-week/current/vote",
+            new GameOfTheWeekRaGameIdRequest(45001));
+        await memberClient.PutAsJsonAsync(
+            "/api/game-of-the-week/current/vote",
+            new GameOfTheWeekRaGameIdRequest(45002));
+
+        // Act
+        var response = await memberClient.GetAsync("/api/game-of-the-week/current");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var poll = await response.Content.ReadFromJsonAsync<GameOfTheWeekCurrentPollDto>();
+        poll.ShouldNotBeNull();
+        poll!.Ballot.Single(b => b.RaGameId == 45001).VoteCount.ShouldBe(1);
+        poll.Ballot.Single(b => b.RaGameId == 45001).Voters.Count.ShouldBe(1);
+        poll.Ballot.Single(b => b.RaGameId == 45002).Voters.Count.ShouldBe(1);
+        poll.VotesCastCount.ShouldBe(2);
+        poll.EligibleVoterCount.ShouldBeGreaterThanOrEqualTo(2);
+    }
+
+    [Fact]
+    public async Task GetCurrent_AllEligibleVotesCast_WhenEveryRaMemberVoted()
+    {
+        // Arrange
+        await CreateOpenPollAsync([46001, 46002]);
+        var adminClient = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
+        var memberClient = _factory.CreateAuthenticatedClient(AuthTestHelper.SecondAllowedDiscordUserId);
+        await adminClient.PutAsJsonAsync(
+            "/api/game-of-the-week/current/vote",
+            new GameOfTheWeekRaGameIdRequest(46001));
+        await memberClient.PutAsJsonAsync(
+            "/api/game-of-the-week/current/vote",
+            new GameOfTheWeekRaGameIdRequest(46002));
+
+        // Act
+        var response = await adminClient.GetAsync("/api/game-of-the-week/current");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var poll = await response.Content.ReadFromJsonAsync<GameOfTheWeekCurrentPollDto>();
+        poll.ShouldNotBeNull();
+        poll!.VotesCastCount.ShouldBe(poll.EligibleVoterCount);
+        poll.AllEligibleVotesCast.ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task WinnerTrackingJob_CreatesGameWhenRaSucceeds()
     {
         // Arrange

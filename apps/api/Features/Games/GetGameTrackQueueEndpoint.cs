@@ -33,7 +33,9 @@ public static class GetGameTrackQueueEndpoint
                     q.ConsoleName,
                     q.Status.ToString(),
                     q.EnqueuedAt,
-                    q.ResolvedAt))
+                    q.ResolvedAt,
+                    q.Source.ToString(),
+                    q.RequestCount))
                 .ToListAsync(ct);
 
             return Results.Ok(items);
@@ -50,4 +52,6 @@ public sealed record GameTrackQueueItemDto(
     string? ConsoleName,
     string Status,
     DateTimeOffset EnqueuedAt,
-    DateTimeOffset? ResolvedAt);
+    DateTimeOffset? ResolvedAt,
+    string Source,
+    int RequestCount);

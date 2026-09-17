@@ -2,13 +2,31 @@ import Link from "next/link";
 import { FriendRank } from "@/components/friend-rank";
 import { ResponsiveTable } from "@/components/layout/responsive-table";
 import { MemberAvatar } from "@/components/members/member-avatar";
-import type { LeaderboardHistoryItemDto } from "@/generated/api-client";
 import { formatSyncTime } from "@/lib/format";
 import { formatGlobalRank } from "@/lib/format-global-rank";
+import { formatFriendRankDelta } from "@/lib/game-delta-format";
+import type { EnrichedLeaderboardHistoryItem } from "@/lib/history-series";
 
 type Props = {
-  items: LeaderboardHistoryItemDto[];
+  items: EnrichedLeaderboardHistoryItem[];
 };
+
+function GlobalRankCell({ item }: { item: EnrichedLeaderboardHistoryItem }) {
+  const showDelta = item.globalRankDelta != null && item.globalRankDelta !== 0;
+
+  return (
+    <div className="text-right">
+      <span className="text-muted-foreground">
+        {formatGlobalRank(item.globalRank, item.globalEntryCount) ?? "—"}
+      </span>
+      {showDelta ? (
+        <p className="mt-0.5 font-mono text-xs text-[var(--accent-retro)]">
+          {formatFriendRankDelta(item.globalRankDelta!)}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 export function LeaderboardHistorySection({ items }: Props) {
   return (
@@ -48,8 +66,8 @@ export function LeaderboardHistorySection({ items }: Props) {
         {
           header: "Global",
           headerClassName: "text-right",
-          cellClassName: "text-right font-mono text-muted-foreground",
-          render: (item) => formatGlobalRank(item.globalRank, item.globalEntryCount) ?? "—",
+          cellClassName: "text-right font-mono",
+          render: (item) => <GlobalRankCell item={item} />,
         },
       ]}
       renderMobileCard={(item) => (
@@ -70,11 +88,16 @@ export function LeaderboardHistorySection({ items }: Props) {
               Friend{" "}
               <FriendRank rank={item.friendRank} className="inline-flex" iconClassName="size-3" />
             </span>
-            <span>
+            <span className="inline-flex flex-wrap items-center gap-1">
               Global{" "}
               <span className="font-mono text-foreground">
                 {formatGlobalRank(item.globalRank, item.globalEntryCount) ?? "—"}
               </span>
+              {item.globalRankDelta != null && item.globalRankDelta !== 0 ? (
+                <span className="font-mono text-[var(--accent-retro)]">
+                  {formatFriendRankDelta(item.globalRankDelta)}
+                </span>
+              ) : null}
             </span>
           </div>
         </li>

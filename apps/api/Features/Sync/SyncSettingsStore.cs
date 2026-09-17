@@ -134,7 +134,7 @@ public sealed class SyncSettingsStore(AppDbContext db) : ISyncSettingsStore
 
     private static readonly (string JobId, string DisplayName, int? IntervalMinutes, int? IntervalDays)[] DefaultRecurringJobs =
     [
-        (SyncRecurringJobIds.MemberActivity, "Member activity", 15, null),
+        (SyncRecurringJobIds.MemberActivity, "Member activity", 5, null),
         (SyncRecurringJobIds.LeaderboardDispatch, "Leaderboard dispatch", 5, null),
         (SyncRecurringJobIds.MemberRank, "Member RA rank", 60, null),
         (SyncRecurringJobIds.GameMetadata, "Game metadata", null, 7),

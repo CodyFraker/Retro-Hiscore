@@ -10,11 +10,11 @@ type Props = {
 
 function StatTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <Card size="sm" className="min-w-0 flex-1">
+    <Card size="sm" className="min-w-[9.5rem] shrink-0 sm:min-w-[10.5rem] sm:flex-1 sm:shrink">
       <CardContent className="space-y-1">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="font-mono text-lg font-medium tabular-nums">{value}</p>
-        {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+        <p className="font-mono text-base font-medium leading-snug tabular-nums sm:text-lg">{value}</p>
+        {hint ? <p className="text-xs leading-snug text-muted-foreground">{hint}</p> : null}
       </CardContent>
     </Card>
   );
@@ -24,8 +24,12 @@ export function MemberRaStatsRow({ summary, friendRankOnes, boardsWithScore }: P
   const showFriendStats = friendRankOnes != null && boardsWithScore != null;
   const showSoftcore = summary != null && (summary.totalSoftcorePoints ?? 0) > 0;
 
+  if (!showFriendStats && !summary) {
+    return null;
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div className="-mx-4 flex gap-3 overflow-x-auto px-4 scroll-smooth sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
       {showFriendStats ? (
         <>
           <StatTile label="Board leads" value={friendRankOnes.toLocaleString()} />

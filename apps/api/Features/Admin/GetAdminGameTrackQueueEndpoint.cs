@@ -12,6 +12,7 @@ public static class GetAdminGameTrackQueueEndpoint
         {
             var items = await db.GameTrackQueues
                 .AsNoTracking()
+                .Include(q => q.RequestedByMember)
                 .Where(q => q.Status == GameTrackQueueStatus.Pending
                     || q.Status == GameTrackQueueStatus.Failed
                     || (q.Status == GameTrackQueueStatus.Completed

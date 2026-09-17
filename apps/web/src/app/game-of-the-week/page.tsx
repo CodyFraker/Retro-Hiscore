@@ -21,10 +21,17 @@ async function loadHistory(): Promise<GameOfTheWeekHistoryResponse> {
 export default async function GameOfTheWeekPage() {
   const history = await loadHistory();
   let currentPoll: GameOfTheWeekCurrentPollDto | null = null;
+  let currentMemberId: string | null = null;
 
   try {
     const api = await getServerApiClient();
     currentPoll = await api.getGameOfTheWeekCurrent();
+    try {
+      const member = await api.getCurrentMember();
+      currentMemberId = member.id;
+    } catch {
+      currentMemberId = null;
+    }
   } catch {
     currentPoll = null;
   }
@@ -33,7 +40,11 @@ export default async function GameOfTheWeekPage() {
     return (
       <div className="space-y-8">
         <PageHero title="Game of the week" />
-        <GameOfTheWeekView initialPoll={currentPoll} history={history.items} />
+        <GameOfTheWeekView
+          initialPoll={currentPoll}
+          history={history.items}
+          currentMemberId={currentMemberId}
+        />
       </div>
     );
   }

@@ -1,17 +1,29 @@
 "use client";
 
+import { Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useSyncExternalStore } from "react";
 import type { AdminGameTrackQueueItemDto } from "@/generated/api-client";
 import { DataFieldList } from "@/components/layout/data-field-list";
 import { ResponsiveTable } from "@/components/layout/responsive-table";
-import { FormattedSyncTime } from "@/components/formatted-sync-time";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { rejectAdminGameTrackQueueItemAction } from "@/lib/actions/admin";
+import {
+  rejectAdminGameTrackQueueItemAction,
+  trackAdminGameTrackQueueItemAction,
+} from "@/lib/actions/admin";
+import { formatRelativeTime, formatSyncTime, formatSyncTimeUtc } from "@/lib/format";
 
 type Props = {
   items: AdminGameTrackQueueItemDto[];
 };
+
+const stickyActionClassName =
+  "sticky right-0 z-10 bg-background shadow-[-6px_0_10px_-8px_rgba(0,0,0,0.35)] dark:shadow-[-6px_0_10px_-8px_rgba(0,0,0,0.6)]";
+
+function emptySubscribe() {
+  return () => {};
+}
 
 function statusLabel(status: number) {
   switch (status) {
@@ -26,6 +38,120 @@ function statusLabel(status: number) {
     default:
       return String(status);
   }
+}
+
+function statusBadgeVariant(status: number): "outline" | "secondary" | "destructive" {
+  switch (status) {
+    case 4:
+      return "destructive";
+    case 0:
+      return "outline";
+    default:
+      return "secondary";
+  }
+}
+
+function sourceLabel(source: number) {
+  switch (source) {
+    case 1:
+      return "Member request";
+    default:
+      return "Recent play";
+  }
+}
+
+function QueuedAt({ value }: { value: string }) {
+  const relative = useSyncExternalStore(
+    emptySubscribe,
+    () => formatRelativeTime(value),
+    () => formatRelativeTime(value),
+  );
+  const full = useSyncExternalStore(
+    emptySubscribe,
+    () => formatSyncTime(value),
+    () => formatSyncTimeUtc(value),
+  );
+
+  return (
+    <time dateTime={value} title={full} className="text-sm text-muted-foreground">
+      {relative}
+    </time>
+  );
+}
+
+function GameCell({ item }: { item: AdminGameTrackQueueItemDto }) {
+  return (
+    <div className="min-w-0 max-w-xs space-y-0.5 whitespace-normal">
+      <p className="font-medium leading-snug">{item.title}</p>
+      <p className="text-xs text-muted-foreground">
+        {item.consoleName ?? "Unknown platform"}
+        {" · "}
+        <span className="tabular-nums">RA #{item.raGameId}</span>
+        {item.requestCount > 1 ? (
+          <>
+            {" · "}
+            {item.requestCount} requests
+          </>
+        ) : null}
+      </p>
+    </div>
+  );
+}
+
+function SourceCell({ item }: { item: AdminGameTrackQueueItemDto }) {
+  const isMemberRequest = item.source === 1;
+  return (
+    <div className="min-w-0 space-y-0.5 whitespace-normal text-sm">
+      <p className="text-muted-foreground">{sourceLabel(item.source)}</p>
+      {isMemberRequest && item.requestedByRaUsername ? (
+        <p className="text-xs text-muted-foreground">@{item.requestedByRaUsername}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function TrackQueueActions({
+  item,
+  pending,
+  onTrack,
+  onReject,
+  className,
+}: {
+  item: AdminGameTrackQueueItemDto;
+  pending: boolean;
+  onTrack: (id: string) => void;
+  onReject: (id: string) => void;
+  className?: string;
+}) {
+  if (item.status !== 0) {
+    return <span className="text-sm text-muted-foreground">—</span>;
+  }
+
+  return (
+    <div className={className}>
+      <Button
+        type="button"
+        size="icon-sm"
+        disabled={pending}
+        title="Track game"
+        aria-label="Track game"
+        onClick={() => onTrack(item.id)}
+      >
+        <Plus aria-hidden />
+      </Button>
+      <Button
+        type="button"
+        size="icon-sm"
+        variant="outline"
+        disabled={pending}
+        title="Dismiss from queue"
+        aria-label="Dismiss from queue"
+        onClick={() => onReject(item.id)}
+      >
+        <X aria-hidden />
+      </Button>
+    </div>
+  );
 }
 
 export function AdminGameTrackQueueSection({ items }: Props) {
@@ -51,13 +177,26 @@ export function AdminGameTrackQueueSection({ items }: Props) {
     });
   }
 
+  function runTrack(id: string) {
+    setError(null);
+    startTransition(async () => {
+      const result = await trackAdminGameTrackQueueItemAction(id);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      router.push(`/admin/games/${result.game.raGameId}`);
+      router.refresh();
+    });
+  }
+
   return (
     <section className="space-y-3 rounded border border-border p-5">
       <div>
         <h2 className="text-lg font-semibold">Track queue</h2>
         <p className="text-sm text-muted-foreground">
-          Games discovered from friend recent play. Winners are added via Game of the week or manual admin
-          tracking; dismiss items you do not want on the site.
+          Member requests and games from recent friend play. Track adds the game to the catalog; dismiss removes
+          items you do not want on the site.
         </p>
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -65,73 +204,79 @@ export function AdminGameTrackQueueSection({ items }: Props) {
         rows={items}
         rowKey={(item) => item.id}
         columns={[
-          { header: "Title", cellClassName: "font-medium", render: (item) => item.title },
           {
-            header: "Platform",
-            cellClassName: "text-muted-foreground",
-            render: (item) => item.consoleName ?? "—",
+            header: "Game",
+            cellClassName: "whitespace-normal",
+            render: (item) => <GameCell item={item} />,
           },
           {
-            header: "RA ID",
-            cellClassName: "tabular-nums",
-            render: (item) => item.raGameId,
+            header: "Source",
+            cellClassName: "whitespace-normal",
+            render: (item) => <SourceCell item={item} />,
           },
           {
-            header: "Enqueued",
-            cellClassName: "text-sm text-muted-foreground",
-            render: (item) => <FormattedSyncTime value={item.enqueuedAt} />,
+            header: "Queued",
+            cellClassName: "whitespace-normal",
+            render: (item) => <QueuedAt value={item.enqueuedAt} />,
           },
           {
             header: "Status",
-            cellClassName: "text-sm",
-            render: (item) => statusLabel(item.status),
+            render: (item) => (
+              <Badge variant={statusBadgeVariant(item.status)}>{statusLabel(item.status)}</Badge>
+            ),
           },
           {
-            header: "Actions",
-            headerClassName: "text-right",
-            cellClassName: "text-right",
-            render: (item) =>
-              item.status === 0 ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={pending}
-                  onClick={() => runReject(item.id)}
-                >
-                  Dismiss
-                </Button>
-              ) : (
-                <span className="text-sm text-muted-foreground">—</span>
-              ),
+            header: <span className="sr-only">Actions</span>,
+            headerClassName: `w-0 text-right ${stickyActionClassName}`,
+            cellClassName: `text-right ${stickyActionClassName}`,
+            render: (item) => (
+              <TrackQueueActions
+                item={item}
+                pending={pending}
+                onTrack={runTrack}
+                onReject={runReject}
+                className="inline-flex shrink-0 justify-end gap-1"
+              />
+            ),
           },
         ]}
         renderMobileCard={(item) => (
           <li key={item.id} className="rounded border border-border bg-card p-4 text-sm">
-            <p className="font-medium">{item.title}</p>
+            <GameCell item={item} />
             <DataFieldList
               className="mt-2"
               fields={[
-                { label: "Platform", value: item.consoleName ?? "—" },
-                { label: "RA ID", value: item.raGameId },
                 {
-                  label: "Enqueued",
-                  value: <FormattedSyncTime value={item.enqueuedAt} />,
+                  label: "Source",
+                  value: (
+                    <span>
+                      {sourceLabel(item.source)}
+                      {item.source === 1 && item.requestedByRaUsername
+                        ? ` (@${item.requestedByRaUsername})`
+                        : null}
+                    </span>
+                  ),
                 },
-                { label: "Status", value: statusLabel(item.status) },
+                {
+                  label: "Queued",
+                  value: <QueuedAt value={item.enqueuedAt} />,
+                },
+                {
+                  label: "Status",
+                  value: (
+                    <Badge variant={statusBadgeVariant(item.status)}>{statusLabel(item.status)}</Badge>
+                  ),
+                },
               ]}
             />
             {item.status === 0 ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="mt-3 w-full"
-                disabled={pending}
-                onClick={() => runReject(item.id)}
-              >
-                Dismiss
-              </Button>
+              <TrackQueueActions
+                item={item}
+                pending={pending}
+                onTrack={runTrack}
+                onReject={runReject}
+                className="mt-3 flex gap-2"
+              />
             ) : null}
           </li>
         )}

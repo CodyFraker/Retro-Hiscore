@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { AlertCircle } from "lucide-react";
+import { GameTrackRequestForm } from "@/components/games/game-track-request-form";
 import { TrackedGamesSection } from "@/components/dashboard/tracked-games-section";
+import type { GameTrackRequestQuotaDto } from "@/generated/api-client";
 import { GamesPendingTrackSection } from "@/components/games/games-pending-track-section";
 import { TrackedGamesToolbar } from "@/components/dashboard/tracked-games-toolbar";
 import { PageHero } from "@/components/layout/page-hero";
@@ -27,6 +29,7 @@ export default async function GamesIndexPage({ searchParams }: Props) {
 
   let gamesPage;
   let trackQueue: Awaited<ReturnType<Awaited<ReturnType<typeof getServerApiClient>>["getGameTrackQueue"]>> = [];
+  let trackQuota: GameTrackRequestQuotaDto | null = null;
   let error: string | null = null;
 
   try {
@@ -35,6 +38,11 @@ export default async function GamesIndexPage({ searchParams }: Props) {
       trackQueue = await api.getGameTrackQueue();
     } catch {
       trackQueue = [];
+    }
+    try {
+      trackQuota = await api.getGameTrackRequestQuota();
+    } catch {
+      trackQuota = null;
     }
     gamesPage = await api.getDashboardGames(
       TRACKED_GAMES_PAGE_SIZE,
@@ -76,18 +84,21 @@ export default async function GamesIndexPage({ searchParams }: Props) {
           {error}
         </p>
       ) : (
-        gamesPage && (
-          <TrackedGamesSection
-            basePath="/games"
-            page={gamesPage}
-            query={query}
-            sort={sort}
-            showHeading={false}
-            showToolbar={false}
-          />
-        )
+        <>
+          <GameTrackRequestForm initialQuota={trackQuota} />
+          {gamesPage ? (
+            <TrackedGamesSection
+              basePath="/games"
+              page={gamesPage}
+              query={query}
+              sort={sort}
+              showHeading={false}
+              showToolbar={false}
+            />
+          ) : null}
+          <GamesPendingTrackSection items={trackQueue} />
+        </>
       )}
-      {!error ? <GamesPendingTrackSection items={trackQueue} /> : null}
     </div>
   );
 }

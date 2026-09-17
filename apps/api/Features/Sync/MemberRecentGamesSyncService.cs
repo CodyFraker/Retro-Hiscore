@@ -19,6 +19,7 @@ public sealed class MemberRecentGamesSyncService(
     IRaApiKeyPool apiKeyPool,
     IConsoleIconSyncService consoleIconSync,
     IGameTrackQueueService gameTrackQueueService,
+    ILeaderboardSyncActivityEnqueueService leaderboardSyncActivityEnqueue,
     IOptions<SyncOptions> syncOptions,
     ILogger<MemberRecentGamesSyncService> logger) : IMemberRecentGamesSyncService
 {
@@ -31,16 +32,19 @@ public sealed class MemberRecentGamesSyncService(
             .ToListAsync(cancellationToken);
 
         var consoleIds = new HashSet<int>();
+        var allChanges = new List<MemberRecentGamePlayChange>();
 
         foreach (var member in members)
         {
             try
             {
-                var ids = await SyncMemberInternalAsync(member, syncedAt, cancellationToken);
-                foreach (var id in ids)
+                var result = await SyncMemberInternalAsync(member, syncedAt, cancellationToken);
+                foreach (var id in result.ConsoleIds)
                 {
                     consoleIds.Add(id);
                 }
+
+                allChanges.AddRange(result.Changes);
             }
             catch (Exception ex)
             {
@@ -63,6 +67,10 @@ public sealed class MemberRecentGamesSyncService(
         }
 
         await gameTrackQueueService.EnqueueEligibleAsync(syncedAt, cancellationToken);
+        await leaderboardSyncActivityEnqueue.EnqueueForMemberChangesAsync(
+            allChanges,
+            SyncTrigger.Scheduled,
+            cancellationToken);
     }
 
     public async Task SyncMemberAsync(
@@ -70,10 +78,10 @@ public sealed class MemberRecentGamesSyncService(
         DateTimeOffset syncedAt,
         CancellationToken cancellationToken = default)
     {
-        var consoleIds = await SyncMemberInternalAsync(member, syncedAt, cancellationToken);
+        var result = await SyncMemberInternalAsync(member, syncedAt, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
 
-        foreach (var consoleId in consoleIds)
+        foreach (var consoleId in result.ConsoleIds)
         {
             try
             {
@@ -86,29 +94,41 @@ public sealed class MemberRecentGamesSyncService(
         }
 
         await gameTrackQueueService.EnqueueEligibleAsync(syncedAt, cancellationToken);
+        await leaderboardSyncActivityEnqueue.EnqueueForMemberChangesAsync(
+            result.Changes,
+            SyncTrigger.Scheduled,
+            cancellationToken);
     }
 
-    private async Task<HashSet<int>> SyncMemberInternalAsync(
+    private async Task<MemberRecentGamesSyncResult> SyncMemberInternalAsync(
         Member member,
         DateTimeOffset syncedAt,
         CancellationToken cancellationToken)
     {
         var consoleIds = new HashSet<int>();
+        var changes = new List<MemberRecentGamePlayChange>();
         if (string.IsNullOrWhiteSpace(member.RaUsername))
         {
-            return consoleIds;
+            return new MemberRecentGamesSyncResult(consoleIds, changes);
         }
+
+        var trackedRaGameIds = await db.Games
+            .AsNoTracking()
+            .Select(g => g.RaGameId)
+            .ToListAsync(cancellationToken);
+        var trackedSet = trackedRaGameIds.ToHashSet();
 
         var identity = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername!;
         var preferredKeys = string.IsNullOrWhiteSpace(member.RaApiKey)
             ? Array.Empty<string>()
             : new[] { member.RaApiKey };
 
+        var fetchCount = Math.Clamp(_syncOptions.RecentGamesPerMember, 1, 50);
         var games = await apiKeyPool.ExecuteAsync(
             preferredKeys,
             (key, ct) => raApiClient.GetUserRecentlyPlayedGamesAsync(
                 identity,
-                _syncOptions.RecentGamesPerMember,
+                fetchCount,
                 0,
                 key,
                 ct),
@@ -117,7 +137,9 @@ public sealed class MemberRecentGamesSyncService(
         var existing = await db.MemberRecentGamePlays
             .Where(p => p.MemberId == member.Id)
             .ToListAsync(cancellationToken);
-        db.MemberRecentGamePlays.RemoveRange(existing);
+        var existingByRaGameId = existing.ToDictionary(p => p.RaGameId);
+
+        var returnedRaGameIds = new HashSet<int>();
 
         foreach (var game in games)
         {
@@ -126,28 +148,77 @@ public sealed class MemberRecentGamesSyncService(
                 continue;
             }
 
+            returnedRaGameIds.Add(game.GameId);
             var lastPlayed = RaDateTime.Parse(game.LastPlayed) ?? syncedAt;
             var numPossible = game.NumPossibleAchievements ?? game.AchievementsTotal ?? 0;
             var numAchieved = game.NumAchieved ?? 0;
 
             consoleIds.Add(game.ConsoleId);
 
-            db.MemberRecentGamePlays.Add(new MemberRecentGamePlay
+            var isNewOrUpdated = false;
+            if (existingByRaGameId.TryGetValue(game.GameId, out var row))
             {
-                MemberId = member.Id,
-                RaGameId = game.GameId,
-                Title = game.Title.Trim(),
-                ConsoleId = game.ConsoleId,
-                ConsoleName = game.ConsoleName,
-                ImageIcon = game.ImageIcon,
-                ImageBoxArt = game.ImageBoxArt,
-                LastPlayedAt = lastPlayed,
-                NumAchieved = numAchieved,
-                NumPossibleAchievements = numPossible,
-                SyncedAt = syncedAt
-            });
+                isNewOrUpdated = lastPlayed > row.LastPlayedAt
+                    || numAchieved > row.NumAchieved
+                    || numPossible > row.NumPossibleAchievements;
+
+                row.Title = game.Title.Trim();
+                row.ConsoleId = game.ConsoleId;
+                row.ConsoleName = game.ConsoleName;
+                row.ImageIcon = game.ImageIcon;
+                row.ImageBoxArt = game.ImageBoxArt;
+                row.LastPlayedAt = lastPlayed;
+                row.NumAchieved = numAchieved;
+                row.NumPossibleAchievements = numPossible;
+                row.SyncedAt = syncedAt;
+            }
+            else
+            {
+                isNewOrUpdated = true;
+                db.MemberRecentGamePlays.Add(new MemberRecentGamePlay
+                {
+                    MemberId = member.Id,
+                    RaGameId = game.GameId,
+                    Title = game.Title.Trim(),
+                    ConsoleId = game.ConsoleId,
+                    ConsoleName = game.ConsoleName,
+                    ImageIcon = game.ImageIcon,
+                    ImageBoxArt = game.ImageBoxArt,
+                    LastPlayedAt = lastPlayed,
+                    NumAchieved = numAchieved,
+                    NumPossibleAchievements = numPossible,
+                    SyncedAt = syncedAt
+                });
+            }
+
+            changes.Add(new MemberRecentGamePlayChange(
+                member.Id,
+                game.GameId,
+                lastPlayed,
+                numAchieved,
+                numPossible,
+                isNewOrUpdated));
         }
 
-        return consoleIds;
+        foreach (var row in existing)
+        {
+            if (returnedRaGameIds.Contains(row.RaGameId))
+            {
+                continue;
+            }
+
+            if (trackedSet.Contains(row.RaGameId))
+            {
+                continue;
+            }
+
+            db.MemberRecentGamePlays.Remove(row);
+        }
+
+        return new MemberRecentGamesSyncResult(consoleIds, changes);
     }
+
+    private sealed record MemberRecentGamesSyncResult(
+        HashSet<int> ConsoleIds,
+        List<MemberRecentGamePlayChange> Changes);
 }

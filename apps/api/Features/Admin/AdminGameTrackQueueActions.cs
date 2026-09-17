@@ -40,5 +40,8 @@ public static class AdminGameTrackQueueActions
             item.ConsoleName,
             item.EnqueuedAt,
             item.ResolvedAt,
-            item.FailureMessage);
+            item.FailureMessage,
+            item.Source,
+            item.RequestedByMember?.RaUsername,
+            item.RequestCount);
 }

@@ -3,9 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ConsoleName } from "@/components/console-name";
 import { GameCardPlayerAvatars } from "@/components/dashboard/game-card-player-avatars";
+import { RaGameModBadges } from "@/components/game/ra-game-mod-badges";
 import { Button } from "@/components/ui/button";
 import type { DashboardGameDto } from "@/generated/api-client";
 import { FormattedSyncTime } from "@/components/formatted-sync-time";
+import { parseRaGameTitle } from "@/lib/ra-game-title";
 import { LastSyncedLabel } from "@/components/sync/last-synced-label";
 import { LeaderboardSyncTierBadge } from "@/components/sync/leaderboard-sync-tier-badge";
 
@@ -17,6 +19,7 @@ type Props = {
 
 export function GameCard({ game, onDelete, deleting }: Props) {
   const artUrl = game.imageBoxArtUrl ?? game.imageIconUrl;
+  const { displayTitle, modTags } = parseRaGameTitle(game.title);
 
   return (
     <li>
@@ -30,7 +33,7 @@ export function GameCard({ game, onDelete, deleting }: Props) {
               {artUrl ? (
                 <Image
                   src={artUrl}
-                  alt={game.title}
+                  alt={displayTitle}
                   fill
                   className="object-cover"
                   sizes="64px"
@@ -42,10 +45,15 @@ export function GameCard({ game, onDelete, deleting }: Props) {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              
-              <div className="mt-1 flex flex-wrap items-center gap-2">
-              <p className="truncate text-xl font-medium">{game.title}</p>
-                <LeaderboardSyncTierBadge status={game.leaderboardSyncStatus} />
+              <div className="mt-1 flex min-w-0 items-start gap-1.5">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-xl font-medium">{displayTitle}</p>
+                    <RaGameModBadges modTags={modTags} />
+                    <LeaderboardSyncTierBadge status={game.leaderboardSyncStatus} />
+                  </div>
+                </div>
+                
               </div>
               <p className="mt-1">
                 <ConsoleName
@@ -81,7 +89,7 @@ export function GameCard({ game, onDelete, deleting }: Props) {
             size="icon-sm"
             className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0"
             disabled={deleting}
-            aria-label={`Stop tracking ${game.title}`}
+            aria-label={`Stop tracking ${displayTitle}`}
             onClick={onDelete}
           >
             <Trash2 className="size-4" />

@@ -158,6 +158,14 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       );
     },
+    postGameTrackRequest: (raGameId: number) =>
+      request<GameTrackRequestSubmitResponse>(baseUrl, "/api/games/track-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raGameId }),
+      }, fetchImpl),
+    getGameTrackRequestQuota: () =>
+      request<GameTrackRequestQuotaDto>(baseUrl, "/api/games/track-requests/quota", undefined, fetchImpl),
     getSyncHealth: () =>
       request<SyncHealthResponse>(baseUrl, "/api/sync/health", undefined, fetchImpl),
     getSearch: (q: string, limit?: number) => {
@@ -493,12 +501,26 @@ export function createApiClient(options: ApiClientOptions) {
         undefined,
         fetchImpl,
       ),
+    postAdminGameOfTheWeekClosePoll: () =>
+      request<GameOfTheWeekCurrentPollDto>(
+        baseUrl,
+        "/api/admin/game-of-the-week/polls/current/close",
+        { method: "POST" },
+        fetchImpl,
+      ),
     getAdminGameTrackQueue: () =>
       request<AdminGameTrackQueueItemDto[]>(baseUrl, "/api/admin/game-track-queue", undefined, fetchImpl),
     postAdminGameTrackQueueReject: (id: string) =>
       request<AdminGameTrackQueueItemDto>(
         baseUrl,
         \`/api/admin/game-track-queue/\${id}/reject\`,
+        { method: "POST" },
+        fetchImpl,
+      ),
+    postAdminGameTrackQueueTrack: (id: string) =>
+      request<AdminGameDto>(
+        baseUrl,
+        \`/api/admin/game-track-queue/\${id}/track\`,
         { method: "POST" },
         fetchImpl,
       ),

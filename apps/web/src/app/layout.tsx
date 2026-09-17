@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import { AppSessionProvider } from "@/components/session-provider";
 import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AppSessionProvider>
           <SiteHeader />
           <main className="mx-auto min-w-0 w-full max-w-6xl flex-1 px-4 py-6 md:py-8">{children}</main>
+          <Toaster richColors closeButton position="top-center" />
         </AppSessionProvider>
       </body>
     </html>

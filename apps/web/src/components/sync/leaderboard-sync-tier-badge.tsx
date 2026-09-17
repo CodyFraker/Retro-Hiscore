@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { Flame, Snowflake } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import type { GameLeaderboardSyncStatusDto } from "@/generated/api-client";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +27,7 @@ export function LeaderboardSyncTierBadge({
   className,
   learnMoreHref = "/settings",
 }: Props) {
+  const router = useRouter();
   const isHot = status.tier === "Hot" && !status.leaderboardSyncForcedCold;
   const label = leaderboardSyncTierLabel(status.tier, status.leaderboardSyncForcedCold);
   const description = useSyncExternalStore(
@@ -40,6 +42,8 @@ export function LeaderboardSyncTierBadge({
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge
           variant="outline"
+          aria-label={label}
+          title={label}
           className={cn(
             "border-2 bg-card/80 font-semibold",
             isHot
@@ -47,7 +51,11 @@ export function LeaderboardSyncTierBadge({
               : "border-border text-foreground",
           )}
         >
-          {label}
+          {isHot ? (
+            <Flame className="size-3.5 shrink-0" aria-hidden />
+          ) : (
+            <Snowflake className="size-3.5 shrink-0" aria-hidden />
+          )}
         </Badge>
         {status.leaderboardSyncIsDue ? (
           <Badge
@@ -63,9 +71,17 @@ export function LeaderboardSyncTierBadge({
           </summary>
           <p id={detailsId} className="mt-1 max-w-sm text-muted-foreground">
             {description}{" "}
-            <Link href={learnMoreHref} className="text-[var(--accent-retro)] hover:underline">
+            <button
+              type="button"
+              className="text-[var(--accent-retro)] hover:underline"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                router.push(learnMoreHref);
+              }}
+            >
               Learn more
-            </Link>
+            </button>
           </p>
         </details>
       </div>

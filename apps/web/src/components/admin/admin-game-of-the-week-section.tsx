@@ -19,7 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { postAdminGameOfTheWeekPollAction } from "@/lib/actions/admin";
+import {
+  postAdminGameOfTheWeekClosePollAction,
+  postAdminGameOfTheWeekPollAction,
+} from "@/lib/actions/admin";
+import { GameOfTheWeekParticipation } from "@/components/game-of-the-week/game-of-the-week-participation";
+import { GameOfTheWeekVoterList } from "@/components/game-of-the-week/game-of-the-week-voter-list";
 import { parseRaGameIdInput } from "@/lib/dashboard-games";
 import {
   formatGameOfTheWeekPhase,
@@ -52,6 +57,8 @@ export function AdminGameOfTheWeekSection({ currentPoll, history }: Props) {
 
   const previewGameLabels = parsedSeedIds.map((id) => `RA #${id}`);
 
+  const PHASE_OPEN = 1;
+
   return (
     <div className="space-y-10">
       {currentPoll ? (
@@ -65,6 +72,39 @@ export function AdminGameOfTheWeekSection({ currentPoll, history }: Props) {
           <p className="text-sm text-muted-foreground">
             Ballot {currentPoll.ballot.length}/5 · {formatGameOfTheWeekTrackingStatus(currentPoll.trackingStatus)}
           </p>
+          {currentPoll.phase === PHASE_OPEN && currentPoll.closedAt == null ? (
+            <>
+              <GameOfTheWeekParticipation poll={currentPoll} />
+              {currentPoll.allEligibleVotesCast ? (
+                <p className="rounded border border-[var(--accent-retro)]/30 bg-[var(--accent-retro)]/5 px-3 py-2 text-sm">
+                  All members have voted. You can close the poll to declare the winner.
+                </p>
+              ) : null}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() => {
+                    if (!window.confirm("Close this poll and declare the winner? You can close early if not everyone has voted.")) {
+                      return;
+                    }
+                    setError(null);
+                    startTransition(async () => {
+                      const result = await postAdminGameOfTheWeekClosePollAction();
+                      if (!result.ok) {
+                        setError(result.error);
+                        return;
+                      }
+                      router.refresh();
+                    });
+                  }}
+                >
+                  Close poll & declare winner
+                </Button>
+              </div>
+            </>
+          ) : null}
           {currentPoll.winnerRaGameId != null ? (
             <p className="text-sm">
               Winner:{" "}
@@ -86,6 +126,7 @@ export function AdminGameOfTheWeekSection({ currentPoll, history }: Props) {
                 <TableRow>
                   <TableHead>Game</TableHead>
                   <TableHead className="text-right">Votes</TableHead>
+                  <TableHead>Voters</TableHead>
                   <TableHead>On site</TableHead>
                 </TableRow>
               </TableHeader>
@@ -101,8 +142,14 @@ export function AdminGameOfTheWeekSection({ currentPoll, history }: Props) {
                       {item.consoleName ? (
                         <p className="text-xs text-muted-foreground">{item.consoleName}</p>
                       ) : null}
+                      {item.addedByDisplayName ? (
+                        <p className="text-xs text-muted-foreground">Nominated by {item.addedByDisplayName}</p>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-right">{item.voteCount}</TableCell>
+                    <TableCell>
+                      <GameOfTheWeekVoterList voters={item.voters} compact maxNames={5} />
+                    </TableCell>
                     <TableCell>{item.isTracked ? "Yes" : "No"}</TableCell>
                   </TableRow>
                 ))}

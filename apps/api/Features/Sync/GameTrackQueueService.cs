@@ -113,7 +113,8 @@ public sealed class GameTrackQueueService(
                 Status = GameTrackQueueStatus.Pending,
                 Title = snapshot.Title,
                 ConsoleName = snapshot.ConsoleName,
-                EnqueuedAt = syncedAt
+                EnqueuedAt = syncedAt,
+                Source = GameTrackQueueSource.RecentPlay
             });
             blockedSet.Add(raGameId);
         }

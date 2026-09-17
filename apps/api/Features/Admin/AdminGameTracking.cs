@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
+using RetroHiscore.Api.Features.Games;
 using RetroHiscore.Api.Features.Ra;
 using RetroHiscore.Api.Features.Sync;
 
@@ -15,6 +16,8 @@ public static class AdminGameTracking
         IRaApiClient raApiClient,
         IRaApiKeyPool apiKeyPool,
         ILeaderboardSyncService leaderboardSync,
+        ILeaderboardSyncJobEnqueuer jobEnqueuer,
+        ISyncSettingsStore syncSettingsStore,
         IConsoleIconSyncService consoleIconSync,
         IOptions<RaOptions> raOptions,
         CancellationToken ct,
@@ -56,11 +59,19 @@ public static class AdminGameTracking
 
         if (syncMemberScores)
         {
-            await leaderboardSync.SyncGameWithRunAsync(
+            await leaderboardSync.SyncGameShellWithRunAsync(
                 game,
                 SyncTrigger.Manual,
                 enqueueGameTrackedNotification: true,
                 ct);
+
+            await LeaderboardSyncJobEnqueueExtensions.EnqueueEligibleMemberGameSyncsAsync(
+                jobEnqueuer,
+                db,
+                syncSettingsStore,
+                raGameId,
+                SyncTrigger.Manual,
+                cancellationToken: ct);
 
             if (game.ConsoleId is int consoleId)
             {
@@ -71,6 +82,8 @@ public static class AdminGameTracking
         {
             await consoleIconSync.EnsureConsoleIconAsync(consoleId, ct);
         }
+
+        await GameTrackQueueCompletionService.CompletePendingForGameAsync(raGameId, null, db, ct);
 
         return (game, null);
     }

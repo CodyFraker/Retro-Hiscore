@@ -2,6 +2,11 @@ using RetroHiscore.Api.Domain;
 
 namespace RetroHiscore.Api.Features.GameOfTheWeek;
 
+public sealed record GameOfTheWeekVoteCastDto(
+    Guid MemberId,
+    string DisplayName,
+    DateTimeOffset CastAt);
+
 public sealed record GameOfTheWeekBallotItemDto(
     int RaGameId,
     string Title,
@@ -10,7 +15,9 @@ public sealed record GameOfTheWeekBallotItemDto(
     int SortOrder,
     bool IsTracked,
     int VoteCount,
-    Guid? AddedByMemberId);
+    Guid? AddedByMemberId,
+    string? AddedByDisplayName,
+    IReadOnlyList<GameOfTheWeekVoteCastDto> Voters);
 
 public sealed record GameOfTheWeekCurrentPollDto(
     Guid PollId,
@@ -22,7 +29,10 @@ public sealed record GameOfTheWeekCurrentPollDto(
     GameOfTheWeekTrackingStatus TrackingStatus,
     int? MyVoteRaGameId,
     IReadOnlyList<GameOfTheWeekBallotItemDto> Ballot,
-    int BallotSlotsRemaining);
+    int BallotSlotsRemaining,
+    int EligibleVoterCount,
+    int VotesCastCount,
+    bool AllEligibleVotesCast);
 
 public sealed record PostGameOfTheWeekPollRequest(
     DateTimeOffset StartsAt,

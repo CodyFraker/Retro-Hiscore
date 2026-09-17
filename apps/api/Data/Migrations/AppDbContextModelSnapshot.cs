@@ -214,11 +214,20 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Property<int>("RaGameId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("RequestCount")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset?>("ResolvedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("RequestedByMemberId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("ResolvedByMemberId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -232,6 +241,8 @@ namespace RetroHiscore.Api.Data.Migrations
 
                     b.HasIndex("RaGameId");
 
+                    b.HasIndex("RequestedByMemberId");
+
                     b.HasIndex("ResolvedByMemberId");
 
                     b.HasIndex("Status");
@@ -239,6 +250,35 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.HasIndex("RaGameId", "Status");
 
                     b.ToTable("GameTrackQueues");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameTrackQueueRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("GameTrackQueueId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("RaGameId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameTrackQueueId");
+
+                    b.HasIndex("RaGameId");
+
+                    b.HasIndex("MemberId", "CreatedAt");
+
+                    b.ToTable("GameTrackQueueRequests");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.GameOfTheWeekBallotEntry", b =>
@@ -969,11 +1009,35 @@ namespace RetroHiscore.Api.Data.Migrations
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.GameTrackQueue", b =>
                 {
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "RequestedByMember")
+                        .WithMany()
+                        .HasForeignKey("RequestedByMemberId");
+
                     b.HasOne("RetroHiscore.Api.Domain.Member", "ResolvedByMember")
                         .WithMany()
                         .HasForeignKey("ResolvedByMemberId");
 
+                    b.Navigation("RequestedByMember");
+
                     b.Navigation("ResolvedByMember");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.GameTrackQueueRequest", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.GameTrackQueue", "GameTrackQueue")
+                        .WithMany()
+                        .HasForeignKey("GameTrackQueueId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GameTrackQueue");
+
+                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.GameOfTheWeekBallotEntry", b =>

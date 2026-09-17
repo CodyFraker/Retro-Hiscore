@@ -30,14 +30,10 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
-    public async Task Sync_SkipsMemberWithoutApiKey_ButSyncsOthers()
+    public async Task ShellSync_DoesNotCallUserGameLeaderboards()
     {
         // Arrange
-        await SetMemberApiKeyAsync("ShrimpPoboy", "shrimp-key");
-        await SetMemberApiKeyAsync("beefboybilly", null);
-        await SetMemberApiKeyAsync("xXScubXx", null);
-
-        SetupCatalogAndShrimpScores();
+        SetupCatalogOnly();
 
         using var scope = _factory.Services.CreateScope();
         var sync = scope.ServiceProvider.GetRequiredService<ILeaderboardSyncService>();
@@ -45,11 +41,11 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
         var game = await db.Games.FirstAsync();
 
         // Act
-        var run = await sync.SyncGameWithRunAsync(game, SyncTrigger.Manual);
+        var run = await sync.SyncGameShellWithRunAsync(game, SyncTrigger.Manual);
 
         // Assert
         run.Status.ShouldBe(SyncRunStatus.Succeeded);
-        await _factory.RaApiClient.Received(1).GetUserGameLeaderboardsAsync(
+        await _factory.RaApiClient.DidNotReceive().GetUserGameLeaderboardsAsync(
             Arg.Any<int>(),
             Arg.Any<string>(),
             Arg.Any<string?>(),
@@ -57,12 +53,12 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Sync_UsesMemberApiKey_ForUserGameLeaderboards()
+    public async Task MemberSync_UsesMemberApiKey_ForUserGameLeaderboards()
     {
         // Arrange
         await SetMemberApiKeyAsync("ShrimpPoboy", "shrimp-key");
         string? capturedKey = null;
-        SetupCatalogAndShrimpScores();
+        SetupShrimpUserScores();
         _factory.RaApiClient
             .GetUserGameLeaderboardsAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(call =>
@@ -91,9 +87,10 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
         var sync = scope.ServiceProvider.GetRequiredService<ILeaderboardSyncService>();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var game = await db.Games.FirstAsync();
+        var member = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
 
         // Act
-        await sync.SyncGameWithRunAsync(game, SyncTrigger.Manual);
+        await sync.SyncMemberGameWithRunAsync(game, member, SyncTrigger.Manual);
 
         // Assert
         capturedKey.ShouldBe("shrimp-key");
@@ -154,7 +151,7 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
         var game = await db.Games.FirstAsync();
 
         // Act
-        var run = await sync.SyncGameWithRunAsync(game, SyncTrigger.Manual);
+        var run = await sync.SyncGameShellWithRunAsync(game, SyncTrigger.Manual);
 
         // Assert
         run.Status.ShouldBe(SyncRunStatus.Succeeded);
@@ -168,7 +165,7 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
             Arg.Any<CancellationToken>());
     }
 
-    private void SetupCatalogAndShrimpScores()
+    private void SetupCatalogOnly()
     {
         _factory.RaApiClient
             .GetGameLeaderboardsAsync(Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
@@ -186,7 +183,10 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
                     }
                 ]);
             });
+    }
 
+    private void SetupShrimpUserScores()
+    {
         _factory.RaApiClient
             .GetUserGameLeaderboardsAsync(Arg.Any<int>(), "ShrimpPoboy", Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<RaUserGameLeaderboardDto>>(
@@ -206,6 +206,10 @@ public class LeaderboardSyncKeyTests : IAsyncLifetime
                     }
                 }
             ]));
+
+        _factory.RaApiClient
+            .GetGameInfoAndUserProgressAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<RaGameInfoAndUserProgressDto?>(null));
     }
 
     private async Task SetMemberApiKeyAsync(string raUsername, string? apiKey)

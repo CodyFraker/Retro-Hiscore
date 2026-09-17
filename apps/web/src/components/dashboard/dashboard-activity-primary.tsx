@@ -23,6 +23,7 @@ type Props = {
   gameOfTheWeekLastWinner?: GameOfTheWeekHistoryItemDto | null;
   groupActivity?: DashboardGroupActivityResponse | null;
   isAdmin?: boolean;
+  currentMemberId?: string | null;
 };
 
 export function DashboardActivityPrimary({
@@ -35,10 +36,16 @@ export function DashboardActivityPrimary({
   gameOfTheWeekLastWinner,
   groupActivity,
   isAdmin = false,
+  currentMemberId,
 }: Props) {
   return (
     <div className="space-y-8">
-      <GameOfTheWeekDashboardCard poll={gameOfTheWeekPoll} lastWinner={gameOfTheWeekLastWinner} />
+      <GameOfTheWeekDashboardCard
+        poll={gameOfTheWeekPoll}
+        lastWinner={gameOfTheWeekLastWinner}
+        isAdmin={isAdmin}
+        currentMemberId={currentMemberId}
+      />
       {groupActivity ? <DashboardGroupActivityCard activity={groupActivity} /> : null}
       <ChampionshipStandings rows={championship} memberCount={memberCount} limit={5} />
       <DashboardRecentAchievementsCard

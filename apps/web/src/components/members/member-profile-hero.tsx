@@ -55,8 +55,8 @@ export function MemberProfileHero({ detail, raSummary }: Props) {
         All members
       </Link>
 
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start">
-        <div className="min-w-0 space-y-2">
+      <div className="min-w-0 space-y-6">
+        <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-4">
             <MemberAvatar
               avatarUrl={detail.avatarUrl}
@@ -81,13 +81,11 @@ export function MemberProfileHero({ detail, raSummary }: Props) {
           ) : null}
         </div>
 
-        <div className="min-w-0">
-          <MemberRaStatsRow
-            friendRankOnes={detail.friendRankOnes}
-            boardsWithScore={detail.boardsWithScore}
-            summary={summary}
-          />
-        </div>
+        <MemberRaStatsRow
+          friendRankOnes={detail.friendRankOnes}
+          boardsWithScore={detail.boardsWithScore}
+          summary={summary}
+        />
       </div>
     </div>
   );

@@ -19,6 +19,8 @@ public sealed class GameOfTheWeekWinnerTrackingService(
     IRaApiClient raApiClient,
     IRaApiKeyPool apiKeyPool,
     ILeaderboardSyncService leaderboardSync,
+    ILeaderboardSyncJobEnqueuer jobEnqueuer,
+    ISyncSettingsStore syncSettingsStore,
     IConsoleIconSyncService consoleIconSync,
     IOptions<RaOptions> raOptions,
     ILogger<GameOfTheWeekWinnerTrackingService> logger) : IGameOfTheWeekWinnerTrackingService
@@ -49,6 +51,8 @@ public sealed class GameOfTheWeekWinnerTrackingService(
                 raApiClient,
                 apiKeyPool,
                 leaderboardSync,
+                jobEnqueuer,
+                syncSettingsStore,
                 consoleIconSync,
                 raOptions,
                 ct);

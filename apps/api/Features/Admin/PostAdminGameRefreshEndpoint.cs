@@ -29,13 +29,19 @@ public static class PostAdminGameRefreshEndpoint
                 return error;
             }
 
-            jobEnqueuer.EnqueueFullGameSync(raGameId, SyncTrigger.Manual);
+            await LeaderboardSyncJobEnqueueExtensions.EnqueueGameShellAndEligibleMembersAsync(
+                jobEnqueuer,
+                db,
+                syncSettingsStore,
+                raGameId,
+                SyncTrigger.Manual,
+                cancellationToken: ct);
 
             var dto = await AdminGameMapper.ToDtoAsync(db, game!, raOptions, syncSettingsStore, ct);
             return Results.Ok(dto);
         })
         .WithName("PostAdminGameRefresh")
         .WithTags("Admin")
-        .WithSummary("Refreshes RetroAchievements metadata and queues a full friend leaderboard sync for one tracked game.")
+        .WithSummary("Refreshes RetroAchievements metadata and queues game-shell plus member-game leaderboard sync for members recently on this title.")
         .RequireAdmin();
 }

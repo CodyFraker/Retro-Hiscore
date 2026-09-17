@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
+using RetroHiscore.Api.Infrastructure;
 
 namespace RetroHiscore.Api.Features.GameOfTheWeek;
 
@@ -21,13 +22,40 @@ public static class GameOfTheWeekPollMapper
             .OrderBy(e => e.SortOrder)
             .ToListAsync(ct);
 
-        var voteCounts = await db.GameOfTheWeekVotes
+        var voteRows = await db.GameOfTheWeekVotes
             .AsNoTracking()
             .Where(v => v.PollId == poll.Id)
-            .GroupBy(v => v.RaGameId)
-            .Select(g => new { RaGameId = g.Key, Count = g.Count() })
+            .Include(v => v.Member)
+            .OrderBy(v => v.CastAt)
             .ToListAsync(ct);
-        var countByRaGameId = voteCounts.ToDictionary(x => x.RaGameId, x => x.Count);
+
+        var countByRaGameId = voteRows
+            .GroupBy(v => v.RaGameId)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var votersByRaGameId = voteRows
+            .GroupBy(v => v.RaGameId)
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<GameOfTheWeekVoteCastDto>)g
+                    .Select(v => new GameOfTheWeekVoteCastDto(
+                        v.MemberId,
+                        MemberAuthHelper.DisplayLabel(v.Member),
+                        v.CastAt))
+                    .ToList());
+
+        var nominatorIds = entries
+            .Where(e => e.AddedByMemberId is Guid)
+            .Select(e => e.AddedByMemberId!.Value)
+            .Distinct()
+            .ToList();
+
+        var nominatorLabels = nominatorIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await db.Members
+                .AsNoTracking()
+                .Where(m => nominatorIds.Contains(m.Id))
+                .ToDictionaryAsync(m => m.Id, MemberAuthHelper.DisplayLabel, ct);
 
         var trackedIds = await db.Games
             .AsNoTracking()
@@ -39,22 +67,35 @@ public static class GameOfTheWeekPollMapper
         int? myVote = null;
         if (memberId is Guid mid)
         {
-            myVote = await db.GameOfTheWeekVotes
-                .AsNoTracking()
-                .Where(v => v.PollId == poll.Id && v.MemberId == mid)
+            myVote = voteRows
+                .Where(v => v.MemberId == mid)
                 .Select(v => (int?)v.RaGameId)
-                .FirstOrDefaultAsync(ct);
+                .FirstOrDefault();
         }
 
-        var ballot = entries.Select(e => new GameOfTheWeekBallotItemDto(
-            e.RaGameId,
-            e.Title,
-            e.ConsoleName,
-            e.ImageIcon,
-            e.SortOrder,
-            trackedSet.Contains(e.RaGameId),
-            countByRaGameId.GetValueOrDefault(e.RaGameId),
-            e.AddedByMemberId)).ToList();
+        var ballot = entries.Select(e =>
+        {
+            var addedByDisplayName = e.AddedByMemberId is Guid nominatorId
+                && nominatorLabels.TryGetValue(nominatorId, out var label)
+                ? label
+                : null;
+
+            return new GameOfTheWeekBallotItemDto(
+                e.RaGameId,
+                e.Title,
+                e.ConsoleName,
+                e.ImageIcon,
+                e.SortOrder,
+                trackedSet.Contains(e.RaGameId),
+                countByRaGameId.GetValueOrDefault(e.RaGameId),
+                e.AddedByMemberId,
+                addedByDisplayName,
+                votersByRaGameId.GetValueOrDefault(e.RaGameId) ?? []);
+        }).ToList();
+
+        var eligibleVoterCount = await db.Members.CountAsync(m => m.RaUsername != null, ct);
+        var votesCastCount = voteRows.Count;
+        var allEligibleVotesCast = eligibleVoterCount > 0 && votesCastCount >= eligibleVoterCount;
 
         return new GameOfTheWeekCurrentPollDto(
             poll.Id,
@@ -66,6 +107,9 @@ public static class GameOfTheWeekPollMapper
             poll.TrackingStatus,
             myVote,
             ballot,
-            Math.Max(0, GameOfTheWeekConstants.MaxBallotSize - entries.Count));
+            Math.Max(0, GameOfTheWeekConstants.MaxBallotSize - entries.Count),
+            eligibleVoterCount,
+            votesCastCount,
+            allEligibleVotesCast);
     }
 }

@@ -6,6 +6,7 @@ import { GameCardPlayerAvatars } from "@/components/dashboard/game-card-player-a
 import { RaGameModBadges } from "@/components/game/ra-game-mod-badges";
 import { FormattedSyncTime } from "@/components/formatted-sync-time";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RequestGameTrackingButton } from "@/components/games/request-game-tracking-button";
 import type { RecentGroupGameDto } from "@/generated/api-client";
 import { parseRaGameTitle } from "@/lib/ra-game-title";
 
@@ -84,18 +85,18 @@ export function GroupRecentGamesCard({ games, isAdmin = false }: Props) {
                       <FormattedSyncTime value={game.lastPlayedAt} />
                     </p>
                     {!game.isTracked ? (
-                      <p className="text-xs text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
                         {isAdmin ? (
                           <Link
                             href="/admin/games"
-                            className="text-foreground underline-offset-4 hover:underline"
+                            className="text-xs text-foreground underline-offset-4 hover:underline"
                           >
                             Review in game track queue
                           </Link>
                         ) : (
-                          "Ask an admin to track this game."
+                          <RequestGameTrackingButton raGameId={game.raGameId} title={displayTitle} />
                         )}
-                      </p>
+                      </div>
                     ) : null}
                     {game.players.length > 0 ? (
                       <GameCardPlayerAvatars

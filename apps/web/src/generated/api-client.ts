@@ -517,6 +517,9 @@ export interface AdminGameTrackQueueItemDto {
   enqueuedAt: string;
   resolvedAt?: string | null;
   failureMessage?: string | null;
+  source: number;
+  requestedByRaUsername?: string | null;
+  requestCount: number;
 }
 
 export interface AdminGameDto {
@@ -567,6 +570,12 @@ export interface PostGameOfTheWeekPollRequest {
   raGameIds: number[];
 }
 
+export interface GameOfTheWeekVoteCastDto {
+  memberId: string;
+  displayName: string;
+  castAt: string;
+}
+
 export interface GameOfTheWeekBallotItemDto {
   raGameId: number;
   title: string;
@@ -576,6 +585,8 @@ export interface GameOfTheWeekBallotItemDto {
   isTracked: boolean;
   voteCount: number;
   addedByMemberId?: string | null;
+  addedByDisplayName?: string | null;
+  voters: GameOfTheWeekVoteCastDto[];
 }
 
 export interface GameOfTheWeekCurrentPollDto {
@@ -589,6 +600,9 @@ export interface GameOfTheWeekCurrentPollDto {
   myVoteRaGameId?: number | null;
   ballot: GameOfTheWeekBallotItemDto[];
   ballotSlotsRemaining: number;
+  eligibleVoterCount: number;
+  votesCastCount: number;
+  allEligibleVotesCast: boolean;
 }
 
 export interface GameOfTheWeekHistoryItemDto {
@@ -669,6 +683,23 @@ export interface GameTrackQueueItemDto {
   status: string;
   enqueuedAt: string;
   resolvedAt?: string | null;
+  source: string;
+  requestCount: number;
+}
+
+export interface GameTrackRequestSubmitResponse {
+  code: string;
+  raGameId: number;
+  title: string;
+  message?: string | null;
+  nextSlotAt?: string | null;
+}
+
+export interface GameTrackRequestQuotaDto {
+  limit: number;
+  used: number;
+  remaining: number;
+  nextSlotAt?: string | null;
 }
 
 export interface MemberSelfSyncIssueDto {
@@ -932,11 +963,8 @@ export interface RecurringJobSnapshotDto {
   configuredIntervalDays?: number | null;
 }
 
-export type DiscordNotificationEventKind =
-  | "GameTracked"
-  | "LeaderboardFriendOvertake"
-  | "LeaderboardNewSubmission"
-  | "AchievementUnlocked";
+export interface DiscordNotificationEventKind {
+}
 
 export interface AdminDiscordWebhookSummaryDto {
   id: string;
@@ -1150,6 +1178,14 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       );
     },
+    postGameTrackRequest: (raGameId: number) =>
+      request<GameTrackRequestSubmitResponse>(baseUrl, "/api/games/track-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raGameId }),
+      }, fetchImpl),
+    getGameTrackRequestQuota: () =>
+      request<GameTrackRequestQuotaDto>(baseUrl, "/api/games/track-requests/quota", undefined, fetchImpl),
     getSyncHealth: () =>
       request<SyncHealthResponse>(baseUrl, "/api/sync/health", undefined, fetchImpl),
     getSearch: (q: string, limit?: number) => {
@@ -1485,12 +1521,26 @@ export function createApiClient(options: ApiClientOptions) {
         undefined,
         fetchImpl,
       ),
+    postAdminGameOfTheWeekClosePoll: () =>
+      request<GameOfTheWeekCurrentPollDto>(
+        baseUrl,
+        "/api/admin/game-of-the-week/polls/current/close",
+        { method: "POST" },
+        fetchImpl,
+      ),
     getAdminGameTrackQueue: () =>
       request<AdminGameTrackQueueItemDto[]>(baseUrl, "/api/admin/game-track-queue", undefined, fetchImpl),
     postAdminGameTrackQueueReject: (id: string) =>
       request<AdminGameTrackQueueItemDto>(
         baseUrl,
         `/api/admin/game-track-queue/${id}/reject`,
+        { method: "POST" },
+        fetchImpl,
+      ),
+    postAdminGameTrackQueueTrack: (id: string) =>
+      request<AdminGameDto>(
+        baseUrl,
+        `/api/admin/game-track-queue/${id}/track`,
         { method: "POST" },
         fetchImpl,
       ),

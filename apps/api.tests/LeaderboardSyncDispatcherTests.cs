@@ -73,7 +73,7 @@ public class LeaderboardSyncDispatcherTests : IAsyncLifetime
 
         // Assert
         count.ShouldBe(1);
-        recording.FullGameEnqueues.Count.ShouldBe(1);
-        recording.FullGameEnqueues[0].RaGameId.ShouldBe(hotGame.RaGameId);
+        recording.GameShellEnqueues.Count.ShouldBe(1);
+        recording.GameShellEnqueues[0].RaGameId.ShouldBe(hotGame.RaGameId);
     }
 }

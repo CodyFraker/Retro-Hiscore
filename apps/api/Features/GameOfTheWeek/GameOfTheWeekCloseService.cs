@@ -7,6 +7,8 @@ namespace RetroHiscore.Api.Features.GameOfTheWeek;
 public interface IGameOfTheWeekCloseService
 {
     Task CloseDuePollsAsync(CancellationToken ct);
+
+    Task<(GameOfTheWeekPoll? Poll, IResult? Error)> CloseOpenBlockingPollAsync(CancellationToken ct);
 }
 
 public sealed class GameOfTheWeekCloseService(AppDbContext db, ILogger<GameOfTheWeekCloseService> logger) : IGameOfTheWeekCloseService
@@ -22,6 +24,30 @@ public sealed class GameOfTheWeekCloseService(AppDbContext db, ILogger<GameOfThe
         {
             await ClosePollAsync(poll, now, ct);
         }
+    }
+
+    public async Task<(GameOfTheWeekPoll? Poll, IResult? Error)> CloseOpenBlockingPollAsync(CancellationToken ct)
+    {
+        var poll = await GameOfTheWeekPollQueries.GetBlockingPollForUpdateAsync(db, ct);
+        if (poll is null)
+        {
+            return (null, Results.NotFound(new { message = "No active game-of-the-week poll." }));
+        }
+
+        if (poll.ClosedAt is not null)
+        {
+            return (null, Results.Conflict(new { message = "This poll is already closed." }));
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var phase = GameOfTheWeekPollQueries.ResolvePhase(poll, now);
+        if (phase != GameOfTheWeekPhase.Open)
+        {
+            return (null, Results.Conflict(new { message = "Only an open poll can be closed manually." }));
+        }
+
+        await ClosePollAsync(poll, now, ct);
+        return (poll, null);
     }
 
     private async Task ClosePollAsync(GameOfTheWeekPoll poll, DateTimeOffset closedAt, CancellationToken ct)

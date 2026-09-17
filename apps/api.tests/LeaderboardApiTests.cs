@@ -127,13 +127,19 @@ public class LeaderboardApiTests : IAsyncLifetime
             .GetLeaderboardEntryCountAsync(Arg.Any<long>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
             .Returns(10_247);
 
+        _factory.RaApiClient
+            .GetGameInfoAndUserProgressAsync(Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<RaGameInfoAndUserProgressDto?>(null));
+
         using var scope = _factory.Services.CreateScope();
         var sync = scope.ServiceProvider.GetRequiredService<ILeaderboardSyncService>();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var game = await db.Games.SingleAsync(g => g.RaGameId == 38130);
+        var shrimp = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
 
         // Act
-        var run = await sync.SyncGameWithRunAsync(game, SyncTrigger.Manual);
+        var run = await sync.SyncGameShellWithRunAsync(game, SyncTrigger.Manual);
+        await sync.SyncMemberGameWithRunAsync(game, shrimp, SyncTrigger.Manual);
         var client = _factory.CreateAuthenticatedClient();
         var payload = await client.GetFromJsonAsync<GameLeaderboardsResponse>("/api/games/38130/leaderboards", JsonOptions);
 

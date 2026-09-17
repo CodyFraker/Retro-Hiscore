@@ -10,4 +10,7 @@ public sealed record AdminGameTrackQueueItemDto(
     string? ConsoleName,
     DateTimeOffset EnqueuedAt,
     DateTimeOffset? ResolvedAt,
-    string? FailureMessage);
+    string? FailureMessage,
+    GameTrackQueueSource Source,
+    string? RequestedByRaUsername,
+    int RequestCount);

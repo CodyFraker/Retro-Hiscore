@@ -11,6 +11,11 @@ namespace RetroHiscore.Api.Features.Sync;
 
 public interface ILeaderboardSyncService
 {
+    Task<SyncRun> SyncGameShellWithRunAsync(
+        Game game,
+        SyncTrigger trigger,
+        bool enqueueGameTrackedNotification = false,
+        CancellationToken cancellationToken = default);
     Task<SyncRun> SyncGameWithRunAsync(
         Game game,
         SyncTrigger trigger,
@@ -104,7 +109,14 @@ public sealed class LeaderboardSyncService(
         return true;
     }
 
-    public async Task<SyncRun> SyncGameWithRunAsync(
+    public Task<SyncRun> SyncGameWithRunAsync(
+        Game game,
+        SyncTrigger trigger,
+        bool enqueueGameTrackedNotification = false,
+        CancellationToken cancellationToken = default)
+        => SyncGameShellWithRunAsync(game, trigger, enqueueGameTrackedNotification, cancellationToken);
+
+    public async Task<SyncRun> SyncGameShellWithRunAsync(
         Game game,
         SyncTrigger trigger,
         bool enqueueGameTrackedNotification = false,
@@ -136,7 +148,7 @@ public sealed class LeaderboardSyncService(
 
         try
         {
-            await SyncGameForMembersInternalAsync(game, memberIds: null, syncedAt, errors, cancellationToken);
+            await SyncGameShellInternalAsync(game, syncedAt, errors, cancellationToken);
             run.Status = errors.Count == 0 ? SyncRunStatus.Succeeded : SyncRunStatus.PartialSuccess;
             run.Error = errors.Count == 0 ? null : string.Join("; ", errors);
 
@@ -144,12 +156,10 @@ public sealed class LeaderboardSyncService(
             {
                 game.LeaderboardScoresSyncedAt = syncedAt;
             }
-
-            await leaderboardSyncNotificationService.EnqueueForGameAsync(game.Id, syncedAt, cancellationToken);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Game leaderboard sync failed for {RaGameId}", game.RaGameId);
+            logger.LogError(ex, "Game leaderboard shell sync failed for {RaGameId}", game.RaGameId);
             run.Status = SyncRunStatus.Failed;
             run.Error = ex.Message;
         }
@@ -193,11 +203,9 @@ public sealed class LeaderboardSyncService(
 
         var syncedAt = DateTimeOffset.UtcNow;
         var errors = new List<string>();
-        var ids = memberIds.Count == 0 ? null : memberIds;
-
         try
         {
-            await SyncGameForMembersInternalAsync(game, ids, syncedAt, errors, cancellationToken);
+            await SyncGameForMembersInternalAsync(game, memberIds, syncedAt, errors, cancellationToken);
             run.Status = errors.Count == 0 ? SyncRunStatus.Succeeded : SyncRunStatus.PartialSuccess;
             run.Error = errors.Count == 0 ? null : string.Join("; ", errors);
 
@@ -258,17 +266,6 @@ public sealed class LeaderboardSyncService(
         {
             try
             {
-                await SyncGameCatalogAsync(game, cancellationToken);
-                await SyncLeaderboardPopulationCountsAsync(game, syncedAt, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to sync catalog for game {GameId}", game.RaGameId);
-                errors.Add($"catalog: {ex.Message}");
-            }
-
-            try
-            {
                 await SyncMemberGameAsync(member, game, syncedAt, cancellationToken);
             }
             catch (Exception ex)
@@ -319,38 +316,27 @@ public sealed class LeaderboardSyncService(
     }
 
     public Task SyncGameAsync(Game game, CancellationToken cancellationToken = default)
-        => SyncGameForMembersInternalAsync(game, memberIds: null, DateTimeOffset.UtcNow, errors: null, cancellationToken);
+        => SyncGameShellInternalAsync(game, DateTimeOffset.UtcNow, errors: null, cancellationToken);
 
     public async Task SyncGameForMembersAsync(
         Game game,
         IReadOnlyCollection<Guid> memberIds,
         CancellationToken cancellationToken = default)
     {
-        var ids = memberIds.Count == 0 ? null : memberIds;
-        await SyncGameForMembersInternalAsync(game, ids, DateTimeOffset.UtcNow, errors: null, cancellationToken);
+        await SyncGameForMembersInternalAsync(
+            game,
+            memberIds,
+            DateTimeOffset.UtcNow,
+            errors: null,
+            cancellationToken);
     }
 
-    private async Task SyncGameForMembersInternalAsync(
+    private async Task SyncGameShellInternalAsync(
         Game game,
-        IReadOnlyCollection<Guid>? memberIds,
         DateTimeOffset syncedAt,
         List<string>? errors,
         CancellationToken cancellationToken)
     {
-        var membersQuery = db.Members.Where(m => m.RaUsername != null);
-        if (memberIds is not null)
-        {
-            membersQuery = membersQuery.Where(m => memberIds.Contains(m.Id));
-        }
-
-        var members = await membersQuery.ToListAsync(cancellationToken);
-        if (members.Count == 0 && memberIds is not null)
-        {
-            members = await db.Members
-                .Where(m => m.RaUsername != null)
-                .ToListAsync(cancellationToken);
-        }
-
         try
         {
             await SyncGameCatalogAsync(game, cancellationToken);
@@ -361,6 +347,23 @@ public sealed class LeaderboardSyncService(
             logger.LogError(ex, "Failed to sync catalog for game {GameId}", game.RaGameId);
             errors?.Add($"Game {game.RaGameId} catalog: {ex.Message}");
         }
+    }
+
+    private async Task SyncGameForMembersInternalAsync(
+        Game game,
+        IReadOnlyCollection<Guid> memberIds,
+        DateTimeOffset syncedAt,
+        List<string>? errors,
+        CancellationToken cancellationToken)
+    {
+        if (memberIds.Count == 0)
+        {
+            return;
+        }
+
+        var members = await db.Members
+            .Where(m => memberIds.Contains(m.Id) && m.RaUsername != null)
+            .ToListAsync(cancellationToken);
 
         foreach (var member in members)
         {

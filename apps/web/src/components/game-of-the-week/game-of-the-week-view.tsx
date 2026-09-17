@@ -1,13 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type {
   GameOfTheWeekCurrentPollDto,
   GameOfTheWeekHistoryItemDto,
 } from "@/generated/api-client";
+import { GameOfTheWeekBallotCard } from "@/components/game-of-the-week/game-of-the-week-ballot-card";
+import { GameOfTheWeekParticipation } from "@/components/game-of-the-week/game-of-the-week-participation";
 import { GameOfTheWeekPastWeeks } from "@/components/game-of-the-week/game-of-the-week-past-weeks";
 import { Button } from "@/components/ui/button";
 import { parseRaGameIdInput } from "@/lib/dashboard-games";
@@ -18,13 +18,16 @@ import {
 
 const PHASE_SCHEDULED = 0;
 const PHASE_OPEN = 1;
+const PHASE_CLOSED = 2;
+const TRACKING_PENDING = 1;
 
 type Props = {
   initialPoll: GameOfTheWeekCurrentPollDto;
   history?: GameOfTheWeekHistoryItemDto[];
+  currentMemberId?: string | null;
 };
 
-export function GameOfTheWeekView({ initialPoll, history = [] }: Props) {
+export function GameOfTheWeekView({ initialPoll, history = [], currentMemberId }: Props) {
   const router = useRouter();
   const [poll, setPoll] = useState(initialPoll);
   const [ballotInput, setBallotInput] = useState("");
@@ -33,12 +36,17 @@ export function GameOfTheWeekView({ initialPoll, history = [] }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  const awaitingFinalization =
+    poll.phase === PHASE_CLOSED && poll.closedAt == null && poll.winnerRaGameId == null;
+
   const phaseLabel =
-    poll.phase === PHASE_SCHEDULED
-      ? "Scheduled"
-      : poll.phase === PHASE_OPEN
-        ? "Voting open"
-        : "Closed";
+    awaitingFinalization
+      ? "Waiting for results"
+      : poll.phase === PHASE_SCHEDULED
+        ? "Scheduled"
+        : poll.phase === PHASE_OPEN
+          ? "Voting open"
+          : "Closed";
 
   return (
     <div className="space-y-8">
@@ -52,16 +60,27 @@ export function GameOfTheWeekView({ initialPoll, history = [] }: Props) {
             Voting opens {new Date(poll.startsAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
           </p>
         ) : null}
-        {poll.winnerRaGameId != null && poll.phase !== PHASE_OPEN && poll.phase !== PHASE_SCHEDULED ? (
+        {poll.phase === PHASE_OPEN ? <GameOfTheWeekParticipation poll={poll} /> : null}
+        {poll.allEligibleVotesCast && poll.phase === PHASE_OPEN ? (
+          <p className="text-sm text-muted-foreground">
+            All members have voted. An admin can close the poll to declare the winner.
+          </p>
+        ) : null}
+        {poll.winnerRaGameId != null && poll.closedAt != null ? (
           <p className="text-sm">
             Winner:{" "}
             <span className="font-medium">
               {poll.ballot.find((b) => b.raGameId === poll.winnerRaGameId)?.title ??
                 `RA #${poll.winnerRaGameId}`}
             </span>
-            {poll.trackingStatus === 1 ? (
+            {poll.trackingStatus === TRACKING_PENDING ? (
               <span className="text-muted-foreground"> (syncing leaderboards…)</span>
             ) : null}
+          </p>
+        ) : null}
+        {awaitingFinalization ? (
+          <p className="text-sm text-muted-foreground">
+            Voting time has ended. Results will appear after the poll is finalized.
           </p>
         ) : null}
       </header>
@@ -70,39 +89,15 @@ export function GameOfTheWeekView({ initialPoll, history = [] }: Props) {
         <h2 className="text-lg font-semibold">Ballot</h2>
         <ul className="grid gap-4 sm:grid-cols-2">
           {poll.ballot.map((item) => (
-            <li key={item.raGameId} className="rounded border border-border p-4">
-              <div className="flex gap-3">
-                {item.imageIcon ? (
-                  <Image
-                    src={item.imageIcon.startsWith("http") ? item.imageIcon : `https://media.retroachievements.org${item.imageIcon}`}
-                    alt=""
-                    width={48}
-                    height={48}
-                    className="rounded"
-                    unoptimized
-                  />
-                ) : null}
-                <div className="min-w-0 flex-1">
-                  <BallotTitle raGameId={item.raGameId} title={item.title} isTracked={item.isTracked} />
-                  <p className="text-xs text-muted-foreground">{item.consoleName ?? "Unknown platform"}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {item.voteCount} vote{item.voteCount === 1 ? "" : "s"}
-                    {item.isTracked ? " · On site" : " · Not tracked yet"}
-                  </p>
-                </div>
-              </div>
-              {poll.phase === PHASE_OPEN ? (
-                <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name="gotw-vote"
-                    checked={selectedVote === item.raGameId}
-                    disabled={pending}
-                    onChange={() => setSelectedVote(item.raGameId)}
-                  />
-                  My vote
-                </label>
-              ) : null}
+            <li key={item.raGameId}>
+              <GameOfTheWeekBallotCard
+                item={item}
+                mode={poll.phase === PHASE_OPEN ? "voting" : "readOnly"}
+                selectedVote={selectedVote}
+                onSelectVote={setSelectedVote}
+                votePending={pending}
+                currentMemberId={currentMemberId}
+              />
             </li>
           ))}
         </ul>
@@ -183,34 +178,5 @@ export function GameOfTheWeekView({ initialPoll, history = [] }: Props) {
         </section>
       ) : null}
     </div>
-  );
-}
-
-function BallotTitle({
-  raGameId,
-  title,
-  isTracked,
-}: {
-  raGameId: number;
-  title: string;
-  isTracked: boolean;
-}) {
-  if (isTracked) {
-    return (
-      <Link href={`/games/${raGameId}`} className="font-medium hover:text-[var(--accent-retro)]">
-        {title}
-      </Link>
-    );
-  }
-
-  return (
-    <a
-      href={`https://retroachievements.org/game/${raGameId}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="font-medium hover:text-[var(--accent-retro)]"
-    >
-      {title}
-    </a>
   );
 }

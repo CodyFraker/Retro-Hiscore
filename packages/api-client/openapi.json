@@ -646,6 +646,24 @@
         }
       }
     },
+    "/api/admin/game-of-the-week/polls/current/close": {
+      "post": {
+        "operationId": "postAdminGameOfTheWeekClosePoll",
+        "tags": ["Admin"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameOfTheWeekCurrentPollDto" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" },
+          "409": { "description": "Conflict" }
+        }
+      }
+    },
     "/api/games/track-queue": {
       "get": {
         "operationId": "getGameTrackQueue",
@@ -662,6 +680,70 @@
                   "type": "array",
                   "items": { "$ref": "#/components/schemas/GameTrackQueueItemDto" }
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/track-requests": {
+      "post": {
+        "operationId": "postGameTrackRequest",
+        "tags": ["Games"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/GameOfTheWeekRaGameIdRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameTrackRequestSubmitResponse" }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameTrackRequestSubmitResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameTrackRequestSubmitResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameTrackRequestSubmitResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/games/track-requests/quota": {
+      "get": {
+        "operationId": "getGameTrackRequestQuota",
+        "tags": ["Games"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GameTrackRequestQuotaDto" }
               }
             }
           }
@@ -2361,7 +2443,7 @@
       },
       "AdminGameTrackQueueItemDto": {
         "type": "object",
-        "required": ["id", "raGameId", "status", "title", "enqueuedAt"],
+        "required": ["id", "raGameId", "status", "title", "enqueuedAt", "source", "requestCount"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "raGameId": { "type": "integer" },
@@ -2370,7 +2452,10 @@
           "consoleName": { "type": "string", "nullable": true },
           "enqueuedAt": { "type": "string", "format": "date-time" },
           "resolvedAt": { "type": "string", "format": "date-time", "nullable": true },
-          "failureMessage": { "type": "string", "nullable": true }
+          "failureMessage": { "type": "string", "nullable": true },
+          "source": { "type": "integer" },
+          "requestedByRaUsername": { "type": "string", "nullable": true },
+          "requestCount": { "type": "integer" }
         }
       },
       "AdminGameDto": {
@@ -2442,9 +2527,18 @@
           }
         }
       },
+      "GameOfTheWeekVoteCastDto": {
+        "type": "object",
+        "required": ["memberId", "displayName", "castAt"],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "displayName": { "type": "string" },
+          "castAt": { "type": "string", "format": "date-time" }
+        }
+      },
       "GameOfTheWeekBallotItemDto": {
         "type": "object",
-        "required": ["raGameId", "title", "sortOrder", "isTracked", "voteCount"],
+        "required": ["raGameId", "title", "sortOrder", "isTracked", "voteCount", "voters"],
         "properties": {
           "raGameId": { "type": "integer" },
           "title": { "type": "string" },
@@ -2453,7 +2547,12 @@
           "sortOrder": { "type": "integer" },
           "isTracked": { "type": "boolean" },
           "voteCount": { "type": "integer" },
-          "addedByMemberId": { "type": "string", "format": "uuid", "nullable": true }
+          "addedByMemberId": { "type": "string", "format": "uuid", "nullable": true },
+          "addedByDisplayName": { "type": "string", "nullable": true },
+          "voters": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/GameOfTheWeekVoteCastDto" }
+          }
         }
       },
       "GameOfTheWeekCurrentPollDto": {
@@ -2465,7 +2564,10 @@
           "endsAt",
           "trackingStatus",
           "ballot",
-          "ballotSlotsRemaining"
+          "ballotSlotsRemaining",
+          "eligibleVoterCount",
+          "votesCastCount",
+          "allEligibleVotesCast"
         ],
         "properties": {
           "pollId": { "type": "string", "format": "uuid" },
@@ -2480,7 +2582,10 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/GameOfTheWeekBallotItemDto" }
           },
-          "ballotSlotsRemaining": { "type": "integer" }
+          "ballotSlotsRemaining": { "type": "integer" },
+          "eligibleVoterCount": { "type": "integer" },
+          "votesCastCount": { "type": "integer" },
+          "allEligibleVotesCast": { "type": "boolean" }
         }
       },
       "GameOfTheWeekHistoryItemDto": {
@@ -2611,14 +2716,37 @@
       },
       "GameTrackQueueItemDto": {
         "type": "object",
-        "required": ["raGameId", "status", "enqueuedAt"],
+        "required": ["raGameId", "status", "enqueuedAt", "source", "requestCount"],
         "properties": {
           "raGameId": { "type": "integer" },
           "title": { "type": "string", "nullable": true },
           "consoleName": { "type": "string", "nullable": true },
           "status": { "type": "string" },
           "enqueuedAt": { "type": "string", "format": "date-time" },
-          "resolvedAt": { "type": "string", "format": "date-time", "nullable": true }
+          "resolvedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "source": { "type": "string" },
+          "requestCount": { "type": "integer" }
+        }
+      },
+      "GameTrackRequestSubmitResponse": {
+        "type": "object",
+        "required": ["code", "raGameId", "title"],
+        "properties": {
+          "code": { "type": "string" },
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "message": { "type": "string", "nullable": true },
+          "nextSlotAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "GameTrackRequestQuotaDto": {
+        "type": "object",
+        "required": ["limit", "used", "remaining"],
+        "properties": {
+          "limit": { "type": "integer" },
+          "used": { "type": "integer" },
+          "remaining": { "type": "integer" },
+          "nextSlotAt": { "type": "string", "format": "date-time", "nullable": true }
         }
       },
       "MemberSelfSyncIssueDto": {

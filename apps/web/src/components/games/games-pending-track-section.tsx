@@ -15,7 +15,7 @@ export function GamesPendingTrackSection({ items }: Props) {
     <section id="pending-track" className="space-y-3 rounded border border-border p-5">
       <h2 className="text-lg font-semibold">Pending track requests</h2>
       <p className="text-sm text-muted-foreground">
-        These games showed up in recent friend play and are waiting for an admin to add them to the catalog.
+        Member requests and games from recent friend play waiting for an admin to track or dismiss.
       </p>
       <ul className="divide-y divide-border text-sm">
         {pending.map((item) => (
@@ -23,6 +23,8 @@ export function GamesPendingTrackSection({ items }: Props) {
             <span className="font-medium">{item.title ?? `RA #${item.raGameId}`}</span>
             <span className="text-xs text-muted-foreground">
               {item.consoleName ?? "Unknown platform"}
+              {item.source === "MemberRequest" ? " · Member request" : null}
+              {item.requestCount > 1 ? ` · ${item.requestCount} requests` : null}
               {item.enqueuedAt ? (
                 <>
                   {" · "}

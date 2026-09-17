@@ -1,6 +1,6 @@
 import type { DashboardGameSortKey } from "@/lib/dashboard-games";
 
-export const TRACKED_GAMES_PAGE_SIZE = 20;
+export const TRACKED_GAMES_PAGE_SIZE = 15;
 
 export type TrackedGamesSearchParams = {
   page?: string;

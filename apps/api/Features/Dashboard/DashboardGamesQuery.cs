@@ -44,7 +44,7 @@ public static class DashboardGamesQuery
         string? query,
         CancellationToken ct)
     {
-        var take = Math.Clamp(limit ?? 20, 1, 100);
+        var take = Math.Clamp(limit ?? 15, 1, 100);
         var skip = Math.Max(offset ?? 0, 0);
         var sortKey = ParseSort(sort);
         var normalizedQuery = query?.Trim();

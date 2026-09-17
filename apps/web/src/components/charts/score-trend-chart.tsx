@@ -11,8 +11,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { chartYDomain } from "@/lib/chart-y-domain";
 import type { MemberSeries } from "@/lib/history-series";
 import { countDistinctSyncTimestamps } from "@/lib/history-series";
+import {
+  formatLeaderboardScore,
+  isTimeLeaderboardFormat,
+} from "@/lib/leaderboard-score-format";
 import { ChartEmptyState } from "@/components/charts/chart-empty-state";
 import { MemberAvatar } from "@/components/members/member-avatar";
 
@@ -26,6 +31,7 @@ const CHART_COLORS = [
 
 type Props = {
   series: MemberSeries[];
+  scoreFormat?: string | null;
 };
 
 function formatTick(value: string) {
@@ -37,8 +43,19 @@ function formatTick(value: string) {
   }).format(new Date(value));
 }
 
-export function ScoreTrendChart({ series }: Props) {
+export function ScoreTrendChart({ series, scoreFormat }: Props) {
   const [hidden, setHidden] = useState<Record<string, boolean>>({});
+  const timeFormat = isTimeLeaderboardFormat(scoreFormat);
+
+  const formattedScoreByKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const member of series) {
+      for (const point of member.points) {
+        map.set(`${point.syncedAt}:${member.memberId}`, point.formattedScore);
+      }
+    }
+    return map;
+  }, [series]);
 
   const chartData = useMemo(() => {
     const byTime = new Map<string, Record<string, string | number>>();
@@ -54,6 +71,22 @@ export function ScoreTrendChart({ series }: Props) {
         new Date(String(a.syncedAt)).getTime() - new Date(String(b.syncedAt)).getTime(),
     );
   }, [series]);
+
+  const yDomain = useMemo(() => {
+    if (!timeFormat) {
+      return undefined;
+    }
+    const values: number[] = [];
+    for (const row of chartData) {
+      for (const member of series) {
+        const value = row[member.memberId];
+        if (typeof value === "number") {
+          values.push(value);
+        }
+      }
+    }
+    return chartYDomain(values, "tight");
+  }, [chartData, series, timeFormat]);
 
   if (countDistinctSyncTimestamps(series) < 2) {
     return <ChartEmptyState />;
@@ -80,7 +113,18 @@ export function ScoreTrendChart({ series }: Props) {
             fontSize={11}
             minTickGap={32}
           />
-          <YAxis stroke="var(--muted-foreground)" fontSize={11} width={56} />
+          <YAxis
+            stroke="var(--muted-foreground)"
+            fontSize={11}
+            width={timeFormat ? 64 : 56}
+            domain={yDomain}
+            allowDataOverflow={timeFormat}
+            tickFormatter={(value) =>
+              timeFormat
+                ? formatLeaderboardScore(Number(value), scoreFormat)
+                : Number(value).toLocaleString()
+            }
+          />
           <Tooltip
             contentStyle={{
               background: "var(--card)",
@@ -89,6 +133,17 @@ export function ScoreTrendChart({ series }: Props) {
               color: "var(--foreground)",
             }}
             labelFormatter={(label) => formatTick(String(label))}
+            formatter={(value, _name, item) => {
+              const memberId = String(item?.dataKey ?? "");
+              const syncedAt = String(item?.payload?.syncedAt ?? "");
+              const formatted =
+                formattedScoreByKey.get(`${syncedAt}:${memberId}`) ??
+                (typeof value === "number"
+                  ? formatLeaderboardScore(value, scoreFormat)
+                  : String(value ?? ""));
+              const member = series.find((entry) => entry.memberId === memberId);
+              return [formatted, member?.displayName ?? "Score"];
+            }}
           />
           <Legend
             wrapperStyle={{ flexWrap: "wrap", paddingTop: 8 }}

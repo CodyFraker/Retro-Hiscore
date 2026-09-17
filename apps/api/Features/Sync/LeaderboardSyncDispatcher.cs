@@ -62,7 +62,7 @@ public sealed class LeaderboardSyncDispatcher(
                 : TimeSpan.FromSeconds(staggerIndex * Math.Max(0, staggerSeconds));
             staggerIndex++;
 
-            jobEnqueuer.EnqueueFullGameSync(game.RaGameId, trigger, delay);
+            jobEnqueuer.EnqueueGameShellSync(game.RaGameId, trigger, delay);
             enqueued++;
             logger.LogInformation(
                 "Enqueued leaderboard sync for game {RaGameId} tier {Tier}",

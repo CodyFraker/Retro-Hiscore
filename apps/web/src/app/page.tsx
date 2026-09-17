@@ -77,6 +77,7 @@ async function HomePageContent({ searchParams }: Props) {
   let gameOfTheWeekLastWinner: GameOfTheWeekHistoryItemDto | null = null;
   let groupActivity: DashboardGroupActivityResponse | null = null;
   let showSetupReminder = false;
+  let currentMemberId: string | null = null;
   let error: string | null = null;
 
   try {
@@ -107,6 +108,7 @@ async function HomePageContent({ searchParams }: Props) {
     }
     try {
       const member = await api.getCurrentMember();
+      currentMemberId = member.id;
       if (!member.needsOnboarding && member.hasApiKey) {
         const syncStatus = await api.getMemberSelfSyncStatus();
         showSetupReminder = memberNeedsSyncReminder(true, syncStatus);
@@ -146,6 +148,7 @@ async function HomePageContent({ searchParams }: Props) {
                 gameOfTheWeekLastWinner={gameOfTheWeekLastWinner}
                 groupActivity={groupActivity}
                 isAdmin={isAdmin}
+                currentMemberId={currentMemberId}
               />
             }
           />

@@ -27,7 +27,7 @@ public static class TriggerSyncEndpoint
         })
         .WithName("TriggerSync")
         .WithTags("Sync")
-        .WithSummary("Admin: enqueue leaderboard sync jobs for all tracked games.")
+        .WithSummary("Admin: enqueue game-shell leaderboard sync jobs for all tracked games (member scores are activity-driven).")
         .RequireAdmin();
 }
 
@@ -81,7 +81,7 @@ public static class TriggerDueDispatchSyncEndpoint
         })
         .WithName("TriggerDueDispatchSync")
         .WithTags("Sync")
-        .WithSummary("Admin: enqueue leaderboard sync jobs only for games that are due.")
+        .WithSummary("Admin: enqueue game-shell leaderboard sync jobs only for games that are due (member scores are activity-driven).")
         .RequireAdmin();
 }
 

@@ -60,6 +60,9 @@ builder.Services.AddScoped<IMemberRaGameProgressSyncService, MemberRaGameProgres
 builder.Services.AddScoped<IMemberAchievementSyncService, MemberAchievementSyncService>();
 builder.Services.AddScoped<IGameAchievementDistributionSyncService, GameAchievementDistributionSyncService>();
 builder.Services.AddScoped<IGameTrackQueueService, GameTrackQueueService>();
+builder.Services.AddScoped<IGameTrackQueueRequestService, GameTrackQueueRequestService>();
+builder.Services.AddScoped<IGameTrackQueueCompletionService, GameTrackQueueCompletionService>();
+builder.Services.AddScoped<ILeaderboardSyncActivityEnqueueService, LeaderboardSyncActivityEnqueueService>();
 builder.Services.AddScoped<IMemberRecentGamesSyncService, MemberRecentGamesSyncService>();
 builder.Services.AddScoped<IGameMetadataSyncService, GameMetadataSyncService>();
 builder.Services.AddScoped<IConsoleIconSyncService, ConsoleIconSyncService>();
@@ -211,6 +214,8 @@ app.MapGetMemberAchievements();
 app.MapGetMemberHistory();
 app.MapGetGames();
 app.MapGetGameTrackQueue();
+app.MapPostGameTrackRequest();
+app.MapGetGameTrackRequestQuota();
 app.MapGetGameLeaderboards();
 app.MapGetGameHistory();
 app.MapGetGameLeaderboardPopulationHistory();
@@ -241,6 +246,7 @@ app.MapGetAdminGames();
 app.MapPostAdminGame();
 app.MapGetAdminGameTrackQueue();
 app.MapPostAdminGameTrackQueueReject();
+app.MapPostAdminGameTrackQueueTrack();
 app.MapDeleteAdminGame();
 app.MapPostAdminGameRefresh();
 app.MapPatchAdminGameLeaderboardSync();
@@ -269,6 +275,7 @@ app.MapPostGameOfTheWeekBallot();
 app.MapPutGameOfTheWeekVote();
 app.MapPostAdminGameOfTheWeekPoll();
 app.MapGetAdminGameOfTheWeekCurrentPoll();
+app.MapPostAdminGameOfTheWeekClosePoll();
 
 app.Run();
 

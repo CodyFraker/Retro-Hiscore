@@ -42,6 +42,7 @@ public sealed class MemberSelfSyncService(
     AppDbContext db,
     ILeaderboardSyncService leaderboardSync,
     ILeaderboardSyncJobEnqueuer jobEnqueuer,
+    ISyncSettingsStore syncSettingsStore,
     IMemberRaRankSnapshotSync memberRaRankSnapshotSync,
     IMemberRecentGamesSyncService memberRecentGamesSync,
     IMemberRaGameProgressSyncService memberRaGameProgressSync,
@@ -90,7 +91,19 @@ public sealed class MemberSelfSyncService(
             throw new InvalidOperationException("Leaderboard sync cooldown is active.");
         }
 
-        var games = await db.Games.AsNoTracking().ToListAsync(cancellationToken);
+        var policy = await syncSettingsStore.GetLeaderboardPolicyAsync(cancellationToken);
+        var trackedRaGameIds = await db.Games.AsNoTracking().Select(g => g.RaGameId).ToListAsync(cancellationToken);
+        var eligibleRaGameIds = await LeaderboardSyncMemberEligibility.GetEligibleTrackedRaGameIdsForMemberAsync(
+            db,
+            member.Id,
+            trackedRaGameIds.ToHashSet(),
+            DateTimeOffset.UtcNow,
+            policy,
+            cancellationToken);
+        var games = await db.Games
+            .AsNoTracking()
+            .Where(g => eligibleRaGameIds.Contains(g.RaGameId))
+            .ToListAsync(cancellationToken);
         var queued = 0;
         var skipped = 0;
 

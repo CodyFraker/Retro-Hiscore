@@ -4,7 +4,7 @@ namespace RetroHiscore.Api.Features.Sync;
 
 public sealed class NullLeaderboardSyncJobEnqueuer : ILeaderboardSyncJobEnqueuer
 {
-    public void EnqueueFullGameSync(int raGameId, SyncTrigger trigger, TimeSpan? delay = null)
+    public void EnqueueGameShellSync(int raGameId, SyncTrigger trigger, TimeSpan? delay = null)
     {
     }
 

@@ -5,18 +5,18 @@ namespace RetroHiscore.Api.Features.Sync;
 
 public sealed class HangfireLeaderboardSyncJobEnqueuer(IBackgroundJobClient backgroundJobs) : ILeaderboardSyncJobEnqueuer
 {
-    public void EnqueueFullGameSync(int raGameId, SyncTrigger trigger, TimeSpan? delay = null)
+    public void EnqueueGameShellSync(int raGameId, SyncTrigger trigger, TimeSpan? delay = null)
     {
         if (delay is { } d && d > TimeSpan.Zero)
         {
             backgroundJobs.Schedule<GameLeaderboardSyncJob>(
-                job => job.RunFullGameAsync(raGameId, trigger, CancellationToken.None),
+                job => job.RunGameShellAsync(raGameId, trigger, CancellationToken.None),
                 d);
             return;
         }
 
         backgroundJobs.Enqueue<GameLeaderboardSyncJob>(
-            job => job.RunFullGameAsync(raGameId, trigger, CancellationToken.None));
+            job => job.RunGameShellAsync(raGameId, trigger, CancellationToken.None));
     }
 
     public void EnqueueMemberGameSync(
