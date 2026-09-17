@@ -663,8 +663,14 @@ export interface DashboardGroupActivityItemDto {
   subtitle?: string | null;
   memberRaUsername?: string | null;
   memberDisplayName?: string | null;
+  memberAvatarUrl?: string | null;
   raGameId?: number | null;
   raLeaderboardId?: number | null;
+  leaderboardTitle?: string | null;
+  achievementTitle?: string | null;
+  imageIconUrl?: string | null;
+  imageBoxArtUrl?: string | null;
+  badgeUrl?: string | null;
   friendRankDelta?: number | null;
   scoreDelta?: number | null;
 }

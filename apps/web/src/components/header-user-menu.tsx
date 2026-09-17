@@ -1,8 +1,9 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { LogOut, Settings, User } from "lucide-react";
+import { LogOut, Settings, Shield, Swords, User, Users } from "lucide-react";
 import Link from "next/link";
+import { accountHeaderNavLinks } from "@/lib/header-nav-links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,13 @@ type Props = {
   displayName: string;
   avatarUrl?: string | null;
   profileHref?: string | null;
+  showAdminNav?: boolean;
+};
+
+const ACCOUNT_NAV_ICON_BY_HREF: Record<string, typeof Users> = {
+  "/members": Users,
+  "/rivalry": Swords,
+  "/admin/members": Shield,
 };
 
 function avatarFallbackInitials(name: string): string {
@@ -29,7 +37,9 @@ function avatarFallbackInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-export function HeaderUserMenu({ displayName, avatarUrl, profileHref }: Props) {
+export function HeaderUserMenu({ displayName, avatarUrl, profileHref, showAdminNav }: Props) {
+  const accountLinks = accountHeaderNavLinks(showAdminNav);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -53,6 +63,16 @@ export function HeaderUserMenu({ displayName, avatarUrl, profileHref }: Props) {
             <p className="truncate text-sm font-medium leading-none">{displayName}</p>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        {accountLinks.map((link) => {
+          const Icon = ACCOUNT_NAV_ICON_BY_HREF[link.href] ?? User;
+          return (
+            <DropdownMenuItem key={link.href} render={<Link href={link.href} />}>
+              <Icon />
+              {link.label}
+            </DropdownMenuItem>
+          );
+        })}
         <DropdownMenuSeparator />
         {profileHref ? (
           <DropdownMenuItem render={<Link href={profileHref} />}>

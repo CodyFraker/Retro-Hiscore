@@ -1,4 +1,4 @@
-import { Crown } from "lucide-react";
+import { Crown, Podium } from "lucide-react";
 import Link from "next/link";
 import { MemberAvatar } from "@/components/members/member-avatar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,7 @@ export function ChampionshipStandings({ rows, memberCount, limit = 5 }: Props) {
       <Card>
         <CardHeader>
           <CardTitle>Friend championship</CardTitle>
+          <Podium className="size-4 shrink-0 text-[var(--accent-retro)]" />
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
@@ -44,7 +45,11 @@ export function ChampionshipStandings({ rows, memberCount, limit = 5 }: Props) {
   return (
     <Card>
       <CardHeader className="space-y-1">
-        <CardTitle>Friend championship</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Podium className="size-4 shrink-0 text-[var(--accent-retro)]" />
+          Friend championship
+        </CardTitle>
+        
         {margin != null && margin > 0 ? (
           <p className="text-sm text-muted-foreground">
             <span className="font-mono text-foreground">+{margin}</span> board lead

@@ -96,7 +96,7 @@ export default async function GamesIndexPage({ searchParams }: Props) {
               showToolbar={false}
             />
           ) : null}
-          <GamesPendingTrackSection items={trackQueue} />
+          
         </>
       )}
     </div>

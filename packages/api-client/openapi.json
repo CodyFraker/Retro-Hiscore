@@ -2695,8 +2695,14 @@
           "subtitle": { "type": "string", "nullable": true },
           "memberRaUsername": { "type": "string", "nullable": true },
           "memberDisplayName": { "type": "string", "nullable": true },
+          "memberAvatarUrl": { "type": "string", "nullable": true },
           "raGameId": { "type": "integer", "nullable": true },
           "raLeaderboardId": { "type": "integer", "format": "int64", "nullable": true },
+          "leaderboardTitle": { "type": "string", "nullable": true },
+          "achievementTitle": { "type": "string", "nullable": true },
+          "imageIconUrl": { "type": "string", "nullable": true },
+          "imageBoxArtUrl": { "type": "string", "nullable": true },
+          "badgeUrl": { "type": "string", "nullable": true },
           "friendRankDelta": { "type": "integer", "nullable": true },
           "scoreDelta": { "type": "integer", "format": "int64", "nullable": true }
         }

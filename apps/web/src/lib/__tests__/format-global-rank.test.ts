@@ -1,8 +1,8 @@
 import { formatGlobalPercentile, formatGlobalRank } from "@/lib/format-global-rank";
 
 describe("formatGlobalRank", () => {
-  it("formats rank with entry count", () => {
-    expect(formatGlobalRank(165, 10_247)).toBe("#165 of 10,247");
+  it("formats rank with entry count and top percent", () => {
+    expect(formatGlobalRank(165, 10_247)).toBe("#165 of 10,247 · top 1.6%");
   });
 
   it("falls back when entry count is missing", () => {
@@ -13,6 +13,6 @@ describe("formatGlobalRank", () => {
 describe("formatGlobalPercentile", () => {
   it("returns percentile when data is present", () => {
     expect(formatGlobalPercentile(1, 100)).toBe("top 1.0%");
-    expect(formatGlobalPercentile(50, 100)).toBe("top 51.0%");
+    expect(formatGlobalPercentile(50, 100)).toBe("top 50.0%");
   });
 });

@@ -27,8 +27,11 @@ public sealed class HangfireAdminSchedulerReader : IAdminSchedulerReader
             if (!string.IsNullOrEmpty(job.LastJobId))
             {
                 var details = monitoring.JobDetails(job.LastJobId);
-                lastState = details.History.FirstOrDefault()?.StateName;
-                lastExecution = details.CreatedAt;
+                if (details is not null)
+                {
+                    lastState = details.History?.FirstOrDefault()?.StateName;
+                    lastExecution = details.CreatedAt;
+                }
             }
 
             results.Add(new RecurringJobSnapshotDto(

@@ -7,7 +7,8 @@ export function formatGlobalRank(
   }
 
   if (entryCount != null && entryCount > 0) {
-    return `#${rank.toLocaleString()} of ${entryCount.toLocaleString()}`;
+    const topPercent = formatGlobalPercentile(rank, entryCount);
+    return `#${rank.toLocaleString()} of ${entryCount.toLocaleString()} · ${topPercent}`;
   }
 
   return `#${rank.toLocaleString()} globally`;
@@ -21,10 +22,6 @@ export function formatGlobalPercentile(
     return null;
   }
 
-  const percentile = ((entryCount - rank + 1) / entryCount) * 100;
-  if (percentile >= 99) {
-    return `top ${(100 - percentile + 1).toFixed(1)}%`;
-  }
-
-  return `top ${percentile.toFixed(1)}%`;
+  const topPercent = (rank / entryCount) * 100;
+  return `top ${topPercent.toFixed(1)}%`;
 }

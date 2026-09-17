@@ -2,6 +2,8 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
+using RetroHiscore.Api.Features.Games;
+using RetroHiscore.Api.Features.Sync;
 
 namespace RetroHiscore.Api.Features.Dashboard;
 
@@ -9,6 +11,7 @@ public static class GroupActivityBuilder
 {
     public static async Task<DashboardGroupActivityResponse> BuildAsync(
         AppDbContext db,
+        string mediaBaseUrl,
         int limit,
         CancellationToken ct)
     {
@@ -21,6 +24,12 @@ public static class GroupActivityBuilder
         var take = Math.Clamp(limit, 1, 100);
         var items = new List<DashboardGroupActivityItemDto>();
 
+        var games = await db.Games.AsNoTracking().ToListAsync(ct);
+        var gameTitles = games.ToDictionary(g => g.RaGameId, g => g.Title);
+        var gameImages = games.ToDictionary(
+            g => g.RaGameId,
+            g => RaMediaUrl.FromGame(g, mediaBaseUrl));
+
         var leaderboardMoves = await ActivityBuilder.BuildAsync(db, ct);
         foreach (var move in leaderboardMoves)
         {
@@ -28,6 +37,7 @@ public static class GroupActivityBuilder
                 ? $"{move.DisplayName} moved on {move.LeaderboardTitle}"
                 : $"{move.DisplayName} scored on {move.LeaderboardTitle}";
             var subtitle = move.FormattedScore;
+            var images = gameImages.GetValueOrDefault(move.RaGameId);
             items.Add(new DashboardGroupActivityItemDto(
                 "LeaderboardMove",
                 window.CurrentSync,
@@ -35,14 +45,19 @@ public static class GroupActivityBuilder
                 subtitle,
                 move.RaUsername,
                 move.DisplayName,
+                move.AvatarUrl,
                 move.RaGameId,
                 move.RaLeaderboardId,
+                move.LeaderboardTitle,
+                null,
+                images?.ImageIconUrl,
+                images?.ImageBoxArtUrl,
+                null,
                 move.FriendRankDelta,
                 move.ScoreDelta));
         }
 
-        var trackedIds = await db.Games.AsNoTracking().Select(g => g.RaGameId).ToListAsync(ct);
-        var gameTitles = await db.Games.AsNoTracking().ToDictionaryAsync(g => g.RaGameId, g => g.Title, ct);
+        var trackedIds = games.Select(g => g.RaGameId).ToList();
         var achievementRows = await GetDashboardAchievementActivityEndpoint.FilteredQuery(
                 db,
                 trackedIds,
@@ -55,23 +70,36 @@ public static class GroupActivityBuilder
             {
                 m.DateEarned,
                 m.Achievement.RaGameId,
-                m.Achievement.Title,
+                AchievementTitle = m.Achievement.Title,
+                m.Achievement.BadgeData,
+                m.Achievement.BadgeContentType,
+                m.Achievement.BadgeName,
                 m.Member.RaUsername,
-                DisplayName = m.Member.DisplayName ?? m.Member.RaUsername!
+                DisplayName = m.Member.DisplayName ?? m.Member.RaUsername!,
+                m.Member.AvatarUrl
             })
             .ToListAsync(ct);
 
         foreach (var row in achievementRows)
         {
+            var images = gameImages.GetValueOrDefault(row.RaGameId);
+            var badgeUrl = ConsoleIconSyncService.ToDataUrl(row.BadgeData, row.BadgeContentType)
+                ?? RaMediaUrl.ToBadgeUrl(row.BadgeName, mediaBaseUrl);
             items.Add(new DashboardGroupActivityItemDto(
                 "AchievementUnlock",
                 row.DateEarned ?? window.CurrentSync,
-                $"{row.DisplayName} unlocked {row.Title}",
+                $"{row.DisplayName} unlocked {row.AchievementTitle}",
                 gameTitles.GetValueOrDefault(row.RaGameId),
                 row.RaUsername,
                 row.DisplayName,
+                row.AvatarUrl,
                 row.RaGameId,
                 null,
+                null,
+                row.AchievementTitle,
+                images?.ImageIconUrl,
+                images?.ImageBoxArtUrl,
+                badgeUrl,
                 null,
                 null));
         }
@@ -89,6 +117,7 @@ public static class GroupActivityBuilder
         {
             var raGameId = TryReadRaGameId(entry.PayloadJson);
             var title = TryReadTitle(entry.PayloadJson) ?? (raGameId is not null ? $"Game #{raGameId}" : "New game");
+            var images = raGameId is int gid ? gameImages.GetValueOrDefault(gid) : null;
             items.Add(new DashboardGroupActivityItemDto(
                 "GameTracked",
                 entry.OccurredAt,
@@ -96,7 +125,13 @@ public static class GroupActivityBuilder
                 null,
                 null,
                 null,
+                null,
                 raGameId,
+                null,
+                null,
+                null,
+                images?.ImageIconUrl,
+                images?.ImageBoxArtUrl,
                 null,
                 null,
                 null));
@@ -154,8 +189,14 @@ public sealed record DashboardGroupActivityItemDto(
     string? Subtitle,
     string? MemberRaUsername,
     string? MemberDisplayName,
+    string? MemberAvatarUrl,
     int? RaGameId,
     long? RaLeaderboardId,
+    string? LeaderboardTitle,
+    string? AchievementTitle,
+    string? ImageIconUrl,
+    string? ImageBoxArtUrl,
+    string? BadgeUrl,
     int? FriendRankDelta,
     long? ScoreDelta);
 

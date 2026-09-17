@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { GlobalSearch } from "@/components/layout/global-search";
 import { SyncHealthChip } from "@/components/layout/sync-health-chip";
 import { HeaderUserMenu } from "@/components/header-user-menu";
 import type { SyncHealthResponse } from "@/generated/api-client";
@@ -19,6 +18,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  accountHeaderNavLinks,
+  MAIN_HEADER_NAV_LINKS,
+  type HeaderNavLink,
+} from "@/lib/header-nav-links";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -27,37 +31,6 @@ type Props = {
   showAdminNav?: boolean;
   profileHref?: string | null;
   syncHealth?: SyncHealthResponse | null;
-};
-
-type NavLink = {
-  href: string;
-  label: string;
-  shortLabel?: string;
-  match: (pathname: string) => boolean;
-};
-
-const BASE_NAV_LINKS: NavLink[] = [
-  { href: "/", label: "Home", match: (path) => path === "/" },
-  { href: "/games", label: "Games", match: (path) => path === "/games" || path.startsWith("/games/") },
-  {
-    href: "/game-of-the-week",
-    label: "Game of the week",
-    shortLabel: "GOTW",
-    match: (path) => path === "/game-of-the-week",
-  },
-  { href: "/achievements", label: "Achievements", match: (path) => path === "/achievements" || path.startsWith("/achievements/") },
-  { href: "/members", label: "Members", match: (path) => path === "/members" || path.startsWith("/members/") },
-  {
-    href: "/rivalry",
-    label: "Rivalry",
-    match: (path) => path === "/rivalry" || path.startsWith("/rivalry/"),
-  },
-];
-
-const ADMIN_NAV_LINK: NavLink = {
-  href: "/admin/members",
-  label: "Admin",
-  match: (path) => path === "/admin" || path.startsWith("/admin/"),
 };
 
 function navLinkClassName(active: boolean, mobile: boolean) {
@@ -81,13 +54,14 @@ function navLinkClassName(active: boolean, mobile: boolean) {
 
 function NavLinks({
   onNavigate,
-  showAdminNav,
+  links,
+  ariaLabel = "Main",
 }: {
   onNavigate?: () => void;
-  showAdminNav?: boolean;
+  links: HeaderNavLink[];
+  ariaLabel?: string;
 }) {
   const pathname = usePathname();
-  const links = showAdminNav ? [...BASE_NAV_LINKS, ADMIN_NAV_LINK] : BASE_NAV_LINKS;
 
   return (
     <nav
@@ -95,7 +69,7 @@ function NavLinks({
         "flex gap-1 md:gap-3 lg:gap-5",
         onNavigate ? "flex-col" : "flex-col md:flex-row md:flex-nowrap md:justify-center md:overflow-x-auto",
       )}
-      aria-label="Main"
+      aria-label={ariaLabel}
     >
       {links.map((link) => {
         const active = link.match(pathname);
@@ -142,16 +116,16 @@ export function SiteHeaderBar({
         </Link>
 
         <div className="hidden min-w-0 flex-1 md:flex md:justify-center">
-          <NavLinks showAdminNav={showAdminNav} />
+          <NavLinks links={MAIN_HEADER_NAV_LINKS} />
         </div>
 
         <div className="hidden shrink-0 items-center gap-2 md:flex">
-          <GlobalSearch />
           {syncHealth ? <SyncHealthChip health={syncHealth} admin={showAdminNav} /> : null}
           <HeaderUserMenu
             displayName={displayName}
             avatarUrl={avatarUrl}
             profileHref={profileHref}
+            showAdminNav={showAdminNav}
           />
         </div>
 
@@ -173,9 +147,15 @@ export function SiteHeaderBar({
               <SheetTitle>Menu</SheetTitle>
             </SheetHeader>
             <div className="flex flex-col gap-6 overflow-y-auto px-4 pb-6">
-              <GlobalSearch />
               {syncHealth ? <SyncHealthChip health={syncHealth} admin={showAdminNav} /> : null}
-              <NavLinks onNavigate={() => setOpen(false)} showAdminNav={showAdminNav} />
+              <NavLinks onNavigate={() => setOpen(false)} links={MAIN_HEADER_NAV_LINKS} />
+              <div className="border-t border-border pt-4">
+                <NavLinks
+                  onNavigate={() => setOpen(false)}
+                  links={accountHeaderNavLinks(showAdminNav)}
+                  ariaLabel="Account"
+                />
+              </div>
               <Link
                 href={profileHref ?? "/settings"}
                 onClick={() => setOpen(false)}

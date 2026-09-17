@@ -86,7 +86,14 @@ function GameCell({ item }: { item: AdminGameTrackQueueItemDto }) {
       <p className="text-xs text-muted-foreground">
         {item.consoleName ?? "Unknown platform"}
         {" · "}
-        <span className="tabular-nums">RA #{item.raGameId}</span>
+        <a
+          href={`https://retroachievements.org/game/${item.raGameId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="tabular-nums hover:text-[var(--accent-retro)]"
+        >
+          RA #{item.raGameId}
+        </a>
         {item.requestCount > 1 ? (
           <>
             {" · "}

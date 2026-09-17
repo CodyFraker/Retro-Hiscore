@@ -20,7 +20,14 @@ export function GamesPendingTrackSection({ items }: Props) {
       <ul className="divide-y divide-border text-sm">
         {pending.map((item) => (
           <li key={item.raGameId} className="flex flex-wrap items-baseline justify-between gap-2 py-2">
-            <span className="font-medium">{item.title ?? `RA #${item.raGameId}`}</span>
+            <a
+              href={`https://retroachievements.org/game/${item.raGameId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium hover:text-[var(--accent-retro)]"
+            >
+              {item.title ?? `RA #${item.raGameId}`}
+            </a>
             <span className="text-xs text-muted-foreground">
               {item.consoleName ?? "Unknown platform"}
               {item.source === "MemberRequest" ? " · Member request" : null}

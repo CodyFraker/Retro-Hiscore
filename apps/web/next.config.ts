@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "media.retroachievements.org",
+        pathname: "/UserPic/**",
+      },
+      {
+        protocol: "https",
         hostname: "retroachievements.org",
         pathname: "/UserPic/**",
       },
