@@ -152,9 +152,9 @@ public class LeaderboardApiTests : IAsyncLifetime
         payload.Members.Count.ShouldBe(1);
         payload.Members[0].RaUsername.ShouldBe("ShrimpPoboy");
 
-        var shrimp = payload.Leaderboards[0].Standings.Single(s => s.RaUsername == "ShrimpPoboy");
-        shrimp.Score.ShouldBe(352750);
-        shrimp.FriendRank.ShouldBe(1);
+        var shrimpStanding = payload.Leaderboards[0].Standings.Single(s => s.RaUsername == "ShrimpPoboy");
+        shrimpStanding.Score.ShouldBe(352750);
+        shrimpStanding.FriendRank.ShouldBe(1);
         payload.Leaderboards[0].Standings.Count.ShouldBe(1);
     }
 

@@ -105,6 +105,31 @@ public class CurrentMemberSelfSyncApiTests : IAsyncLifetime
     public async Task PostLeaderboards_QueuesJobsForTrackedGames()
     {
         // Arrange
+        var recentPlay = DateTimeOffset.UtcNow.AddHours(-1);
+        using (var seedScope = _factory.Services.CreateScope())
+        {
+            var seedDb = seedScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var shrimp = await seedDb.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            var trackedRaGameIds = await seedDb.Games.Select(g => g.RaGameId).ToListAsync();
+            foreach (var raGameId in trackedRaGameIds)
+            {
+                seedDb.MemberRecentGamePlays.Add(new MemberRecentGamePlay
+                {
+                    MemberId = shrimp.Id,
+                    RaGameId = raGameId,
+                    Title = $"Game {raGameId}",
+                    ConsoleId = 1,
+                    ConsoleName = "NES",
+                    LastPlayedAt = recentPlay,
+                    NumAchieved = 1,
+                    NumPossibleAchievements = 10,
+                    SyncedAt = recentPlay
+                });
+            }
+
+            await seedDb.SaveChangesAsync();
+        }
+
         var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
         // Act

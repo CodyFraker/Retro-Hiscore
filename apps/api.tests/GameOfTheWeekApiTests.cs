@@ -212,6 +212,14 @@ public class GameOfTheWeekApiTests : IAsyncLifetime
     public async Task GetCurrent_AllEligibleVotesCast_WhenEveryRaMemberVoted()
     {
         // Arrange
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var scub = await db.Members.SingleAsync(m => m.RaUsername == "xXScubXx");
+            scub.RaUsername = null;
+            await db.SaveChangesAsync();
+        }
+
         await CreateOpenPollAsync([46001, 46002]);
         var adminClient = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
         var memberClient = _factory.CreateAuthenticatedClient(AuthTestHelper.SecondAllowedDiscordUserId);

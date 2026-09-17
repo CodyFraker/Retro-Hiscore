@@ -1,8 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
-using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.GameOfTheWeek;
+using RetroHiscore.Api.Features.Ra;
 using Shouldly;
 
 namespace RetroHiscore.Api.Tests;
@@ -117,8 +118,9 @@ public class PostAdminGameOfTheWeekClosePollEndpointTests : IAsyncLifetime
 
     private void StubRaGame(int raGameId, string title)
     {
-        _factory.RaApiClient.GetGameAsync(raGameId, NSubstitute.Arg.Any<string?>(), NSubstitute.Arg.Any<CancellationToken>())
-            .Returns(new RetroHiscore.Api.Features.Ra.RaGameDto
+        _factory.RaApiClient
+            .GetGameAsync(raGameId, Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(new RaGameDto
             {
                 Title = title,
                 ConsoleId = 1,

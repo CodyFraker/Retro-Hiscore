@@ -963,8 +963,11 @@ export interface RecurringJobSnapshotDto {
   configuredIntervalDays?: number | null;
 }
 
-export interface DiscordNotificationEventKind {
-}
+export type DiscordNotificationEventKind =
+  | "GameTracked"
+  | "LeaderboardFriendOvertake"
+  | "LeaderboardNewSubmission"
+  | "AchievementUnlocked";
 
 export interface AdminDiscordWebhookSummaryDto {
   id: string;

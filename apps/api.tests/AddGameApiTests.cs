@@ -43,6 +43,26 @@ public class AddGameApiTests : IAsyncLifetime
         // Arrange
         const int raGameId = 99999;
         await _factory.SetMemberApiKeyAsync("ShrimpPoboy", "shrimp-test-key");
+        var recentPlay = DateTimeOffset.UtcNow.AddHours(-1);
+        using (var seedScope = _factory.Services.CreateScope())
+        {
+            var seedDb = seedScope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var seedMember = await seedDb.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
+            seedDb.MemberRecentGamePlays.Add(new MemberRecentGamePlay
+            {
+                MemberId = seedMember.Id,
+                RaGameId = raGameId,
+                Title = "New Adventure",
+                ConsoleId = 3,
+                ConsoleName = "SNES",
+                LastPlayedAt = recentPlay,
+                NumAchieved = 1,
+                NumPossibleAchievements = 10,
+                SyncedAt = recentPlay
+            });
+            await seedDb.SaveChangesAsync();
+        }
+
         SetupRaMocks(raGameId, includeMemberScore: true);
         var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
 
@@ -70,9 +90,9 @@ public class AddGameApiTests : IAsyncLifetime
         detail.Leaderboards.Count.ShouldBe(1);
         detail.Members.Count.ShouldBe(1);
         detail.Members[0].RaUsername.ShouldBe("ShrimpPoboy");
-        var shrimp = detail.Leaderboards[0].Standings.Single(s => s.RaUsername == "ShrimpPoboy");
-        shrimp.Score.ShouldBe(12345);
-        shrimp.FriendRank.ShouldBe(1);
+        var shrimpStanding = detail.Leaderboards[0].Standings.Single(s => s.RaUsername == "ShrimpPoboy");
+        shrimpStanding.Score.ShouldBe(12345);
+        shrimpStanding.FriendRank.ShouldBe(1);
     }
 
     [Fact]
