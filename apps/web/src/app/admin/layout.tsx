@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { AdminTabNav } from "@/components/admin/admin-tab-nav";
 import { PageHero } from "@/components/layout/page-hero";
 import { authOptions } from "@/lib/auth-options";
+import { isThemeLabEnabled } from "@/lib/theme-lab-env";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         title="Admin"
         description="Manage members, sync schedules, tracked games, and Discord webhooks for your group."
       />
-      <AdminTabNav />
+      <AdminTabNav showThemeLab={isThemeLabEnabled()} />
       {children}
     </div>
   );

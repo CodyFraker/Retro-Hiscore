@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Sync;
+using RetroHiscore.Api.Infrastructure;
 using RetroHiscore.Api.Options;
 
 namespace RetroHiscore.Api.Features.Members;
@@ -171,6 +172,7 @@ public sealed class MemberSelfSyncService(
         {
             rankRun.FinishedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
+            SyncRunMetrics.Record(rankRun);
         }
 
         var activityRun = new SyncRun
@@ -200,6 +202,7 @@ public sealed class MemberSelfSyncService(
         {
             activityRun.FinishedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
+            SyncRunMetrics.Record(activityRun);
         }
 
         if (errors.Count > 0 && rankRun.Status != SyncRunStatus.Succeeded)
@@ -245,6 +248,7 @@ public sealed class MemberSelfSyncService(
         {
             run.FinishedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
+            SyncRunMetrics.Record(run);
         }
 
         return run;

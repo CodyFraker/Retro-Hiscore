@@ -23,6 +23,7 @@ import {
   MAIN_HEADER_NAV_LINKS,
   type HeaderNavLink,
 } from "@/lib/header-nav-links";
+import { useTheme } from "@/components/theme/theme-provider";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -104,9 +105,17 @@ export function SiteHeaderBar({
   syncHealth,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const { theme } = useTheme();
+  const isAero = theme === "frutiger-aero";
 
   return (
-    <header className="border-b border-border bg-card">
+    <header
+      data-site-header
+      className={cn(
+        "border-b border-border",
+        isAero ? "glass-bg" : "bg-card",
+      )}
+    >
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 md:gap-6 md:py-4">
         <Link
           href="/"

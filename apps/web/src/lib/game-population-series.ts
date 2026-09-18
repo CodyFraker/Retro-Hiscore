@@ -17,25 +17,78 @@ export type BoardPopulationRow = {
   points: LeaderboardPopulationPointDto[];
 };
 
-export function toTotalPopulationSeries(
-  data: GameLeaderboardPopulationHistoryResponse,
-): TotalPopulationPoint[] {
-  const bySync = new Map<string, { total: number; boards: number }>();
+function aggregatePopulationBySync(data: GameLeaderboardPopulationHistoryResponse) {
+  const bySync = new Map<string, { total: number; boardIds: Set<number> }>();
 
   for (const board of data.boards) {
     for (const point of board.points) {
-      const row = bySync.get(point.syncedAt) ?? { total: 0, boards: 0 };
-      row.total += point.entryCount;
-      row.boards += 1;
+      const row = bySync.get(point.syncedAt) ?? { total: 0, boardIds: new Set<number>() };
+      if (!row.boardIds.has(board.raLeaderboardId)) {
+        row.boardIds.add(board.raLeaderboardId);
+        row.total += point.entryCount;
+      }
       bySync.set(point.syncedAt, row);
     }
   }
 
-  return [...bySync.entries()]
-    .map(([syncedAt, { total, boards }]) => ({
+  return bySync;
+}
+
+export function expectedPopulationBoardCount(
+  data: GameLeaderboardPopulationHistoryResponse,
+): number {
+  return data.boards.length;
+}
+
+export function hasAnyPopulationSnapshots(data: GameLeaderboardPopulationHistoryResponse): boolean {
+  return data.boards.some((board) => board.points.length > 0);
+}
+
+export function countCompletePopulationSyncs(data: GameLeaderboardPopulationHistoryResponse): number {
+  const expected = expectedPopulationBoardCount(data);
+  if (expected === 0) {
+    return 0;
+  }
+
+  let count = 0;
+  for (const row of aggregatePopulationBySync(data).values()) {
+    if (row.boardIds.size === expected) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+export function hasPartialPopulationSnapshots(
+  data: GameLeaderboardPopulationHistoryResponse,
+): boolean {
+  const expected = expectedPopulationBoardCount(data);
+  if (expected === 0) {
+    return false;
+  }
+
+  for (const row of aggregatePopulationBySync(data).values()) {
+    if (row.boardIds.size > 0 && row.boardIds.size < expected) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function toTotalPopulationSeries(
+  data: GameLeaderboardPopulationHistoryResponse,
+): TotalPopulationPoint[] {
+  const expectedBoardCount = expectedPopulationBoardCount(data);
+  if (expectedBoardCount === 0) {
+    return [];
+  }
+
+  return [...aggregatePopulationBySync(data).entries()]
+    .filter(([, row]) => row.boardIds.size === expectedBoardCount)
+    .map(([syncedAt, { total, boardIds }]) => ({
       syncedAt,
       totalEntryCount: total,
-      boardCount: boards,
+      boardCount: boardIds.size,
     }))
     .sort((a, b) => new Date(a.syncedAt).getTime() - new Date(b.syncedAt).getTime());
 }

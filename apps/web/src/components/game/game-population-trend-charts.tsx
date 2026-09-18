@@ -13,12 +13,15 @@ import {
   YAxis,
 } from "recharts";
 import { ChartEmptyState } from "@/components/charts/chart-empty-state";
+import { LeaderboardEntryCountTrendChart } from "@/components/charts/leaderboard-entry-count-trend-chart";
 import type { GameLeaderboardPopulationHistoryResponse } from "@/generated/api-client";
 import { formatPopulationDelta } from "@/lib/game-delta-format";
 import {
+  expectedPopulationBoardCount,
+  hasAnyPopulationSnapshots,
+  hasPartialPopulationSnapshots,
   toBoardPopulationRows,
   toTotalPopulationSeries,
-  type TotalPopulationPoint,
 } from "@/lib/game-population-series";
 
 const CHART_COLORS = [
@@ -56,9 +59,29 @@ const CHART_TOOLTIP_CONTENT_STYLE = {
 } as const;
 
 export function GamePopulationTrendCharts({ data }: Props) {
+  const expectedBoardCount = expectedPopulationBoardCount(data);
   const totalSeries = useMemo(() => toTotalPopulationSeries(data), [data]);
+  const chartPoints = useMemo(
+    () =>
+      totalSeries.map((point) => ({
+        syncedAt: point.syncedAt,
+        entryCount: point.totalEntryCount,
+      })),
+    [totalSeries],
+  );
   const boardRows = useMemo(() => toBoardPopulationRows(data), [data]);
   const [compareIds, setCompareIds] = useState<number[]>([]);
+
+  const latestCompleteKpi = useMemo(() => {
+    if (totalSeries.length === 0) {
+      return null;
+    }
+    const latest = totalSeries.at(-1)!;
+    const previous = totalSeries.length >= 2 ? totalSeries.at(-2) : undefined;
+    const delta =
+      previous != null ? latest.totalEntryCount - previous.totalEntryCount : null;
+    return { total: latest.totalEntryCount, delta };
+  }, [totalSeries]);
 
   const perBoardChartData = useMemo(() => {
     const byTime = new Map<string, Record<string, string | number>>();
@@ -95,69 +118,68 @@ export function GamePopulationTrendCharts({ data }: Props) {
     });
   }
 
-  if (totalSeries.length === 0) {
+  function renderTotalEntriesSection() {
+    const heading = (
+      <div>
+        <h2 className="steam-section-heading">Total entries over time</h2>
+        <p className="text-xs text-muted-foreground">
+          Ranked players on RetroAchievements at each full-game sync—growth shows new submissions
+          across this title. Summing across boards counts the same player once per board they
+          appear on. Only syncs where all {expectedBoardCount} tracked leaderboards were captured
+          are shown; partial syncs are hidden.
+        </p>
+      </div>
+    );
+
+    if (!hasAnyPopulationSnapshots(data)) {
+      return (
+        <section className="space-y-3">
+          {heading}
+          <ChartEmptyState message="No population snapshots yet. Run a leaderboard sync to start tracking." />
+        </section>
+      );
+    }
+
+    if (totalSeries.length === 0 && hasPartialPopulationSnapshots(data)) {
+      return (
+        <section className="space-y-3">
+          {heading}
+          <ChartEmptyState
+            message={`No full capture yet—all ${expectedBoardCount} leaderboards must sync in the same run. Partial captures are hidden.`}
+          />
+        </section>
+      );
+    }
+
     return (
       <section className="space-y-3">
-        <h2 className="steam-section-heading">Total ranked entries over time</h2>
-        <ChartEmptyState message="No population snapshots yet. Run a leaderboard sync to start tracking." />
+        {heading}
+        {latestCompleteKpi != null && (
+          <dl className="flex flex-wrap gap-6 rounded border border-border bg-secondary/20 px-4 py-3 text-sm">
+            <div>
+              <dt className="text-xs text-muted-foreground">Latest total (full sync)</dt>
+              <dd className="font-mono text-lg text-foreground">
+                {latestCompleteKpi.total.toLocaleString()}
+              </dd>
+            </div>
+            {latestCompleteKpi.delta != null && (
+              <div>
+                <dt className="text-xs text-muted-foreground">Since prior full sync</dt>
+                <dd className="font-mono text-lg text-foreground">
+                  {formatPopulationDelta(latestCompleteKpi.delta)}
+                </dd>
+              </div>
+            )}
+          </dl>
+        )}
+        <LeaderboardEntryCountTrendChart points={chartPoints} />
       </section>
     );
   }
 
   return (
     <div className="space-y-8">
-      <section className="space-y-3">
-        <div>
-          <h2 className="steam-section-heading">Total ranked entries over time</h2>
-          <p className="text-xs text-muted-foreground">
-            Sum of ranked players across all leaderboards at each sync (same player on multiple
-            boards is counted more than once).
-          </p>
-        </div>
-        <div className="min-w-0 h-56 w-full rounded border border-border bg-secondary/20 p-3 sm:h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={totalSeries} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-              <XAxis
-                dataKey="syncedAt"
-                tickFormatter={formatTick}
-                stroke="var(--muted-foreground)"
-                fontSize={11}
-                minTickGap={32}
-              />
-              <YAxis
-                stroke="var(--muted-foreground)"
-                fontSize={11}
-                width={56}
-                tickFormatter={(value) => value.toLocaleString()}
-              />
-              <Tooltip
-                contentStyle={CHART_TOOLTIP_CONTENT_STYLE}
-                labelFormatter={(label) => formatTick(String(label))}
-                formatter={(value, _name, item) => {
-                  if (typeof value !== "number" || item == null) {
-                    return ["—", "Total"];
-                  }
-                  const payload = item.payload as TotalPopulationPoint;
-                  return [
-                    `${value.toLocaleString()} entries (${payload.boardCount} boards)`,
-                    "Total",
-                  ];
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="totalEntryCount"
-                name="Total ranked entries"
-                stroke="var(--accent-retro)"
-                dot={totalSeries.length <= 24}
-                strokeWidth={2}
-                connectNulls
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
+      {renderTotalEntriesSection()}
 
       {boardRows.length > 0 && (
         <section className="space-y-3">

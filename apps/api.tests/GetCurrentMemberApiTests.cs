@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using RetroHiscore.Api.Features.Members;
+using RetroHiscore.Api.Infrastructure;
 using Shouldly;
 
 namespace RetroHiscore.Api.Tests;
@@ -33,5 +34,6 @@ public class GetCurrentMemberApiTests : IAsyncLifetime
         // Assert
         member.ShouldNotBeNull();
         member.OnboardingStep.ShouldBe("NeedsApiKey");
+        member.UiTheme.ShouldBe(UiThemes.Steam);
     }
 }

@@ -1,4 +1,9 @@
-import { formatGlobalPercentile, formatGlobalRank } from "@/lib/format-global-rank";
+import {
+  formatGlobalPercentile,
+  formatGlobalRank,
+  globalTopPercent,
+  isGlobalTopTier,
+} from "@/lib/format-global-rank";
 
 describe("formatGlobalRank", () => {
   it("formats rank with entry count and top percent", () => {
@@ -14,5 +19,22 @@ describe("formatGlobalPercentile", () => {
   it("returns percentile when data is present", () => {
     expect(formatGlobalPercentile(1, 100)).toBe("top 1.0%");
     expect(formatGlobalPercentile(50, 100)).toBe("top 50.0%");
+  });
+});
+
+describe("globalTopPercent", () => {
+  it("returns null when data is missing", () => {
+    expect(globalTopPercent(null, 100)).toBeNull();
+  });
+
+  it("computes rank over entry count", () => {
+    expect(globalTopPercent(20, 100)).toBe(20);
+  });
+});
+
+describe("isGlobalTopTier", () => {
+  it("returns true at or below threshold", () => {
+    expect(isGlobalTopTier(20, 100)).toBe(true);
+    expect(isGlobalTopTier(21, 100)).toBe(false);
   });
 });

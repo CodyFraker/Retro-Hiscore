@@ -12,6 +12,7 @@ import { GameDeltaCallout } from "@/components/game/game-delta-callout";
 import { GameDetailTabs } from "@/components/game/game-detail-tabs";
 import { GameMetadata } from "@/components/game/game-metadata";
 import { GamePopulationTrendCharts } from "@/components/game/game-population-trend-charts";
+import { GameTrendsTab } from "@/components/game/game-trends-tab";
 import { GameRefreshButton } from "@/components/game/game-refresh-button";
 import { LeaderboardSyncTierBadge } from "@/components/sync/leaderboard-sync-tier-badge";
 import { GameSourcesSection } from "@/components/game/game-sources-section";
@@ -215,17 +216,19 @@ export default async function GamePage({ params }: Props) {
               </>
             }
             trends={
-              <>
-                <GameDeltaCallout deltas={deltas} />
-                <GameTrendCharts
-                  items={history.items}
-                  leaderboards={data.leaderboards}
-                  members={data.members}
-                  deltas={deltas}
-                  defaultMemberId={member.id}
-                />
-                <GamePopulationTrendCharts data={populationHistory} />
-              </>
+              <GameTrendsTab
+                population={<GamePopulationTrendCharts data={populationHistory} />}
+                deltas={<GameDeltaCallout deltas={deltas} />}
+                friendTrends={
+                  <GameTrendCharts
+                    items={history.items}
+                    leaderboards={data.leaderboards}
+                    members={data.members}
+                    deltas={deltas}
+                    defaultMemberId={member.id}
+                  />
+                }
+              />
             }
             achievements={
               <GameAchievementsSection

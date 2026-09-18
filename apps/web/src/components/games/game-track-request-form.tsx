@@ -39,7 +39,7 @@ export function GameTrackRequestForm({ initialQuota }: Props) {
         : `No requests left. Next slot ${formatNextSlot(quota.nextSlotAt ?? undefined) ?? "soon"}.`;
 
   return (
-    <section className="space-y-3 rounded border border-border p-5">
+    <section className="space-y-3 rounded-md border border-border bg-card p-5 glass-bg">
       <div>
         <h2 className="text-lg font-semibold">Request a game</h2>
         <p className="text-sm text-muted-foreground">

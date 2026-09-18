@@ -9,12 +9,36 @@ import {
 } from "@/lib/game-delta-format";
 import { isGameDeltaMover, sortGameDeltasByMovement } from "@/lib/game-history-series";
 
+const FIELD_SUMMARY_MIN_BOARDS = 3;
+
 type Props = {
   deltas: GameDelta[];
 };
 
+function summarizeFieldGrowth(deltas: GameDelta[]): string | null {
+  const boardsWithGrowth = new Set<number>();
+  let netGrowth = 0;
+
+  for (const delta of deltas) {
+    if (delta.globalEntryCountDelta != null && delta.globalEntryCountDelta > 0) {
+      boardsWithGrowth.add(delta.raLeaderboardId);
+      netGrowth += delta.globalEntryCountDelta;
+    }
+  }
+
+  if (boardsWithGrowth.size < FIELD_SUMMARY_MIN_BOARDS) {
+    return null;
+  }
+
+  const boardLabel =
+    boardsWithGrowth.size === 1 ? "1 board" : `${boardsWithGrowth.size} boards`;
+  return `Field grew on ${boardLabel} since last sync (${formatPopulationDelta(netGrowth)} total). See Total entries over time above for full-game growth.`;
+}
+
 export function GameDeltaCallout({ deltas }: Props) {
   const [moversOnly, setMoversOnly] = useState(true);
+
+  const fieldSummary = useMemo(() => summarizeFieldGrowth(deltas), [deltas]);
 
   const visibleDeltas = useMemo(() => {
     const sorted = sortGameDeltasByMovement(deltas);
@@ -47,6 +71,11 @@ export function GameDeltaCallout({ deltas }: Props) {
           Movers only
         </label>
       </div>
+      {fieldSummary != null && (
+        <p className="rounded border border-border bg-secondary/20 px-4 py-3 text-sm text-muted-foreground">
+          {fieldSummary}
+        </p>
+      )}
       {visibleDeltas.length === 0 ? (
         <p className="rounded border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">
           No score or rank movement since the last sync.

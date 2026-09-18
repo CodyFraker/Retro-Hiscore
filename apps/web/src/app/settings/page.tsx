@@ -4,6 +4,7 @@ import { SettingsOnboardingWizard } from "@/components/settings/settings-onboard
 import { SettingsMemberSyncSection } from "@/components/settings/settings-member-sync-section";
 import { SyncHealthAlert } from "@/components/settings/sync-health-alert";
 import { PageHero } from "@/components/layout/page-hero";
+import { ThemeSettingsSection } from "@/components/settings/theme-settings-section";
 import type { MemberSelfSyncStatusDto } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
 
@@ -52,6 +53,8 @@ export default async function SettingsPage() {
         title="Settings"
         description="Link your RetroAchievements account so your leaderboard scores stay in sync."
       />
+
+      <ThemeSettingsSection syncToAccount={linked && !error} />
 
       {error && (
         <p className="rounded border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm">

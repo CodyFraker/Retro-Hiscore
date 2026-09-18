@@ -22,8 +22,13 @@ public static class PostGameTrackRequestEndpoint
                 return Results.NotFound();
             }
 
-            var (_, error, _) = await trackRequestService.SubmitAsync(member.Id, request.RaGameId, ct);
-            return error!;
+            var (response, error, statusCode) = await trackRequestService.SubmitAsync(member.Id, request.RaGameId, ct);
+            if (response is not null && statusCode is >= 200 and < 300)
+            {
+                PlatformMetrics.RecordGameTrackRequestSubmitted();
+            }
+
+            return error ?? Results.Ok(response);
         })
         .WithName("PostGameTrackRequest")
         .WithTags("Games")

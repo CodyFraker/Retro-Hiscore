@@ -31,12 +31,23 @@ const TABS: {
   },
 ];
 
-export function AdminTabNav() {
+const THEME_LAB_TAB: (typeof TABS)[number] = {
+  href: "/admin/theme-lab",
+  label: "Theme lab",
+  match: (path: string) => path === "/admin/theme-lab",
+};
+
+type Props = {
+  showThemeLab?: boolean;
+};
+
+export function AdminTabNav({ showThemeLab = false }: Props) {
   const pathname = usePathname();
+  const tabs = showThemeLab ? [...TABS, THEME_LAB_TAB] : TABS;
 
   return (
     <ScrollableTabList ariaLabel="Admin sections" listClassName="-mb-px gap-6">
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const active = tab.match(pathname);
         return (
           <ScrollableTabItem key={tab.href}>

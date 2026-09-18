@@ -324,6 +324,25 @@
         }
       }
     },
+    "/api/members/me/ui-theme": {
+      "put": {
+        "operationId": "putMemberUiTheme",
+        "tags": ["Members"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PutMemberUiThemeRequest" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "No Content" },
+          "400": { "description": "Bad Request" },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
     "/api/members/{raUsername}": {
       "get": {
         "operationId": "getMember",
@@ -1710,9 +1729,16 @@
           "avatarUrl": { "type": "string", "nullable": true }
         }
       },
+      "PutMemberUiThemeRequest": {
+        "type": "object",
+        "required": ["uiTheme"],
+        "properties": {
+          "uiTheme": { "type": "string" }
+        }
+      },
       "CurrentMemberDto": {
         "type": "object",
-        "required": ["id", "displayName", "boardsWithScore", "friendRankOnes", "hasApiKey", "needsOnboarding", "onboardingStep", "isAdmin"],
+        "required": ["id", "displayName", "boardsWithScore", "friendRankOnes", "hasApiKey", "needsOnboarding", "onboardingStep", "isAdmin", "uiTheme"],
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "raUsername": { "type": "string", "nullable": true },
@@ -1724,7 +1750,8 @@
           "hasApiKey": { "type": "boolean" },
           "needsOnboarding": { "type": "boolean" },
           "onboardingStep": { "type": "string" },
-          "isAdmin": { "type": "boolean" }
+          "isAdmin": { "type": "boolean" },
+          "uiTheme": { "type": "string" }
         }
       },
       "MemberSelfSyncScopeStatusDto": {

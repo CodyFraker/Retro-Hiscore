@@ -46,7 +46,8 @@ public static class GetCurrentMemberEndpoint
                 HasApiKey: !string.IsNullOrWhiteSpace(member.RaApiKey),
                 NeedsOnboarding: MemberAuthHelper.NeedsOnboarding(member),
                 OnboardingStep: MemberAuthHelper.ResolveOnboardingStep(member),
-                IsAdmin: MemberAuthHelper.IsAdmin(member, discordId, authOptions.Value)));
+                IsAdmin: MemberAuthHelper.IsAdmin(member, discordId, authOptions.Value),
+                UiTheme: UiThemes.Normalize(member.UiTheme)));
         })
         .WithName("GetCurrentMember")
         .WithTags("Members")
@@ -65,4 +66,5 @@ public sealed record CurrentMemberDto(
     bool HasApiKey,
     bool NeedsOnboarding,
     string OnboardingStep,
-    bool IsAdmin);
+    bool IsAdmin,
+    string UiTheme);

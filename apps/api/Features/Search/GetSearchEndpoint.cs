@@ -19,6 +19,8 @@ public static class GetSearchEndpoint
                 return Results.Ok(new SearchResponse([]));
             }
 
+            PlatformMetrics.RecordSearchExecuted();
+
             var take = Math.Clamp(limit ?? 20, 1, 50);
             var pattern = $"%{term}%";
             var perKind = Math.Max(take / 3, 5);

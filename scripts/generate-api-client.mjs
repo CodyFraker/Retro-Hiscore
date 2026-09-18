@@ -220,6 +220,12 @@ export function createApiClient(options: ApiClientOptions) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ avatarUrl }),
       }, fetchImpl),
+    putMemberUiTheme: (uiTheme: string) =>
+      request<void>(baseUrl, "/api/members/me/ui-theme", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uiTheme }),
+      }, fetchImpl),
     getMember: (raUsername: string) =>
       request<MemberDetailDto>(
         baseUrl,

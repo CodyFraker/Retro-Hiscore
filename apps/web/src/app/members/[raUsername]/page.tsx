@@ -1,13 +1,17 @@
 import { Suspense, type ReactNode } from "react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LeaderboardTrendPanel } from "@/components/leaderboards/leaderboard-trend-panel";
 import { MemberCompareLink } from "@/components/rivalry/member-compare-link";
+import { MemberLeaderboardTrendControls } from "@/components/members/member-leaderboard-trend-controls";
 import { MemberProfileHero } from "@/components/members/member-profile-hero";
 import { MemberProfileTabs } from "@/components/members/member-profile-tabs";
 import { MemberRaAchievementTrends } from "@/components/members/member-ra-achievement-trends";
 import { MemberRaSummarySection } from "@/components/members/member-ra-summary-section";
+import { MemberStandingsPagination } from "@/components/members/member-standings-pagination";
 import { MemberStandingsSection } from "@/components/members/member-standings-section";
+import { MemberTopLeaderboardsSection } from "@/components/members/member-top-leaderboards-section";
 import { MemberTrackedAchievementsTable } from "@/components/members/member-tracked-achievements-table";
-import { MemberTrendCharts } from "@/components/members/member-trend-charts";
 import { LastSyncedLabel } from "@/components/sync/last-synced-label";
 import type {
   ChampionshipRowDto,
@@ -17,13 +21,27 @@ import type {
   MemberRaSummaryResponse,
 } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
+import {
+  MEMBER_STANDINGS_PAGE_SIZE,
+  memberLeaderboardsPath,
+  memberStandingsOffset,
+  parseMemberStandingsPage,
+  parseTrendHistoryPage,
+  resolveMemberLeaderboardSelection,
+} from "@/lib/member-leaderboards-params";
 import { resolveMemberProfileTab } from "@/lib/member-profile-tab";
 
 export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ raUsername: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    standingsPage?: string;
+    game?: string;
+    board?: string;
+    trendHistoryPage?: string;
+  }>;
 };
 
 const unavailableRaSummary: MemberRaSummaryResponse = {
@@ -35,7 +53,13 @@ const unavailableRaSummary: MemberRaSummaryResponse = {
 export default async function MemberProfilePage({ params, searchParams }: Props) {
   const { raUsername: raw } = await params;
   const raUsername = decodeURIComponent(raw);
-  const { tab: tabParam } = await searchParams;
+  const {
+    tab: tabParam,
+    standingsPage: standingsPageParam,
+    game: gameParam,
+    board: boardParam,
+    trendHistoryPage: trendHistoryPageParam,
+  } = await searchParams;
   const activeTab = resolveMemberProfileTab(tabParam);
 
   const api = await getServerApiClient();
@@ -54,7 +78,6 @@ export default async function MemberProfilePage({ params, searchParams }: Props)
     raSummary = unavailableRaSummary;
   }
   let raRankHistory: MemberRaRankHistoryResponse = { items: [] };
-  let history: Awaited<ReturnType<typeof api.getMemberHistory>> | null = null;
   let raTrackedAchievementHistory: MemberRaAchievementHistoryResponse = { items: [] };
   let trackedAchievements: MemberAchievementsListResponse = {
     total: 0,
@@ -69,6 +92,15 @@ export default async function MemberProfilePage({ params, searchParams }: Props)
   >["items"] = [];
   let viewerRaUsername: string | null = null;
   let pendingRaGameIds: Set<number> = new Set();
+  let leaderboardScoresSyncedAt: string | null = null;
+  let trendHistoryItems: Awaited<ReturnType<typeof api.getLeaderboardHistory>>["items"] = [];
+  let trendBoardFormat: string | null = null;
+  let trendBoardTitle: string | null = null;
+
+  const standingsPage = parseMemberStandingsPage(standingsPageParam);
+  const trendHistoryPage = parseTrendHistoryPage(trendHistoryPageParam);
+  const selection = resolveMemberLeaderboardSelection(detail.standings, gameParam, boardParam);
+
   try {
     const current = await api.getCurrentMember();
     viewerRaUsername = current.raUsername ?? null;
@@ -105,9 +137,26 @@ export default async function MemberProfilePage({ params, searchParams }: Props)
     }
   } else if (activeTab === "leaderboards") {
     try {
-      history = await api.getMemberHistory(raUsername, 200, 0);
+      const syncHealth = await api.getSyncHealth();
+      leaderboardScoresSyncedAt = syncHealth.leaderboardScoresLastSuccessAt ?? null;
     } catch {
-      history = { total: 0, offset: 0, limit: 200, items: [] };
+      leaderboardScoresSyncedAt = null;
+    }
+
+    if (selection) {
+      try {
+        const [boardDetail, boardHistory] = await Promise.all([
+          api.getLeaderboard(selection.raLeaderboardId),
+          api.getLeaderboardHistory(selection.raLeaderboardId, 200, 0),
+        ]);
+        trendHistoryItems = boardHistory.items;
+        trendBoardFormat = boardDetail.format ?? null;
+        trendBoardTitle = boardDetail.title;
+      } catch {
+        trendHistoryItems = [];
+        trendBoardFormat = null;
+        trendBoardTitle = null;
+      }
     }
   } else if (activeTab === "achievements") {
     try {
@@ -121,34 +170,85 @@ export default async function MemberProfilePage({ params, searchParams }: Props)
     }
   }
 
-  let leaderboardScoresSyncedAt: string | null = null;
-  if (history) {
-    for (const item of history.items) {
-      if (
-        !leaderboardScoresSyncedAt ||
-        new Date(item.syncedAt) > new Date(leaderboardScoresSyncedAt)
-      ) {
-        leaderboardScoresSyncedAt = item.syncedAt;
-      }
-    }
-  }
+  const standingsTotal = detail.standings.length;
+  const standingsOffset = memberStandingsOffset(standingsPage);
+  const standingsPageItems = detail.standings.slice(
+    standingsOffset,
+    standingsOffset + MEMBER_STANDINGS_PAGE_SIZE,
+  );
+
+  const standingsPageHref = (page: number) =>
+    memberLeaderboardsPath(raUsername, {
+      tab: "leaderboards",
+      standingsPage: page,
+      game: selection?.raGameId,
+      board: selection?.raLeaderboardId,
+      trendHistoryPage,
+    });
+
+  const trendHistoryPageHref = (page: number) =>
+    memberLeaderboardsPath(raUsername, {
+      tab: "leaderboards",
+      standingsPage,
+      game: selection?.raGameId,
+      board: selection?.raLeaderboardId,
+      trendHistoryPage: page,
+    });
 
   let panel: ReactNode;
   if (activeTab === "leaderboards") {
     panel = (
       <>
-        <MemberTrendCharts items={history?.items ?? []} />
+        <MemberTopLeaderboardsSection standings={detail.standings} />
         <section className="space-y-3">
           <h2 className="steam-section-heading">Current standings</h2>
           <LastSyncedLabel at={leaderboardScoresSyncedAt} prefix="Scores last synced" />
-          {detail.standings.length === 0 ? (
+          {standingsTotal === 0 ? (
             <p className="text-muted-foreground">No scores synced yet.</p>
           ) : (
-            <div className="md:overflow-x-auto">
-              <MemberStandingsSection standings={detail.standings} />
+            <div className="space-y-4">
+              <div className="md:overflow-x-auto">
+                <MemberStandingsSection standings={standingsPageItems} />
+              </div>
+              <MemberStandingsPagination
+                total={standingsTotal}
+                offset={standingsOffset}
+                limit={MEMBER_STANDINGS_PAGE_SIZE}
+                standingsPage={standingsPage}
+                standingsPageHref={standingsPageHref}
+              />
             </div>
           )}
         </section>
+        {selection ? (
+          <>
+            <MemberLeaderboardTrendControls
+              raUsername={raUsername}
+              standings={detail.standings}
+              selectedGameId={selection.raGameId}
+              selectedBoardId={selection.raLeaderboardId}
+              standingsPage={standingsPage}
+            />
+            {trendBoardTitle ? (
+              <p className="text-sm text-muted-foreground">
+                Showing trends for{" "}
+                <Link
+                  href={`/leaderboards/${selection.raLeaderboardId}`}
+                  className="text-foreground hover:text-[var(--accent-retro)]"
+                >
+                  {trendBoardTitle}
+                </Link>
+              </p>
+            ) : null}
+            <LeaderboardTrendPanel
+              format={trendBoardFormat}
+              historyItems={trendHistoryItems}
+              historyPage={trendHistoryPage}
+              historyPageHref={trendHistoryPageHref}
+              recentHistoryMemberId={detail.id}
+            />
+          </>
+        ) : null}
       </>
     );
   } else if (activeTab === "achievements") {

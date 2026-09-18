@@ -2,6 +2,7 @@
 
 import { getServerApiClient } from "@/lib/api";
 import { actionErrorMessage } from "@/lib/action-error";
+import { isThemeId } from "@/lib/theme";
 
 export type SettingsActionResult =
   | { ok: true }
@@ -23,6 +24,20 @@ export async function saveMemberRaAccountAction(
     return { ok: true };
   } catch (error) {
     return { ok: false, error: actionErrorMessage(error, "Failed to save account") };
+  }
+}
+
+export async function saveMemberUiThemeAction(uiTheme: string): Promise<SettingsActionResult> {
+  if (!isThemeId(uiTheme)) {
+    return { ok: false, error: "Choose a supported site theme." };
+  }
+
+  try {
+    const api = await getServerApiClient();
+    await api.putMemberUiTheme(uiTheme);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: actionErrorMessage(error, "Failed to save theme") };
   }
 }
 

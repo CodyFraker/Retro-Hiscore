@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import type { GameHistoryItemDto, GameLeaderboardDto, StandingMemberDto } from "@/generated/api-client";
 import { formatFriendRankDelta } from "@/lib/game-delta-format";
 import type { GameDelta } from "@/lib/game-history-series";
@@ -33,6 +34,8 @@ import {
   indexGameDeltasByBoardMember,
   toGameMemberBoardRankSeries,
 } from "@/lib/game-history-series";
+
+const LARGE_GAME_BOARD_COUNT = 15;
 
 const CHART_COLORS = [
   "var(--chart-1)",
@@ -87,6 +90,17 @@ export function GameRankTrendSection({
   const initialMemberId = resolveDefaultMemberId(members, defaultMemberId);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(initialMemberId);
   const [hiddenBoards, setHiddenBoards] = useState<Record<string, boolean>>({});
+  const [boardFilter, setBoardFilter] = useState("");
+
+  const isLargeGame = leaderboards.length > LARGE_GAME_BOARD_COUNT;
+
+  const filteredLeaderboards = useMemo(() => {
+    const query = boardFilter.trim().toLowerCase();
+    if (!query) {
+      return leaderboards;
+    }
+    return leaderboards.filter((board) => board.title.toLowerCase().includes(query));
+  }, [boardFilter, leaderboards]);
 
   const memberBoardSeries = useMemo(() => {
     if (!selectedMemberId) {
@@ -134,110 +148,151 @@ export function GameRankTrendSection({
     return null;
   }
 
-  return (
-    <section className="space-y-6">
-      <div className="space-y-3">
-        <div>
-          <h2 className="steam-section-heading">Friend ranks since last sync</h2>
-          <p className="text-xs text-muted-foreground">
-            Current friend rank on each board, with movement since the previous sync.
-          </p>
+  const rankSnapshotTable = (
+    <div className="md:overflow-x-auto">
+      {isLargeGame && (
+        <div className="mb-3 max-w-md">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">Filter leaderboards</span>
+            <Input
+              type="search"
+              value={boardFilter}
+              onChange={(event) => setBoardFilter(event.target.value)}
+              placeholder="Search by title…"
+              className="bg-input"
+            />
+          </label>
         </div>
-        <div className="md:overflow-x-auto">
-          <ResponsiveTable
-            rows={leaderboards}
-            rowKey={(board) => String(board.id)}
-            desktopClassName="overflow-x-auto rounded border border-border"
-            renderDesktop={() => (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-48">Leaderboard</TableHead>
-                    {members.map((member) => (
-                      <TableHead key={member.id} className="min-w-28 text-right">
-                        <Link
-                          href={`/members/${encodeURIComponent(member.raUsername)}`}
-                          className="inline-flex items-center justify-end gap-2 hover:text-[var(--accent-retro)]"
-                        >
-                          <MemberAvatar
-                            avatarUrl={member.avatarUrl}
-                            displayName={member.displayName}
-                            size={20}
-                          />
-                          {member.displayName}
-                        </Link>
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {leaderboards.map((board) => (
-                    <TableRow key={board.id}>
-                      <TableCell>
-                        <Link
-                          href={`/leaderboards/${board.raLeaderboardId}`}
-                          className="font-medium hover:text-[var(--accent-retro)]"
-                        >
-                          {board.title}
-                        </Link>
-                      </TableCell>
-                      {members.map((member) => {
-                        const standing = board.standings.find((s) => s.memberId === member.id);
-                        const delta = deltaByKey.get(`${board.raLeaderboardId}:${member.id}`);
-                        return (
-                          <TableCell key={member.id} className="text-right text-sm">
-                            <FriendRank
-                              rank={standing?.friendRank}
-                              className="justify-end font-mono"
-                              iconClassName="size-3"
-                            />
-                            {delta?.friendRankDelta != null && delta.friendRankDelta !== 0 && (
-                              <p className="mt-0.5 font-mono text-xs text-[var(--accent-retro)]">
-                                {formatFriendRankDelta(delta.friendRankDelta)}
-                              </p>
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            renderMobileCard={(board) => (
-              <li key={board.id} className="rounded border border-border bg-card p-4">
-                <Link
-                  href={`/leaderboards/${board.raLeaderboardId}`}
-                  className="font-medium hover:text-[var(--accent-retro)]"
-                >
-                  {board.title}
-                </Link>
-                <ul className="mt-3 divide-y divide-border border-t border-border">
-                  {members.map((member) => {
-                    const standing = board.standings.find((s) => s.memberId === member.id);
-                    const delta = deltaByKey.get(`${board.raLeaderboardId}:${member.id}`);
-                    return (
-                      <li
-                        key={member.id}
-                        className="flex items-center justify-between gap-3 py-2.5 text-sm"
+      )}
+      {filteredLeaderboards.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No leaderboards match your filter.</p>
+      ) : (
+        <ResponsiveTable
+          rows={filteredLeaderboards}
+          rowKey={(board) => String(board.id)}
+          desktopClassName="overflow-x-auto rounded border border-border"
+          renderDesktop={() => (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-48">Leaderboard</TableHead>
+                  {members.map((member) => (
+                    <TableHead key={member.id} className="min-w-28 text-right">
+                      <Link
+                        href={`/members/${encodeURIComponent(member.raUsername)}`}
+                        className="inline-flex items-center justify-end gap-2 hover:text-[var(--accent-retro)]"
                       >
-                        <span className="truncate text-muted-foreground">{member.displayName}</span>
-                        <div className="shrink-0 text-right">
-                          <FriendRank rank={standing?.friendRank} className="justify-end font-mono" />
+                        <MemberAvatar
+                          avatarUrl={member.avatarUrl}
+                          displayName={member.displayName}
+                          size={20}
+                        />
+                        {member.displayName}
+                      </Link>
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredLeaderboards.map((board) => (
+                  <TableRow key={board.id}>
+                    <TableCell>
+                      <Link
+                        href={`/leaderboards/${board.raLeaderboardId}`}
+                        className="font-medium hover:text-[var(--accent-retro)]"
+                      >
+                        {board.title}
+                      </Link>
+                    </TableCell>
+                    {members.map((member) => {
+                      const standing = board.standings.find((s) => s.memberId === member.id);
+                      const delta = deltaByKey.get(`${board.raLeaderboardId}:${member.id}`);
+                      return (
+                        <TableCell key={member.id} className="text-right text-sm">
+                          <FriendRank
+                            rank={standing?.friendRank}
+                            className="justify-end font-mono"
+                            iconClassName="size-3"
+                          />
                           {delta?.friendRankDelta != null && delta.friendRankDelta !== 0 && (
                             <p className="mt-0.5 font-mono text-xs text-[var(--accent-retro)]">
                               {formatFriendRankDelta(delta.friendRankDelta)}
                             </p>
                           )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </li>
-            )}
-          />
-        </div>
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+          renderMobileCard={(board) => (
+            <li key={board.id} className="rounded border border-border bg-card p-4">
+              <Link
+                href={`/leaderboards/${board.raLeaderboardId}`}
+                className="font-medium hover:text-[var(--accent-retro)]"
+              >
+                {board.title}
+              </Link>
+              <ul className="mt-3 divide-y divide-border border-t border-border">
+                {members.map((member) => {
+                  const standing = board.standings.find((s) => s.memberId === member.id);
+                  const delta = deltaByKey.get(`${board.raLeaderboardId}:${member.id}`);
+                  return (
+                    <li
+                      key={member.id}
+                      className="flex items-center justify-between gap-3 py-2.5 text-sm"
+                    >
+                      <span className="truncate text-muted-foreground">{member.displayName}</span>
+                      <div className="shrink-0 text-right">
+                        <FriendRank rank={standing?.friendRank} className="justify-end font-mono" />
+                        {delta?.friendRankDelta != null && delta.friendRankDelta !== 0 && (
+                          <p className="mt-0.5 font-mono text-xs text-[var(--accent-retro)]">
+                            {formatFriendRankDelta(delta.friendRankDelta)}
+                          </p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          )}
+        />
+      )}
+    </div>
+  );
+
+  return (
+    <section className="space-y-6">
+      <div className="space-y-3">
+        {isLargeGame ? (
+          <details className="group rounded border border-border">
+            <summary className="cursor-pointer list-none px-4 py-3 [&::-webkit-details-marker]:hidden">
+              <h2 className="steam-section-heading inline">Friend ranks (snapshot)</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                All board ranks ({leaderboards.length} leaderboards). Expand to view and filter.
+              </p>
+            </summary>
+            <div className="space-y-3 border-t border-border px-4 py-3">
+              <p className="text-xs text-muted-foreground">
+                Current friend rank on each board, with movement since the previous sync.
+              </p>
+              {rankSnapshotTable}
+            </div>
+          </details>
+        ) : (
+          <>
+            <div>
+              <h2 className="steam-section-heading">Friend ranks (snapshot)</h2>
+              <p className="text-xs text-muted-foreground">
+                Current friend rank on each board, with movement since the previous sync.
+              </p>
+            </div>
+            {rankSnapshotTable}
+          </>
+        )}
       </div>
 
       <div className="space-y-3">

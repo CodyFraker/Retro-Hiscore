@@ -119,11 +119,13 @@ if (!isTesting)
         .UseRecommendedSerializerSettings()
         .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
 
+    GlobalJobFilters.Filters.Add(new HangfireTelemetryServerFilter());
     builder.Services.AddHangfireServer();
 }
 
 builder.Services.AddOpenApi();
 builder.Services.AddRetroHiscoreCors(builder.Configuration);
+builder.Services.AddRetroHiscoreTelemetry(builder.Configuration, builder.Environment);
 
 if (!isTesting)
 {
@@ -204,6 +206,7 @@ app.MapPostMemberSelfSyncProfile();
 app.MapPostMemberSelfSyncAchievements();
 app.MapPutMemberApiKey();
 app.MapPutMemberProfile();
+app.MapPutMemberUiTheme();
 app.MapGetRivalry();
 app.MapGetSearch();
 app.MapGetMember();

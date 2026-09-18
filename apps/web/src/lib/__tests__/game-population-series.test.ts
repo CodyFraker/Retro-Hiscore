@@ -1,5 +1,11 @@
 import type { GameLeaderboardPopulationHistoryResponse } from "@/generated/api-client";
-import { toBoardPopulationRows, toTotalPopulationSeries } from "@/lib/game-population-series";
+import {
+  countCompletePopulationSyncs,
+  hasAnyPopulationSnapshots,
+  hasPartialPopulationSnapshots,
+  toBoardPopulationRows,
+  toTotalPopulationSeries,
+} from "@/lib/game-population-series";
 
 describe("toTotalPopulationSeries", () => {
   it("sums entry counts across boards at each sync time", () => {
@@ -30,6 +36,42 @@ describe("toTotalPopulationSeries", () => {
       { syncedAt: "2026-01-01T00:00:00Z", totalEntryCount: 150, boardCount: 2 },
       { syncedAt: "2026-01-02T00:00:00Z", totalEntryCount: 175, boardCount: 2 },
     ]);
+  });
+
+  it("excludes sync times where not every board was captured", () => {
+    const data: GameLeaderboardPopulationHistoryResponse = {
+      boards: [
+        {
+          raLeaderboardId: 1,
+          title: "A",
+          points: [
+            { syncedAt: "2026-01-01T00:00:00Z", entryCount: 100 },
+            { syncedAt: "2026-01-02T00:00:00Z", entryCount: 110 },
+          ],
+        },
+        {
+          raLeaderboardId: 2,
+          title: "B",
+          points: [{ syncedAt: "2026-01-01T00:00:00Z", entryCount: 50 }],
+        },
+      ],
+    };
+
+    const series = toTotalPopulationSeries(data);
+
+    expect(series).toEqual([
+      { syncedAt: "2026-01-01T00:00:00Z", totalEntryCount: 150, boardCount: 2 },
+    ]);
+    expect(hasPartialPopulationSnapshots(data)).toBe(true);
+    expect(countCompletePopulationSyncs(data)).toBe(1);
+  });
+
+  it("returns empty series when there are no boards", () => {
+    const data: GameLeaderboardPopulationHistoryResponse = { boards: [] };
+
+    expect(toTotalPopulationSeries(data)).toEqual([]);
+    expect(hasAnyPopulationSnapshots(data)).toBe(false);
+    expect(countCompletePopulationSyncs(data)).toBe(0);
   });
 });
 

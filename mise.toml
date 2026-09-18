@@ -5,11 +5,13 @@ dotnet = "10"
 [tasks.api]
 description = "Run the API"
 dir = "apps/api"
+env = { COLLECTOR_ENABLED = "true", OTEL_EXPORTER_OTLP_ENDPOINT = "http://localhost:14317", Telemetry__OtlpEndpoint = "http://localhost:14317" }
 run = "dotnet run --urls http://localhost:18943"
 
 [tasks.web]
 description = "Run the Next.js frontend"
 dir = "apps/web"
+env = { COLLECTOR_ENABLED = "true", OTEL_EXPORTER_OTLP_ENDPOINT = "http://localhost:14318" }
 run = "npm run dev -- --port 18321"
 
 [tasks.test]

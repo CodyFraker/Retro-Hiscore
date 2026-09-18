@@ -8,7 +8,7 @@ type Props = {
 
 export function DashboardGroupActivityCard({ activity }: Props) {
   return (
-    <section className="rounded border border-border bg-card p-5">
+    <section className="rounded-md border border-border bg-card p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-lg font-semibold">What&apos;s new</h2>
         <Link href="/activity" className="text-sm text-[var(--accent-retro)] hover:underline">

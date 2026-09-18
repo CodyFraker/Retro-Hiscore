@@ -43,7 +43,7 @@ export function GameOfTheWeekDashboardShowcase({
       const opensAt = new Date(poll.startsAt);
 
       return (
-        <section className="rounded border border-border bg-card p-5 space-y-4">
+        <section className="rounded-md border border-border bg-card p-5 space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">Game of the week</h2>
@@ -126,7 +126,7 @@ export function GameOfTheWeekDashboardShowcase({
       const winnerImage = gameOfTheWeekImageUrl(winner?.imageIcon);
 
       return (
-        <section className="rounded border border-border bg-card p-5">
+        <section className="rounded-md border border-border bg-card p-5">
           <h2 className="text-lg font-semibold">Game of the week</h2>
           <p className="mt-1 text-sm text-muted-foreground">Voting closed</p>
           {poll.winnerRaGameId != null ? (
@@ -160,7 +160,7 @@ export function GameOfTheWeekDashboardShowcase({
         winner?.title ?? (poll.winnerRaGameId != null ? `RA #${poll.winnerRaGameId}` : "Winner");
 
       return (
-        <section className="rounded border border-border bg-card p-5">
+        <section className="rounded-md border border-border bg-card p-5">
           <h2 className="text-lg font-semibold">Game of the week</h2>
           <p className="mt-1 text-sm text-muted-foreground">Winner syncing leaderboards…</p>
           {poll.winnerRaGameId != null ? (
@@ -184,7 +184,7 @@ export function GameOfTheWeekDashboardShowcase({
   }
 
   return (
-    <section className="rounded border border-border bg-card p-5">
+    <section className="rounded-md border border-border bg-card p-5">
       <h2 className="text-lg font-semibold">Game of the week</h2>
       <p className="mt-1 text-sm text-muted-foreground">No vote open</p>
       {lastWinner && lastWinner.winnerRaGameId != null ? (

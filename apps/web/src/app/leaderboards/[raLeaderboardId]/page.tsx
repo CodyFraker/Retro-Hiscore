@@ -2,24 +2,10 @@ import { ArrowLeft, Clock } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FormattedSyncTime } from "@/components/formatted-sync-time";
-import { DeltaCallout } from "@/components/charts/delta-callout";
-import { GlobalRankTrendChart } from "@/components/charts/global-rank-trend-chart";
-import { LeaderboardEntryCountTrendChart } from "@/components/charts/leaderboard-entry-count-trend-chart";
-import { ScoreTrendChart } from "@/components/charts/score-trend-chart";
-import { LeaderboardHistoryPagination } from "@/components/leaderboards/leaderboard-history-pagination";
-import { LeaderboardHistorySection } from "@/components/leaderboards/leaderboard-history-section";
+import { LeaderboardTrendPanel } from "@/components/leaderboards/leaderboard-trend-panel";
 import { LeaderboardStandingsSection } from "@/components/leaderboards/leaderboard-standings-section";
 import { getServerApiClient } from "@/lib/api";
-import {
-  computeLeaderboardPopulationDelta,
-  computeMemberDeltas,
-  dedupeLeaderboardHistoryItems,
-  enrichLeaderboardHistoryRows,
-  LEADERBOARD_HISTORY_PAGE_SIZE,
-  parseLeaderboardHistoryPage,
-  toChartSeries,
-  toLeaderboardPopulationSeries,
-} from "@/lib/history-series";
+import { parseLeaderboardHistoryPage } from "@/lib/history-series";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +13,13 @@ type Props = {
   params: Promise<{ raLeaderboardId: string }>;
   searchParams: Promise<{ historyPage?: string }>;
 };
+
+function boardHistoryPageHref(raLeaderboardId: number, page: number) {
+  if (page <= 1) {
+    return `/leaderboards/${raLeaderboardId}`;
+  }
+  return `/leaderboards/${raLeaderboardId}?historyPage=${page}`;
+}
 
 export default async function LeaderboardPage({ params, searchParams }: Props) {
   const { raLeaderboardId: raw } = await params;
@@ -49,25 +42,7 @@ export default async function LeaderboardPage({ params, searchParams }: Props) {
     notFound();
   }
 
-  const series = toChartSeries(history.items);
-  const populationSeries = toLeaderboardPopulationSeries(history.items);
-  const deltas = computeMemberDeltas(series);
-  const populationDelta = computeLeaderboardPopulationDelta(history.items);
-  const dedupedHistory = dedupeLeaderboardHistoryItems(history.items);
-  const dedupedHistoryIds = new Set(dedupedHistory.map((row) => row.id));
-  const enrichedHistory = enrichLeaderboardHistoryRows(history.items).filter((row) =>
-    dedupedHistoryIds.has(row.id),
-  );
-  const historyPageCount = Math.max(
-    1,
-    Math.ceil(enrichedHistory.length / LEADERBOARD_HISTORY_PAGE_SIZE),
-  );
-  const historyPage = parseLeaderboardHistoryPage(historyPageParam, historyPageCount);
-  const historyOffset = (historyPage - 1) * LEADERBOARD_HISTORY_PAGE_SIZE;
-  const historyPageItems = enrichedHistory.slice(
-    historyOffset,
-    historyOffset + LEADERBOARD_HISTORY_PAGE_SIZE,
-  );
+  const historyPage = parseLeaderboardHistoryPage(historyPageParam, Number.MAX_SAFE_INTEGER);
 
   return (
     <div className="space-y-10">
@@ -113,56 +88,13 @@ export default async function LeaderboardPage({ params, searchParams }: Props) {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="steam-section-heading">Score trend</h2>
-        <ScoreTrendChart series={series} scoreFormat={detail.format} />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="steam-section-heading">Global rank over time</h2>
-        <GlobalRankTrendChart series={series} historyItems={history.items} />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="steam-section-heading">Total entries over time</h2>
-        <p className="text-xs text-muted-foreground">
-          Ranked players on RetroAchievements at each sync—growth shows new submissions on this
-          board.
-        </p>
-        <LeaderboardEntryCountTrendChart points={populationSeries} />
-      </section>
-
-      <DeltaCallout
-        deltas={deltas}
-        scoreFormat={detail.format}
-        globalEntryCountDelta={populationDelta?.delta}
+      <LeaderboardTrendPanel
+        format={detail.format}
+        historyItems={history.items}
+        historyPage={historyPage}
+        historyPageHref={(page) => boardHistoryPageHref(raLeaderboardId, page)}
+        showDeltaCallout
       />
-
-      <section className="space-y-3">
-        <h2 className="steam-section-heading">Recent history</h2>
-        {history.items.length === 0 ? (
-          <p className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="size-4 shrink-0" />
-            No snapshots yet.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            <p className="text-xs text-muted-foreground">
-              Rows where score and global rank are unchanged since the previous sync are hidden.
-            </p>
-            <div className="md:overflow-x-auto">
-              <LeaderboardHistorySection items={historyPageItems} />
-            </div>
-            <LeaderboardHistoryPagination
-              raLeaderboardId={raLeaderboardId}
-              total={enrichedHistory.length}
-              offset={historyOffset}
-              limit={LEADERBOARD_HISTORY_PAGE_SIZE}
-              historyPage={historyPage}
-            />
-          </div>
-        )}
-      </section>
     </div>
   );
 }

@@ -5,6 +5,11 @@ import { createApiClient } from "@/generated/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 import { isDiscordUserInvited } from "@/lib/sign-in-check";
 import { syncMemberProfileOnLogin } from "@/lib/sync-member-profile";
+import { initNodeMetrics } from "@/lib/telemetry/init-node-metrics";
+import {
+  recordAuthSignInRejectedNotInvited,
+  recordAuthSignInSuccess,
+} from "@/lib/telemetry/platform-metrics";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
@@ -22,7 +27,13 @@ export const authOptions: NextAuthOptions = {
     async signIn({ profile }) {
       const discordId =
         profile?.id === undefined || profile?.id === null ? null : String(profile.id);
-      return await isDiscordUserInvited(discordId ?? "");
+      const invited = await isDiscordUserInvited(discordId ?? "");
+      if (!invited) {
+        initNodeMetrics();
+        recordAuthSignInRejectedNotInvited();
+      }
+
+      return invited;
     },
     async jwt({ token, account, profile, trigger, session }) {
       if (trigger === "update" && session) {
@@ -35,6 +46,8 @@ export const authOptions: NextAuthOptions = {
       }
 
       if (account && profile?.id !== undefined && profile?.id !== null) {
+        initNodeMetrics();
+        recordAuthSignInSuccess();
         const discordId = String(profile.id);
         const username =
           typeof profile.username === "string"

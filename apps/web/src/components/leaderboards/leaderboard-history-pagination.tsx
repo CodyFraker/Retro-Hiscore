@@ -2,26 +2,19 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 type Props = {
-  raLeaderboardId: number;
   total: number;
   offset: number;
   limit: number;
   historyPage: number;
+  historyPageHref: (page: number) => string;
 };
 
-function historyPageHref(raLeaderboardId: number, page: number) {
-  if (page <= 1) {
-    return `/leaderboards/${raLeaderboardId}`;
-  }
-  return `/leaderboards/${raLeaderboardId}?historyPage=${page}`;
-}
-
 export function LeaderboardHistoryPagination({
-  raLeaderboardId,
   total,
   offset,
   limit,
   historyPage,
+  historyPageHref,
 }: Props) {
   if (total <= limit) {
     return null;
@@ -43,12 +36,14 @@ export function LeaderboardHistoryPagination({
           <Button
             variant="outline"
             size="sm"
-            render={<Link href={historyPageHref(raLeaderboardId, prevPage)} />}
+            render={<Link href={historyPageHref(prevPage)} />}
           >
             Previous
           </Button>
         ) : (
-          <Button variant="outline" size="sm" disabled>Previous</Button>
+          <Button variant="outline" size="sm" disabled>
+            Previous
+          </Button>
         )}
         <span className="text-sm text-muted-foreground tabular-nums">
           Page {historyPage} of {pageCount}
@@ -57,12 +52,14 @@ export function LeaderboardHistoryPagination({
           <Button
             variant="outline"
             size="sm"
-            render={<Link href={historyPageHref(raLeaderboardId, nextPage)} />}
+            render={<Link href={historyPageHref(nextPage)} />}
           >
             Next
           </Button>
         ) : (
-          <Button variant="outline" size="sm" disabled>Next</Button>
+          <Button variant="outline" size="sm" disabled>
+            Next
+          </Button>
         )}
       </div>
     </div>

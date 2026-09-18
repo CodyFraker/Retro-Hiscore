@@ -18,6 +18,20 @@ type Props = {
   achievements: ReactNode;
 };
 
+function activeTabPanel(
+  activeTab: string,
+  panels: { standings: ReactNode; trends: ReactNode; achievements: ReactNode },
+): ReactNode {
+  switch (activeTab) {
+    case "trends":
+      return panels.trends;
+    case "achievements":
+      return panels.achievements;
+    default:
+      return panels.standings;
+  }
+}
+
 export function GameDetailTabs({ standings, trends, achievements }: Props) {
   const searchParams = useSearchParams();
   const activeTab = resolveQueryTab(searchParams.get("tab") ?? undefined, TAB_IDS, "standings");
@@ -25,9 +39,7 @@ export function GameDetailTabs({ standings, trends, achievements }: Props) {
   return (
     <div className="space-y-8">
       <QueryTabNav tabs={[...TABS]} activeTab={activeTab} ariaLabel="Game sections" />
-      <div hidden={activeTab !== "standings"}>{standings}</div>
-      <div hidden={activeTab !== "trends"}>{trends}</div>
-      <div hidden={activeTab !== "achievements"}>{achievements}</div>
+      {activeTabPanel(activeTab, { standings, trends, achievements })}
     </div>
   );
 }

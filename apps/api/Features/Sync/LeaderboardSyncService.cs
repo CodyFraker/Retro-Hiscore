@@ -5,6 +5,7 @@ using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Dashboard;
 using RetroHiscore.Api.Features.Notifications;
 using RetroHiscore.Api.Features.Ra;
+using RetroHiscore.Api.Infrastructure;
 using RetroHiscore.Api.Options;
 
 namespace RetroHiscore.Api.Features.Sync;
@@ -168,6 +169,7 @@ public sealed class LeaderboardSyncService(
             run.FinishedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
             await notificationOutboxReadiness.MarkNotificationsReadyForSyncRunAsync(run.Id, cancellationToken);
+            SyncRunMetrics.Record(run);
         }
 
         return run;
@@ -227,6 +229,7 @@ public sealed class LeaderboardSyncService(
             run.FinishedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
             await notificationOutboxReadiness.MarkNotificationsReadyForSyncRunAsync(run.Id, cancellationToken);
+            SyncRunMetrics.Record(run);
         }
 
         return run;
@@ -310,6 +313,7 @@ public sealed class LeaderboardSyncService(
             run.FinishedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
             await notificationOutboxReadiness.MarkNotificationsReadyForSyncRunAsync(run.Id, cancellationToken);
+            SyncRunMetrics.Record(run);
         }
 
         return run;

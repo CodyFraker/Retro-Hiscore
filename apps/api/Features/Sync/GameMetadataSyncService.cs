@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Ra;
+using RetroHiscore.Api.Infrastructure;
 using RetroHiscore.Api.Options;
 
 namespace RetroHiscore.Api.Features.Sync;
@@ -98,6 +99,7 @@ public sealed class GameMetadataSyncService(
         {
             run.FinishedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
+            SyncRunMetrics.Record(run);
         }
 
         try

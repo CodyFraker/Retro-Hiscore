@@ -59,6 +59,7 @@ public static class PostMemberSelfSyncLeaderboardsEndpoint
             }
 
             var result = await selfSync.QueueLeaderboardsAsync(member, ct);
+            PlatformMetrics.RecordMemberSelfSyncRequested("leaderboards");
             return Results.Accepted(
                 "/api/members/me/sync-status",
                 new MemberSelfSyncLeaderboardsResponse(result.Queued, result.SkippedCooldown));
@@ -98,6 +99,7 @@ public static class PostMemberSelfSyncProfileEndpoint
             }
 
             var run = await selfSync.SyncProfileAsync(member, ct);
+            PlatformMetrics.RecordMemberSelfSyncRequested("profile");
             return Results.Ok(new MemberSelfSyncRunResponse(
                 run.Id,
                 run.Status.ToString(),
@@ -138,6 +140,7 @@ public static class PostMemberSelfSyncAchievementsEndpoint
             }
 
             var run = await selfSync.SyncAchievementsAsync(member, ct);
+            PlatformMetrics.RecordMemberSelfSyncRequested("achievements");
             return Results.Ok(new MemberSelfSyncRunResponse(
                 run.Id,
                 run.Status.ToString(),

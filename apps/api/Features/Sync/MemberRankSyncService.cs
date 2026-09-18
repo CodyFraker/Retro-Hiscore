@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
+using RetroHiscore.Api.Infrastructure;
 using RetroHiscore.Api.Options;
 
 namespace RetroHiscore.Api.Features.Sync;
@@ -81,6 +82,7 @@ public sealed class MemberRankSyncService(
         {
             run.FinishedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync(cancellationToken);
+            SyncRunMetrics.Record(run);
         }
 
         return run;

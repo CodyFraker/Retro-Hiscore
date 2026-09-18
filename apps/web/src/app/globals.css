@@ -48,7 +48,8 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
+:root,
+[data-theme="steam"] {
   --steam-olive: #4c5844;
   --steam-olive-dark: #3f4738;
   --steam-gold: #968732;
@@ -92,6 +93,76 @@
   --steam-bevel-dark: color-mix(in oklab, var(--steam-olive-dark), black 22%);
 }
 
+[data-theme="frutiger-aero"] {
+  --aero-cerulean: #5e9c9a;
+  --aero-persian-green: #a7d7d3;
+  --aero-robin-egg: #c8c3d5;
+  --aero-cream-can: #fab700;
+  --aero-flamingo: #f5683d;
+
+  --background: #0a6ea8;
+  --foreground: #f0f9ff;
+  --card: color-mix(in oklab, white 42%, var(--aero-cerulean) 12%);
+  --card-foreground: #0c2d42;
+  --popover: color-mix(in oklab, white 48%, var(--aero-robin-egg) 10%);
+  --popover-foreground: #0c2d42;
+  --primary: var(--aero-cerulean);
+  --primary-foreground: #ffffff;
+  --secondary: color-mix(in oklab, var(--aero-persian-green), white 22%);
+  --secondary-foreground: #0c2d42;
+  --muted: color-mix(in oklab, white 35%, var(--aero-robin-egg) 18%);
+  --muted-foreground: #c5e8f5;
+  --accent: var(--aero-robin-egg);
+  --accent-foreground: #0c2d42;
+  --destructive: var(--aero-flamingo);
+  --border: rgba(255, 255, 255, 0.35);
+  --input: rgba(255, 255, 255, 0.28);
+  --ring: var(--aero-robin-egg);
+  --accent-retro: var(--aero-cream-can);
+  --chart-1: var(--aero-cerulean);
+  --chart-2: var(--aero-persian-green);
+  --chart-3: var(--aero-robin-egg);
+  --chart-4: var(--aero-cream-can);
+  --chart-5: var(--aero-flamingo);
+  --radius: 0.75rem;
+  --sidebar: color-mix(in oklab, var(--aero-cerulean), black 12%);
+  --sidebar-foreground: #f0f9ff;
+  --sidebar-primary: var(--aero-cream-can);
+  --sidebar-primary-foreground: #0c2d42;
+  --sidebar-accent: color-mix(in oklab, var(--aero-persian-green), white 15%);
+  --sidebar-accent-foreground: #0c2d42;
+  --sidebar-border: rgba(255, 255, 255, 0.3);
+  --sidebar-ring: var(--aero-robin-egg);
+
+  --steam-bevel-light: rgba(255, 255, 255, 0.55);
+  --steam-bevel-dark: rgba(255, 255, 255, 0.18);
+
+  --glass-bg: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.38);
+  --glass-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset, 0 0 20px rgba(255, 255, 255, 0.05);
+  --glass-shadow-lg:
+    0 12px 48px rgba(0, 0, 0, 0.18), 0 4px 16px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset, 0 0 30px rgba(255, 255, 255, 0.08);
+  --glass-shadow-sm:
+    0 4px 16px rgba(0, 0, 0, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset, 0 0 10px rgba(255, 255, 255, 0.03);
+  --blur: 30px;
+  --blur-sm: 15px;
+  --blur-lg: 50px;
+
+  --aero-bg-glow-top: #003d7a;
+  --aero-bg-glow-right: #004f9e;
+  --aero-bg-glow-bottom: #003c8a;
+  --aero-bg-glow-top-opacity: 60%;
+  --aero-bg-glow-right-opacity: 70%;
+  --aero-bg-glow-bottom-opacity: 70%;
+  --aero-bg-gradient-start: #2b3d50;
+  --aero-bg-gradient-mid: #046762;
+  --aero-bg-gradient-end: #0092d6;
+}
+
 @utility steam-bevel-raised {
   border-style: solid;
   border-width: 1px;
@@ -120,18 +191,23 @@
   text-transform: uppercase;
 }
 
+@utility glass-bg {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--blur-sm)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur-sm)) saturate(160%);
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    @apply font-sans;
+  }
   body {
     @apply bg-background text-foreground overflow-x-clip;
-    background-image: linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--steam-olive), black 6%) 0%,
-      var(--steam-olive-dark) 45%,
-      color-mix(in oklab, var(--steam-olive-dark), black 8%) 100%
-    );
     background-attachment: scroll;
   }
   @media (min-width: 768px) {
@@ -139,17 +215,89 @@
       background-attachment: fixed;
     }
   }
-  html {
-    @apply font-sans;
+
+  :root body,
+  [data-theme="steam"] body {
+    background-image: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--steam-olive), black 6%) 0%,
+      var(--steam-olive-dark) 45%,
+      color-mix(in oklab, var(--steam-olive-dark), black 8%) 100%
+    );
   }
-  input:not([type="checkbox"]):not([type="radio"]),
-  textarea,
-  select {
+
+  [data-theme="frutiger-aero"] body {
+    background-image:
+      radial-gradient(
+        ellipse 120% 80% at 10% 0%,
+        color-mix(in srgb, var(--aero-bg-glow-top) var(--aero-bg-glow-top-opacity), transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse 90% 70% at 90% 10%,
+        color-mix(in srgb, var(--aero-bg-glow-right) var(--aero-bg-glow-right-opacity), transparent),
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse 100% 60% at 50% 100%,
+        color-mix(in srgb, var(--aero-bg-glow-bottom) var(--aero-bg-glow-bottom-opacity), transparent),
+        transparent 55%
+      ),
+      linear-gradient(
+        160deg,
+        var(--aero-bg-gradient-start) 0%,
+        var(--aero-bg-gradient-mid) 42%,
+        var(--aero-bg-gradient-end) 100%
+      );
+  }
+
+  :root input:not([type="checkbox"]):not([type="radio"]),
+  :root textarea,
+  :root select,
+  [data-theme="steam"] input:not([type="checkbox"]):not([type="radio"]),
+  [data-theme="steam"] textarea,
+  [data-theme="steam"] select {
     border-style: solid;
     border-width: 1px;
     border-top-color: var(--steam-bevel-dark);
     border-left-color: var(--steam-bevel-dark);
     border-right-color: var(--steam-bevel-light);
     border-bottom-color: var(--steam-bevel-light);
+  }
+
+  [data-theme="frutiger-aero"] input:not([type="checkbox"]):not([type="radio"]),
+  [data-theme="frutiger-aero"] textarea,
+  [data-theme="frutiger-aero"] select {
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--glass-border);
+    background: color-mix(in oklab, var(--glass-bg), transparent 20%);
+    backdrop-filter: blur(var(--blur-sm));
+  }
+
+  [data-theme="frutiger-aero"] [data-slot="card"] [data-slot="card-description"] {
+    color: color-mix(in oklab, var(--card-foreground), transparent 38%);
+  }
+
+  [data-theme="frutiger-aero"] [data-slot="card"] {
+    @apply glass-bg;
+  }
+}
+
+@layer utilities {
+  :is(section, div, li).border-border.bg-card {
+    border-radius: var(--radius-md);
+  }
+
+  [data-theme="frutiger-aero"] [data-site-header] {
+    @apply glass-bg;
+  }
+
+  [data-theme="frutiger-aero"] :is(section, div, li).border-border.bg-card {
+    @apply glass-bg;
+  }
+
+  [data-theme="frutiger-aero"] :is(section, div, li).border-border.bg-card .text-muted-foreground {
+    color: color-mix(in oklab, var(--card-foreground), transparent 38%);
   }
 }

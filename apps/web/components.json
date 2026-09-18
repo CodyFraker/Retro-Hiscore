@@ -21,5 +21,12 @@
   },
   "menuColor": "default",
   "menuAccent": "subtle",
-  "registries": {}
+  "registries": {
+    "@glass-ui": {
+      "url": "https://glass-ui.crenspire.com/r/{name}.json"
+    },
+    "@cult-ui": {
+      "url": "https://cult-ui.com/r/{name}.json"
+    }
+  }
 }

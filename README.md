@@ -77,6 +77,27 @@ The track queue lists **member requests** and games discovered from friend recen
 
 Leaderboard sync uses Hangfire recurring jobs (member activity, leaderboard dispatch, member RA rank, game metadata). Admins tune intervals and hot/cold per-game policy on **Admin → Sync schedules**. The dispatcher enqueues **per-game** jobs when each game is due (hot vs cold based on recent play). Members refresh scores per game from the game page (requires API key). Admins can enqueue all games via **Refresh scores** in the account menu.
 
+## Observability
+
+Metrics use OpenTelemetry: API and web export OTLP to the **otel-collector** service; host **Prometheus** scrapes the collector (not the API directly).
+
+| Variable | Purpose |
+|----------|---------|
+| `COLLECTOR_ENABLED` | When `false`, API/web do not export metrics (collector may still run). |
+| `COLLECTOR_PORT` | Host port mapped to collector Prometheus exporter (default `8889`). |
+| `COLLECTOR_FREQUENCY` | Seconds between business gauge polls and metric export flush (default `60`). |
+
+Example Prometheus scrape config (server install):
+
+```yaml
+scrape_configs:
+  - job_name: retro-hiscore-otel
+    static_configs:
+      - targets: ["localhost:8889"]
+```
+
+Grafana panel ideas: API request rate/latency/errors by route; outbound HTTP to RetroAchievements/Discord; Hangfire job failures/duration; sync runs by kind/status; page views and sign-in counters by route; backlog gauges (track queue, notification outbox, members with API keys).
+
 ## Admin sync metrics
 
 - Set `AUTH_ADMIN_DISCORD_USER_IDS` to a comma-separated list of Discord user IDs. Each person must also be invited as a member (Admin → member invites) before they can sign in.
