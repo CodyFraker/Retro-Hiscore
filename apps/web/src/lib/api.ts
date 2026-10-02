@@ -2,20 +2,27 @@ import { getServerSession } from "next-auth";
 import { createApiClient } from "@/generated/api-client";
 import { authOptions } from "@/lib/auth-options";
 import { getApiBaseUrl } from "@/lib/api-base-url";
+import { redirectToSignInAfterInvalidSession } from "@/lib/invalid-session";
 
 export { getApiBaseUrl };
 
 function createAuthorizedFetch(accessToken?: string): typeof fetch {
-  return (input, init) => {
+  return async (input, init) => {
     const headers = new Headers(init?.headers);
     if (accessToken) {
       headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
-    return fetch(input, {
+    const response = await fetch(input, {
       ...init,
       headers,
     });
+
+    if (response.status === 401 && accessToken) {
+      redirectToSignInAfterInvalidSession();
+    }
+
+    return response;
   };
 }
 
@@ -32,7 +39,7 @@ export async function getServerApiClient() {
   const accessToken = session?.apiAccessToken;
 
   if (!accessToken) {
-    throw new Error("Not authenticated");
+    redirectToSignInAfterInvalidSession();
   }
 
   return getApiClient({ accessToken });

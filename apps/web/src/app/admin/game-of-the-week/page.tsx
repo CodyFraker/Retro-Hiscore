@@ -1,6 +1,7 @@
 import { AdminGameOfTheWeekSection } from "@/components/admin/admin-game-of-the-week-section";
 import type { GameOfTheWeekHistoryItemDto } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export default async function AdminGameOfTheWeekPage() {
       history = [];
     }
   } catch (error) {
+    rethrowIfNavigationError(error);
     const message = error instanceof Error ? error.message : "Failed to load game of the week";
     forbidden = message.includes("403");
     loadError = forbidden ? "Your account is not an administrator on the API." : message;

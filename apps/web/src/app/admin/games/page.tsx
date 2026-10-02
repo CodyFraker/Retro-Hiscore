@@ -3,6 +3,7 @@ import { AddGameForm } from "@/components/add-game-form";
 import { AdminGameTrackQueueSection } from "@/components/admin/admin-game-track-queue-section";
 import { AdminGamesSection } from "@/components/admin/admin-games-section";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function AdminGamesPage() {
     const api = await getServerApiClient();
     [games, queue] = await Promise.all([api.getAdminGames(), api.getAdminGameTrackQueue()]);
   } catch (error) {
+    rethrowIfNavigationError(error);
     const message = error instanceof Error ? error.message : "Failed to load games";
     const forbidden = message.includes("403");
     return (

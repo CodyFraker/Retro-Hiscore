@@ -4,6 +4,7 @@ import { MembersRosterTable } from "@/components/members/members-roster-table";
 import { HeadToHeadSection } from "@/components/rivalry/head-to-head-section";
 import type { MemberDto, MembersSummaryDto } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function MembersPage() {
     const api = await getServerApiClient();
     [members, summary] = await Promise.all([api.getMembers(), api.getMembersSummary()]);
   } catch (err) {
+    rethrowIfNavigationError(err);
     error = err instanceof Error ? err.message : "Failed to load members";
   }
 

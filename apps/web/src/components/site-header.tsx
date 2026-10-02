@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { SiteHeaderBar } from "@/components/site-header-bar";
 import { authOptions } from "@/lib/auth-options";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 import type { SyncHealthResponse } from "@/generated/api-client";
 
 export async function SiteHeader() {
@@ -26,7 +27,8 @@ export async function SiteHeader() {
     } catch {
       syncHealth = null;
     }
-  } catch {
+  } catch (error) {
+    rethrowIfNavigationError(error);
     profileHref = null;
   }
 

@@ -5,6 +5,7 @@ import { AdminSyncHealthStrip } from "@/components/admin/admin-sync-health-strip
 import { AdminSyncSettingsSection } from "@/components/admin/admin-sync-settings-section";
 import { formatSyncTime } from "@/lib/format";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function AdminSyncPage() {
     const api = await getServerApiClient();
     [ops, syncSettings] = await Promise.all([api.getAdminOps(), api.getAdminSyncSettings()]);
   } catch (error) {
+    rethrowIfNavigationError(error);
     const message = error instanceof Error ? error.message : "Failed to load sync admin data";
     const forbidden = message.includes("403");
     return (

@@ -1,11 +1,14 @@
 "use server";
 
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 import { formatSyncTime } from "@/lib/format";
 
 export type MemberSyncActionResult = { ok: true; message: string } | { ok: false; message: string };
 
 function actionErrorMessage(error: unknown, fallback: string): string {
+  rethrowIfNavigationError(error);
+
   if (error instanceof Error) {
     const match = error.message.match(/API 429: (.+)/);
     if (match) {

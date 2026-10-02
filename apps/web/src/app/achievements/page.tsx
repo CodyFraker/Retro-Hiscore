@@ -17,6 +17,7 @@ import type {
   MemberDto,
 } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 import {
   ACHIEVEMENTS_PAGE_SIZE,
   achievementsOffset,
@@ -59,6 +60,7 @@ export default async function AchievementsPage({ searchParams }: Props) {
       api.getMembers(),
     ]);
   } catch (err) {
+    rethrowIfNavigationError(err);
     error = err instanceof Error ? err.message : "Failed to load achievements";
   }
 

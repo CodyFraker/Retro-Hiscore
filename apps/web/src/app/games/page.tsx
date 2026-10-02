@@ -7,6 +7,7 @@ import { GamesPendingTrackSection } from "@/components/games/games-pending-track
 import { TrackedGamesToolbar } from "@/components/dashboard/tracked-games-toolbar";
 import { PageHero } from "@/components/layout/page-hero";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 import {
   parseTrackedGamesPage,
   parseTrackedGamesSort,
@@ -51,6 +52,7 @@ export default async function GamesIndexPage({ searchParams }: Props) {
       query || undefined,
     );
   } catch (err) {
+    rethrowIfNavigationError(err);
     error = err instanceof Error ? err.message : "Failed to load games";
   }
 

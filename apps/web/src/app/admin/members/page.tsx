@@ -1,5 +1,6 @@
 import { AdminMemberInvitesSection } from "@/components/admin/admin-member-invites-section";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ export default async function AdminMembersPage() {
     const api = await getServerApiClient();
     invites = await api.getAdminMemberInvites();
   } catch (error) {
+    rethrowIfNavigationError(error);
     const message = error instanceof Error ? error.message : "Failed to load member invites";
     const forbidden = message.includes("403");
     return (

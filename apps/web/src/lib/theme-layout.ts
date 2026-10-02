@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 import { DEFAULT_THEME, resolveTheme, type ThemeId } from "@/lib/theme";
 
 export type LayoutThemeState = {
@@ -28,7 +29,8 @@ export async function getLayoutThemeState(): Promise<LayoutThemeState> {
       syncToAccount: true,
       serverTheme: theme,
     };
-  } catch {
+  } catch (error) {
+    rethrowIfNavigationError(error);
     return {
       initialTheme: DEFAULT_THEME,
       syncToAccount: false,

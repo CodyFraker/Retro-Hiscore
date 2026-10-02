@@ -18,6 +18,7 @@ import type {
 import { getServerSession } from "next-auth";
 import { getServerApiClient } from "@/lib/api";
 import { authOptions } from "@/lib/auth-options";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 import {
   buildTrackedGamesQueryString,
   parseTrackedGamesPage,
@@ -117,6 +118,7 @@ async function HomePageContent({ searchParams }: Props) {
       showSetupReminder = false;
     }
   } catch (err) {
+    rethrowIfNavigationError(err);
     error = err instanceof Error ? err.message : "Failed to load dashboard";
   }
 

@@ -5,6 +5,7 @@ import type {
   DiscordTokenCatalogDto,
 } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export default async function AdminWebhooksPage() {
     tokenCatalog = tokenCatalogResult;
     dispatchRuns = dispatchRunsResult;
   } catch (error) {
+    rethrowIfNavigationError(error);
     const message = error instanceof Error ? error.message : "Failed to load webhooks";
     forbidden = message.includes("403");
     loadError = message;

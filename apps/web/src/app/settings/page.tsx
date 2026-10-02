@@ -7,6 +7,7 @@ import { PageHero } from "@/components/layout/page-hero";
 import { ThemeSettingsSection } from "@/components/settings/theme-settings-section";
 import type { MemberSelfSyncStatusDto } from "@/generated/api-client";
 import { getServerApiClient } from "@/lib/api";
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,7 @@ export default async function SettingsPage() {
       syncHealth = null;
     }
   } catch (err) {
+    rethrowIfNavigationError(err);
     if (err instanceof Error && !err.message.includes("404")) {
       error = err.message;
     }

@@ -1,4 +1,8 @@
+import { rethrowIfNavigationError } from "@/lib/invalid-session";
+
 export function actionErrorMessage(error: unknown, fallback: string): string {
+  rethrowIfNavigationError(error);
+
   if (!(error instanceof Error)) {
     return fallback;
   }
