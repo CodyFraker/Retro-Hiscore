@@ -4,6 +4,8 @@ import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 export const LOGIN_PATH = "/login";
 
+export const CLEAR_SESSION_PATH = "/api/auth/clear-session";
+
 const API_ACCESS_TOKEN_CLOCK_SKEW_MS = 60_000;
 
 export function isApiAccessTokenExpired(accessToken: string): boolean {
@@ -20,8 +22,7 @@ export function isApiAccessTokenExpired(accessToken: string): boolean {
 }
 
 export function signOutRedirectPath(): string {
-  const callbackUrl = encodeURIComponent(LOGIN_PATH);
-  return `/api/auth/signout?callbackUrl=${callbackUrl}`;
+  return CLEAR_SESSION_PATH;
 }
 
 export function redirectToSignInAfterInvalidSession(): never {

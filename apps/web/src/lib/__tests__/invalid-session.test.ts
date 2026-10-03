@@ -9,22 +9,19 @@ jest.mock("jose", () => ({
 
 import {
   isApiAccessTokenExpired,
-  LOGIN_PATH,
   redirectToSignInAfterInvalidSession,
   rethrowIfNavigationError,
   signOutRedirectPath,
 } from "@/lib/invalid-session";
 
 describe("signOutRedirectPath", () => {
-  it("points at NextAuth sign-out with login callback", () => {
+  it("points at the silent session clear route", () => {
     // Arrange
-    const expectedCallback = encodeURIComponent(LOGIN_PATH);
-
     // Act
     const path = signOutRedirectPath();
 
     // Assert
-    expect(path).toBe(`/api/auth/signout?callbackUrl=${expectedCallback}`);
+    expect(path).toBe("/api/auth/clear-session");
   });
 });
 
