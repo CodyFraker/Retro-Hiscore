@@ -57,7 +57,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Docker meta (api)
         id: meta-api
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/api
           tags: |
@@ -73,7 +73,7 @@ jobs:
           labels: ${{ steps.meta-api.outputs.labels }}
       - name: Docker meta (web)
         id: meta-web
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/web
           tags: |
