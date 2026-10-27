@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Features.Members;
+using RetroHiscore.Api.Infrastructure;
 using Shouldly;
 
 namespace RetroHiscore.Api.Tests;
@@ -39,8 +40,9 @@ public class MemberProfileApiTests : IAsyncLifetime
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var protector = scope.ServiceProvider.GetRequiredService<IRaApiKeyProtector>();
         var member = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
-        member.RaApiKey.ShouldBe("member-key-123");
+        member.GetPlainRaApiKey(protector).ShouldBe("member-key-123");
     }
 
     [Fact]
@@ -56,8 +58,9 @@ public class MemberProfileApiTests : IAsyncLifetime
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var protector = scope.ServiceProvider.GetRequiredService<IRaApiKeyProtector>();
         var member = await db.Members.SingleAsync(m => m.RaUsername == "ShrimpPoboy");
-        member.RaApiKey.ShouldBe("member-key-123");
+        member.GetPlainRaApiKey(protector).ShouldBe("member-key-123");
     }
 
     [Fact]
@@ -119,11 +122,16 @@ public class MemberProfileApiTests : IAsyncLifetime
     {
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var protector = scope.ServiceProvider.GetRequiredService<IRaApiKeyProtector>();
         var member = await db.Members.SingleAsync(m => m.DiscordId == discordId);
         member.RaUsername = raUsername;
         member.DisplayName = raUsername;
         member.AvatarUrl = avatarUrl;
-        member.RaApiKey = apiKey;
+        if (apiKey is not null)
+        {
+            member.SetPlainRaApiKey(protector, apiKey);
+        }
+
         await db.SaveChangesAsync();
     }
 }

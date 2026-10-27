@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { isApiAccessTokenExpired } from "@/lib/invalid-session";
 
@@ -14,7 +15,9 @@ export async function getServerApiAccessToken(): Promise<string | undefined> {
 
   const cookieStore = await cookies();
   const jwt = await getToken({
-    req: { headers: { cookie: cookieStore.toString() } },
+    req: new NextRequest("http://localhost", {
+      headers: { cookie: cookieStore.toString() },
+    }),
     secret,
   });
 
