@@ -18,8 +18,10 @@ x-api-environment: &api-environment
   Notifications__NotifyOnRankChange: ${Notifications__NotifyOnRankChange:-true}
   Notifications__NotifyOnNewLead: ${Notifications__NotifyOnNewLead:-true}
   AUTH_SECRET: ${AUTH_SECRET:-}
+  AUTH_SIGN_IN_SERVICE_KEY: ${AUTH_SIGN_IN_SERVICE_KEY:-}
   AUTH_URL: ${AUTH_URL:-http://localhost:18321}
   AUTH_ADMIN_DISCORD_USER_IDS: ${AUTH_ADMIN_DISCORD_USER_IDS:-}
+  DataProtection__KeyRingXml: ${DataProtection__KeyRingXml:-}
   COLLECTOR_ENABLED: ${COLLECTOR_ENABLED:-true}
   COLLECTOR_FREQUENCY: ${COLLECTOR_FREQUENCY:-60}
   Telemetry__Enabled: ${COLLECTOR_ENABLED:-true}
@@ -32,6 +34,7 @@ x-api-environment: &api-environment
 x-web-environment: &web-environment
   API_URL: ${API_URL:-http://api:8080}
   AUTH_SECRET: ${AUTH_SECRET:-}
+  AUTH_SIGN_IN_SERVICE_KEY: ${AUTH_SIGN_IN_SERVICE_KEY:-}
   AUTH_URL: ${AUTH_URL:-http://localhost:18321}
   AUTH_DISCORD_ID: ${AUTH_DISCORD_ID:-}
   AUTH_DISCORD_SECRET: ${AUTH_DISCORD_SECRET:-}

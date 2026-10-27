@@ -66,6 +66,27 @@ public class AdminDiscordWebhooksApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task PostAdminDiscordWebhook_WithInvalidWebhookUrl_ReturnsBadRequest()
+    {
+        // Arrange
+        var client = _factory.CreateAuthenticatedClient(AuthTestHelper.AdminDiscordUserId);
+        var body = new UpsertDiscordWebhookRequest(
+            "Invalid",
+            true,
+            "https://example.com/not-a-discord-webhook",
+            10,
+            DiscordWebhookDefaultTemplates.ForEventKind(DiscordNotificationEventKind.LeaderboardFriendOvertake),
+            ["LeaderboardFriendOvertake"],
+            null);
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/admin/discord-webhooks", body);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task PostAdminDiscordWebhook_WithUnknownToken_ReturnsBadRequest()
     {
         // Arrange

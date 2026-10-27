@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Ra;
+using RetroHiscore.Api.Infrastructure;
 using RetroHiscore.Api.Options;
 
 namespace RetroHiscore.Api.Features.Sync;
@@ -17,6 +18,7 @@ public sealed class MemberRecentGamesSyncService(
     AppDbContext db,
     IRaApiClient raApiClient,
     IRaApiKeyPool apiKeyPool,
+    IRaApiKeyProtector raApiKeyProtector,
     IConsoleIconSyncService consoleIconSync,
     IGameTrackQueueService gameTrackQueueService,
     ILeaderboardSyncActivityEnqueueService leaderboardSyncActivityEnqueue,
@@ -119,9 +121,10 @@ public sealed class MemberRecentGamesSyncService(
         var trackedSet = trackedRaGameIds.ToHashSet();
 
         var identity = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername!;
-        var preferredKeys = string.IsNullOrWhiteSpace(member.RaApiKey)
+        var memberApiKey = member.GetPlainRaApiKey(raApiKeyProtector);
+        var preferredKeys = string.IsNullOrWhiteSpace(memberApiKey)
             ? Array.Empty<string>()
-            : new[] { member.RaApiKey };
+            : new[] { memberApiKey };
 
         var fetchCount = Math.Clamp(_syncOptions.RecentGamesPerMember, 1, 50);
         var games = await apiKeyPool.ExecuteAsync(

@@ -5,11 +5,11 @@ jest.mock("jose", () => ({
   decodeJwt: jest.fn(),
 }));
 
-const mockGetServerSession = jest.fn();
+const mockGetServerApiAccessToken = jest.fn();
 const mockRedirect = jest.fn();
 
-jest.mock("next-auth", () => ({
-  getServerSession: (...args: unknown[]) => mockGetServerSession(...args),
+jest.mock("@/lib/server-api-access-token", () => ({
+  getServerApiAccessToken: (...args: unknown[]) => mockGetServerApiAccessToken(...args),
 }));
 
 jest.mock("next/navigation", () => ({
@@ -25,7 +25,7 @@ import { signOutRedirectPath } from "@/lib/invalid-session";
 
 describe("getServerApiClient", () => {
   beforeEach(() => {
-    mockGetServerSession.mockReset();
+    mockGetServerApiAccessToken.mockReset();
     mockRedirect.mockReset();
     mockRedirect.mockImplementation((url: string) => {
       throw getRedirectError(url, "replace");
@@ -37,9 +37,9 @@ describe("getServerApiClient", () => {
     delete process.env.API_URL;
   });
 
-  it("redirects to sign out when the session has no API access token", async () => {
+  it("redirects to sign out when the JWT has no API access token", async () => {
     // Arrange
-    mockGetServerSession.mockResolvedValue({ user: { name: "member" } });
+    mockGetServerApiAccessToken.mockResolvedValue(undefined);
 
     // Act & Assert
     await getServerApiClient().catch((error: unknown) => {
@@ -47,6 +47,25 @@ describe("getServerApiClient", () => {
       expect(getURLFromRedirectError(error)).toBe(signOutRedirectPath());
     });
     expect(mockRedirect).toHaveBeenCalledWith(signOutRedirectPath());
+  });
+
+  it("returns an API client when the server JWT has an access token", async () => {
+    // Arrange
+    mockGetServerApiAccessToken.mockResolvedValue("valid-token");
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+      status: 200,
+      ok: true,
+      json: async () => ({}),
+      text: async () => "{}",
+    });
+
+    // Act
+    const client = await getServerApiClient();
+
+    // Assert
+    expect(client).toBeDefined();
+    global.fetch = originalFetch;
   });
 });
 

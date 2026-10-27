@@ -52,6 +52,7 @@ public sealed class LeaderboardSyncService(
     IGameAchievementDistributionSyncService achievementDistributionSync,
     INotificationOutboxWriter notificationOutboxWriter,
     INotificationOutboxReadinessService notificationOutboxReadiness,
+    IRaApiKeyProtector raApiKeyProtector,
     IOptions<RaOptions> raOptions,
     IOptions<SyncOptions> syncOptions,
     ILogger<LeaderboardSyncService> logger) : ILeaderboardSyncService
@@ -496,14 +497,15 @@ public sealed class LeaderboardSyncService(
 
     private async Task SyncMemberGameAsync(Member member, Game game, DateTimeOffset syncedAt, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(member.RaUsername) || string.IsNullOrWhiteSpace(member.RaApiKey))
+        var memberApiKey = member.GetPlainRaApiKey(raApiKeyProtector);
+        if (string.IsNullOrWhiteSpace(member.RaUsername) || string.IsNullOrWhiteSpace(memberApiKey))
         {
             return;
         }
 
         var identity = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername!;
         var boards = await apiKeyPool.ExecuteAsync(
-            [member.RaApiKey],
+            [memberApiKey],
             (key, ct) => raApiClient.GetUserGameLeaderboardsAsync(game.RaGameId, identity, key, ct),
             cancellationToken);
 

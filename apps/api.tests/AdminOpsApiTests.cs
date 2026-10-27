@@ -67,5 +67,7 @@ public class AdminOpsApiTests
         body.Config.SharedCatalogKeyConfigured.ShouldBeTrue();
         body.LastSyncByKind.Count.ShouldBe(6);
         body.LastSyncByKind.ShouldContain(k => k.Kind == nameof(SyncKind.LeaderboardScores));
+        body.Config.HangfireDashboardUrl.ShouldNotContain("secret=");
+        body.Config.HangfireDashboardUrl.ShouldNotContain("?");
     }
 }

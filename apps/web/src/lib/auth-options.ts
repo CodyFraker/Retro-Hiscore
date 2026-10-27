@@ -11,9 +11,11 @@ import {
   recordAuthSignInRejectedNotInvited,
   recordAuthSignInSuccess,
 } from "@/lib/telemetry/platform-metrics";
+import { shouldUseSecureAuthCookies } from "@/lib/auth-cookies";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  useSecureCookies: shouldUseSecureAuthCookies(),
   session: {
     strategy: "jwt",
     maxAge: SESSION_MAX_AGE_SECONDS,
@@ -99,7 +101,6 @@ export const authOptions: NextAuthOptions = {
         session.user.discordUsername = token.discordUsername as string | undefined;
       }
 
-      session.apiAccessToken = token.apiAccessToken as string | undefined;
       session.needsOnboarding = token.needsOnboarding as boolean | undefined;
       session.isAdmin = token.isAdmin as boolean | undefined;
       return session;

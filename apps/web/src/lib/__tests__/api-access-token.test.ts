@@ -7,12 +7,16 @@ jest.mock("jose", () => ({
   SignJWT: jest.fn().mockImplementation(() => ({
     setProtectedHeader: () => ({
       setSubject: () => ({
-        setJti: () => ({
-          setIssuedAt: () => ({
-            setExpirationTime: (value: string) => {
-              mockSignJwt(value);
-              return { sign: async () => "new-api-token" };
-            },
+        setIssuer: () => ({
+          setAudience: () => ({
+            setJti: () => ({
+              setIssuedAt: () => ({
+                setExpirationTime: (value: string) => {
+                  mockSignJwt(value);
+                  return { sign: async () => "new-api-token" };
+                },
+              }),
+            }),
           }),
         }),
       }),

@@ -135,6 +135,11 @@ public sealed class DiscordWebhookStore(
             throw new DiscordWebhookValidationException("Name is required.");
         }
 
+        if (!string.IsNullOrWhiteSpace(request.WebhookUrl))
+        {
+            DiscordWebhookUrlValidator.Validate(request.WebhookUrl);
+        }
+
         if (request.DigestIntervalMinutes is < 0 or > 1440)
         {
             throw new DiscordWebhookValidationException("Digest interval must be between 0 and 1440 minutes.");

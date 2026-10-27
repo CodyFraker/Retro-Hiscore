@@ -14,9 +14,14 @@ export async function createApiAccessToken(
 
   const key = new TextEncoder().encode(secret);
 
+  const issuer = process.env.AUTH_JWT_ISSUER ?? "retro-hiscore-web";
+  const audience = process.env.AUTH_JWT_AUDIENCE ?? "retro-hiscore-api";
+
   return await new SignJWT({ name: discordUsername })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(discordUserId)
+    .setIssuer(issuer)
+    .setAudience(audience)
     .setJti(crypto.randomUUID())
     .setIssuedAt()
     .setExpirationTime(`${SESSION_MAX_AGE_SECONDS}s`)

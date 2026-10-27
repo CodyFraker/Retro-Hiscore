@@ -12,6 +12,7 @@ public static class PutMemberApiKeyEndpoint
             PutMemberApiKeyRequest request,
             ClaimsPrincipal user,
             AppDbContext db,
+            IRaApiKeyProtector raApiKeyProtector,
             CancellationToken ct) =>
         {
             if (string.IsNullOrWhiteSpace(request.RaApiKey))
@@ -36,7 +37,7 @@ public static class PutMemberApiKeyEndpoint
                 return Results.NotFound();
             }
 
-            member.RaApiKey = request.RaApiKey.Trim();
+            member.SetPlainRaApiKey(raApiKeyProtector, request.RaApiKey.Trim());
             await db.SaveChangesAsync(ct);
 
             return Results.NoContent();

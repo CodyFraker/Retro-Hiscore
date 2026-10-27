@@ -17,6 +17,7 @@ public static class GetMemberRaSummaryEndpoint
             AppDbContext db,
             IRaApiClient raApiClient,
             IRaApiKeyPool apiKeyPool,
+            IRaApiKeyProtector raApiKeyProtector,
             IOptions<RaOptions> raOptions,
             CancellationToken ct) =>
         {
@@ -31,9 +32,10 @@ public static class GetMemberRaSummaryEndpoint
             }
 
             var targetUsername = member.RaUsername ?? raUsername;
-            var preferredKeys = string.IsNullOrWhiteSpace(member.RaApiKey)
+            var memberApiKey = member.GetPlainRaApiKey(raApiKeyProtector);
+            var preferredKeys = string.IsNullOrWhiteSpace(memberApiKey)
                 ? Array.Empty<string>()
-                : new[] { member.RaApiKey };
+                : new[] { memberApiKey };
 
             RaUserSummaryDto? raw;
             try

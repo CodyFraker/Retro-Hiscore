@@ -61,6 +61,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ["RA:Username"] = "test-user",
                 ["RA:MediaBaseUrl"] = "https://media.retroachievements.org",
                 ["Auth:JwtSigningKey"] = AuthTestHelper.TestSigningKey,
+                ["Auth:JwtIssuer"] = AuthTestHelper.JwtIssuer,
+                ["Auth:JwtAudience"] = AuthTestHelper.JwtAudience,
                 ["Auth:SignInServiceKey"] = SignInServiceKey,
                 ["Auth:AdminDiscordUserIds:0"] = AuthTestHelper.AdminDiscordUserId,
                 ["AUTH_ADMIN_DISCORD_USER_IDS"] = AuthTestHelper.AdminDiscordUserId,

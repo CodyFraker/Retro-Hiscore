@@ -14,6 +14,7 @@ public static class PutMemberRaAccountEndpoint
             ClaimsPrincipal user,
             AppDbContext db,
             IRaApiClient raApiClient,
+            IRaApiKeyProtector raApiKeyProtector,
             CancellationToken ct) =>
         {
             if (string.IsNullOrWhiteSpace(request.RaUsername))
@@ -80,7 +81,7 @@ public static class PutMemberRaAccountEndpoint
             }
 
             member.RaUsername = summary.User;
-            member.RaApiKey = raApiKey;
+            member.SetPlainRaApiKey(raApiKeyProtector, raApiKey);
             if (!string.IsNullOrWhiteSpace(summary.Ulid))
             {
                 member.RaUlid = summary.Ulid;

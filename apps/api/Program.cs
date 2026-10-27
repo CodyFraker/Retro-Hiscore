@@ -1,4 +1,6 @@
+using System.Threading.RateLimiting;
 using Hangfire;
+using Microsoft.AspNetCore.RateLimiting;
 using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -30,7 +32,8 @@ builder.Services.Configure<ConsoleIconSyncOptions>(builder.Configuration.GetSect
 builder.Services.Configure<HangfireDashboardOptions>(builder.Configuration.GetSection(HangfireDashboardOptions.SectionName));
 builder.Services.Configure<ScalarDashboardOptions>(builder.Configuration.GetSection(ScalarDashboardOptions.SectionName));
 builder.Services.Configure<NotificationOptions>(builder.Configuration.GetSection(NotificationOptions.SectionName));
-builder.Services.AddDataProtection();
+builder.Services.AddRetroHiscoreDataProtection(builder.Configuration, builder.Environment, isTesting);
+HostSecurityConfiguration.ValidateForStartup(builder.Environment, builder.Configuration, isTesting);
 builder.Services.AddRetroHiscoreAuth(builder.Configuration, isTesting);
 
 var connectionString = builder.Configuration.GetConnectionString("Default")
@@ -67,6 +70,7 @@ builder.Services.AddScoped<IMemberRecentGamesSyncService, MemberRecentGamesSyncS
 builder.Services.AddScoped<IGameMetadataSyncService, GameMetadataSyncService>();
 builder.Services.AddScoped<IConsoleIconSyncService, ConsoleIconSyncService>();
 builder.Services.AddSingleton<IWebhookUrlProtector, WebhookUrlProtector>();
+builder.Services.AddSingleton<IRaApiKeyProtector, RaApiKeyProtector>();
 builder.Services.AddScoped<IDiscordWebhookTemplateRenderer, DiscordWebhookTemplateRenderer>();
 builder.Services.AddScoped<IDiscordWebhookPayloadValidator, DiscordWebhookPayloadValidator>();
 builder.Services.AddScoped<IDiscordWebhookClient, DiscordWebhookClient>();
@@ -124,6 +128,16 @@ if (!isTesting)
 }
 
 builder.Services.AddOpenApi();
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("sign-in-check", limiter =>
+    {
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.PermitLimit = 60;
+        limiter.QueueLimit = 0;
+    });
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
 builder.Services.AddRetroHiscoreCors(builder.Configuration);
 builder.Services.AddRetroHiscoreTelemetry(builder.Configuration, builder.Environment);
 
@@ -148,46 +162,48 @@ if (!isTesting)
 }
 
 app.UseCors();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+
+var allowOpenDashboard = HostSecurityConfiguration.AllowsOpenDashboardWhenSecretUnset(app.Environment);
 
 if (!isTesting)
 {
     var hangfireOptions = app.Services.GetRequiredService<IOptions<HangfireDashboardOptions>>().Value;
     app.UseHangfireDashboard(hangfireOptions.DashboardPath, new DashboardOptions
     {
-        Authorization = [new DashboardSecretAuthorizationFilter(hangfireOptions.DashboardSecret)]
+        Authorization =
+        [
+            new DashboardSecretAuthorizationFilter(hangfireOptions.DashboardSecret, allowOpenDashboard)
+        ]
     });
-
 }
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/scalar")
+        || context.Request.Path.StartsWithSegments("/openapi"))
+    {
+        var scalarOptions = context.RequestServices.GetRequiredService<IOptions<ScalarDashboardOptions>>().Value;
+        if (!DashboardSecretAuthorization.IsAuthorized(
+                context.Request,
+                scalarOptions.DashboardSecret,
+                allowOpenDashboard))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsync("Unauthorized");
+            return;
+        }
+    }
+
+    await next();
+});
 
 app.MapOpenApi();
 app.MapScalarApiReference("/scalar", options =>
 {
     options.WithTitle("Retro Hiscore API");
-});
-
-app.Use(async (context, next) =>
-{
-    if (context.Request.Path.StartsWithSegments("/scalar"))
-    {
-        var scalarOptions = context.RequestServices.GetRequiredService<IOptions<ScalarDashboardOptions>>().Value;
-        if (!string.IsNullOrWhiteSpace(scalarOptions.DashboardSecret))
-        {
-            var ok = context.Request.Headers.TryGetValue("X-Dashboard-Secret", out var header)
-                && string.Equals(header.ToString(), scalarOptions.DashboardSecret, StringComparison.Ordinal);
-            var queryOk = context.Request.Query.TryGetValue("secret", out var query)
-                && string.Equals(query.ToString(), scalarOptions.DashboardSecret, StringComparison.Ordinal);
-            if (!ok && !queryOk)
-            {
-                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                await context.Response.WriteAsync("Unauthorized");
-                return;
-            }
-        }
-    }
-
-    await next();
 });
 
 app.MapHealthChecks("/health");

@@ -1,10 +1,8 @@
 import { AlertCircle } from "lucide-react";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { SignInButton } from "@/components/sign-in-button";
 import { PageHero } from "@/components/layout/page-hero";
-import { authOptions } from "@/lib/auth-options";
-import { isApiAccessTokenExpired } from "@/lib/invalid-session";
+import { hasValidServerApiAccess } from "@/lib/server-api-access-token";
 
 type Props = {
   searchParams: Promise<{ callbackUrl?: string; error?: string }>;
@@ -12,14 +10,7 @@ type Props = {
 
 export default async function LoginPage({ searchParams }: Props) {
   const params = await searchParams;
-  const session = await getServerSession(authOptions);
-
-  const accessToken = session?.apiAccessToken;
-  if (
-    session &&
-    typeof accessToken === "string" &&
-    !isApiAccessTokenExpired(accessToken)
-  ) {
+  if (await hasValidServerApiAccess()) {
     redirect(params.callbackUrl ?? "/");
   }
 

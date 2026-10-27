@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
@@ -32,5 +33,6 @@ public static class GetSignInCheckEndpoint
         })
         .WithName("GetSignInCheck")
         .WithTags("Auth")
-        .WithSummary("Checks whether a Discord user ID is invited to sign in (server-to-server only).");
+        .WithSummary("Checks whether a Discord user ID is invited to sign in (server-to-server only).")
+        .RequireRateLimiting("sign-in-check");
 }

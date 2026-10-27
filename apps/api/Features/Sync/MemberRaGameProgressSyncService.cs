@@ -6,6 +6,7 @@ using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Games;
 using RetroHiscore.Api.Features.Notifications;
 using RetroHiscore.Api.Features.Ra;
+using RetroHiscore.Api.Infrastructure;
 
 namespace RetroHiscore.Api.Features.Sync;
 
@@ -33,6 +34,7 @@ public sealed class MemberRaGameProgressSyncService(
     AppDbContext db,
     IRaApiClient raApiClient,
     IRaApiKeyPool apiKeyPool,
+    IRaApiKeyProtector raApiKeyProtector,
     IConsoleIconDownloader badgeDownloader,
     INotificationOutboxWriter notificationOutboxWriter,
     IOptions<RaOptions> raOptions,
@@ -58,7 +60,8 @@ public sealed class MemberRaGameProgressSyncService(
         DateTimeOffset syncedAt,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(member.RaUsername) || string.IsNullOrWhiteSpace(member.RaApiKey))
+        var memberApiKey = member.GetPlainRaApiKey(raApiKeyProtector);
+        if (string.IsNullOrWhiteSpace(member.RaUsername) || string.IsNullOrWhiteSpace(memberApiKey))
         {
             return;
         }
@@ -80,7 +83,8 @@ public sealed class MemberRaGameProgressSyncService(
         DateTimeOffset syncedAt,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(member.RaUsername) || string.IsNullOrWhiteSpace(member.RaApiKey))
+        var memberApiKey = member.GetPlainRaApiKey(raApiKeyProtector);
+        if (string.IsNullOrWhiteSpace(member.RaUsername) || string.IsNullOrWhiteSpace(memberApiKey))
         {
             return;
         }
@@ -91,7 +95,7 @@ public sealed class MemberRaGameProgressSyncService(
         try
         {
             var progress = await apiKeyPool.ExecuteAsync(
-                [member.RaApiKey],
+                [memberApiKey],
                 (key, ct) => raApiClient.GetGameInfoAndUserProgressAsync(raGameId, identity, key, ct),
                 cancellationToken);
 

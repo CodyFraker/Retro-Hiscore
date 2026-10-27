@@ -7,7 +7,6 @@ declare module "next-auth" {
   }
 
   interface Session {
-    apiAccessToken?: string;
     needsOnboarding?: boolean;
     isAdmin?: boolean;
     user: {

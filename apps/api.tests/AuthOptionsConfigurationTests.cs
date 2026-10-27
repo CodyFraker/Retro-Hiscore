@@ -43,7 +43,7 @@ public class AuthOptionsConfigurationTests
         var options = new AuthOptions();
 
         // Act
-        AuthExtensions.ApplySignInServiceKey(configuration, options);
+        AuthExtensions.ApplySignInServiceKey(configuration, options, isProduction: false);
 
         // Assert
         options.SignInServiceKey.ShouldBe("sign-in-key");
@@ -98,9 +98,28 @@ public class AuthOptionsConfigurationTests
         var options = new AuthOptions();
 
         // Act
-        AuthExtensions.ApplySignInServiceKey(configuration, options);
+        AuthExtensions.ApplySignInServiceKey(configuration, options, isProduction: false);
 
         // Assert
         options.SignInServiceKey.ShouldBe("auth-secret");
+    }
+
+    [Fact]
+    public void ApplySignInServiceKey_DoesNotFallBackToAuthSecretInProduction()
+    {
+        // Arrange
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AUTH_SECRET"] = "auth-secret",
+            })
+            .Build();
+        var options = new AuthOptions();
+
+        // Act
+        AuthExtensions.ApplySignInServiceKey(configuration, options, isProduction: true);
+
+        // Assert
+        options.SignInServiceKey.ShouldBeNull();
     }
 }

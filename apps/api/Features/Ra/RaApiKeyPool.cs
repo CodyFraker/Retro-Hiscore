@@ -2,23 +2,30 @@ using System.Net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
+using RetroHiscore.Api.Infrastructure;
 
 namespace RetroHiscore.Api.Features.Ra;
 
 public sealed class RaApiKeyPool(
     AppDbContext db,
     IOptions<RaOptions> options,
+    IRaApiKeyProtector raApiKeyProtector,
     ILogger<RaApiKeyPool> logger) : IRaApiKeyPool
 {
     private readonly RaOptions _options = options.Value;
 
     public async Task<IReadOnlyList<string>> GetMemberKeysAsync(CancellationToken cancellationToken = default)
     {
-        return await db.Members
+        var storedKeys = await db.Members
             .Where(m => m.RaApiKey != null && m.RaApiKey != "")
             .Select(m => m.RaApiKey!)
-            .Distinct()
             .ToListAsync(cancellationToken);
+
+        return storedKeys
+            .Select(key => raApiKeyProtector.Unprotect(key)!)
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Distinct()
+            .ToList();
     }
 
     public async Task<T> ExecuteAsync<T>(

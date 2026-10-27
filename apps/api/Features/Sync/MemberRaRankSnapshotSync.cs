@@ -1,6 +1,7 @@
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Ra;
+using RetroHiscore.Api.Infrastructure;
 
 namespace RetroHiscore.Api.Features.Sync;
 
@@ -12,7 +13,8 @@ public interface IMemberRaRankSnapshotSync
 public sealed class MemberRaRankSnapshotSync(
     AppDbContext db,
     IRaApiClient raApiClient,
-    IRaApiKeyPool apiKeyPool) : IMemberRaRankSnapshotSync
+    IRaApiKeyPool apiKeyPool,
+    IRaApiKeyProtector raApiKeyProtector) : IMemberRaRankSnapshotSync
 {
     public async Task SyncMemberAsync(
         Member member,
@@ -24,9 +26,10 @@ public sealed class MemberRaRankSnapshotSync(
             return;
         }
 
-        var preferredKeys = string.IsNullOrWhiteSpace(member.RaApiKey)
+        var memberApiKey = member.GetPlainRaApiKey(raApiKeyProtector);
+        var preferredKeys = string.IsNullOrWhiteSpace(memberApiKey)
             ? Array.Empty<string>()
-            : new[] { member.RaApiKey };
+            : new[] { memberApiKey };
 
         var target = !string.IsNullOrWhiteSpace(member.RaUlid) ? member.RaUlid! : member.RaUsername!;
         var summary = await apiKeyPool.ExecuteAsync(

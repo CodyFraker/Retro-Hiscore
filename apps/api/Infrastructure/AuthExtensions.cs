@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using RetroHiscore.Api.Options;
@@ -22,7 +23,11 @@ public static class AuthExtensions
             configuration.GetSection(AuthOptions.SectionName).Bind(options);
             ApplyWebOrigin(configuration, options);
             ApplySharedAdminDiscordAllowlist(configuration, options);
-            ApplySignInServiceKey(configuration, options);
+            var isProduction = string.Equals(
+                configuration["ASPNETCORE_ENVIRONMENT"],
+                Environments.Production,
+                StringComparison.OrdinalIgnoreCase);
+            ApplySignInServiceKey(configuration, options, isProduction);
         });
 
         var signingKey = ResolveJwtSigningKey(configuration);
@@ -46,6 +51,9 @@ public static class AuthExtensions
             signingKey = "test-signing-key-for-integration-tests-only";
         }
 
+        var jwtIssuer = configuration[$"{AuthOptions.SectionName}:JwtIssuer"] ?? "retro-hiscore-web";
+        var jwtAudience = configuration[$"{AuthOptions.SectionName}:JwtAudience"] ?? "retro-hiscore-api";
+
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -53,8 +61,10 @@ public static class AuthExtensions
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtIssuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtAudience,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
                     ValidateLifetime = true,
@@ -156,12 +166,24 @@ public static class AuthExtensions
             .ToList();
     }
 
-    public static void ApplySignInServiceKey(IConfiguration configuration, AuthOptions options)
+    public static void ApplySignInServiceKey(IConfiguration configuration, AuthOptions options, bool isProduction)
     {
         var key = configuration["AUTH_SIGN_IN_SERVICE_KEY"];
         if (!string.IsNullOrWhiteSpace(key))
         {
             options.SignInServiceKey = key;
+            return;
+        }
+
+        var fromSection = configuration[$"{AuthOptions.SectionName}:SignInServiceKey"];
+        if (!string.IsNullOrWhiteSpace(fromSection))
+        {
+            options.SignInServiceKey = fromSection;
+            return;
+        }
+
+        if (isProduction)
+        {
             return;
         }
 

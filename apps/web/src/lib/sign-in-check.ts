@@ -2,9 +2,22 @@ import { getApiBaseUrl } from "@/lib/api-base-url";
 
 const SIGN_IN_SERVICE_KEY_HEADER = "X-SignIn-Service-Key";
 
+function resolveSignInServiceKey(): string | undefined {
+  const dedicated = process.env.AUTH_SIGN_IN_SERVICE_KEY;
+  if (dedicated) {
+    return dedicated;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return undefined;
+  }
+
+  return process.env.AUTH_SECRET;
+}
+
 export async function isDiscordUserInvited(discordUserId: string): Promise<boolean> {
   const baseUrl = getApiBaseUrl();
-  const serviceKey = process.env.AUTH_SIGN_IN_SERVICE_KEY ?? process.env.AUTH_SECRET;
+  const serviceKey = resolveSignInServiceKey();
   if (!baseUrl || !serviceKey) {
     return false;
   }

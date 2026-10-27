@@ -1,8 +1,7 @@
-import { getServerSession } from "next-auth";
 import { createApiClient } from "@/generated/api-client";
-import { authOptions } from "@/lib/auth-options";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 import { redirectToSignInAfterInvalidSession } from "@/lib/invalid-session";
+import { getServerApiAccessToken } from "@/lib/server-api-access-token";
 
 export { getApiBaseUrl };
 
@@ -35,8 +34,7 @@ export function getApiClient(options?: { accessToken?: string }) {
 }
 
 export async function getServerApiClient() {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.apiAccessToken;
+  const accessToken = await getServerApiAccessToken();
 
   if (!accessToken) {
     redirectToSignInAfterInvalidSession();

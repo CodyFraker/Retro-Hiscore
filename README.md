@@ -98,6 +98,18 @@ scrape_configs:
 
 Grafana panel ideas: API request rate/latency/errors by route; outbound HTTP to RetroAchievements/Discord; Hangfire job failures/duration; sync runs by kind/status; page views and sign-in counters by route; backlog gauges (track queue, notification outbox, members with API keys).
 
+## Production security checklist
+
+After deploying behind HTTPS (nginx or similar), verify:
+
+- `AUTH_URL` and `NEXTAUTH_URL` use `https://`.
+- Production sets `Hangfire__DashboardSecret`, `Scalar__DashboardSecret`, `AUTH_SIGN_IN_SERVICE_KEY`, and `DataProtection__KeyRingXml`.
+- Hangfire (`/hangfire`) and Scalar (`/scalar`) require the `X-Dashboard-Secret` header (no `?secret=` URLs).
+- Browser devtools: `GET /api/auth/session` does not include `apiAccessToken`.
+- Sign in with an invited Discord account; open dashboard, settings, and admin sync.
+
+Regression gates locally: `dotnet test apps/api.tests/RetroHiscore.Api.Tests.csproj` and `npm test` / `npm run build` in `apps/web`.
+
 ## Admin sync metrics
 
 - Set `AUTH_ADMIN_DISCORD_USER_IDS` to a comma-separated list of Discord user IDs. Each person must also be invited as a member (Admin → member invites) before they can sign in.

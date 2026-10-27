@@ -14,6 +14,7 @@ public sealed class AdminOpsBuilder(
     ISyncSettingsStore syncSettingsStore,
     IOptions<RaOptions> raOptions,
     IOptions<HangfireDashboardOptions> hangfireOptions,
+    IRaApiKeyPool apiKeyPool,
     IAdminSchedulerReader schedulerReader)
 {
     private const int RecentRunLimit = 15;
@@ -104,21 +105,14 @@ public sealed class AdminOpsBuilder(
                 m.LastEntrySyncedAt))
             .ToList();
 
-        var distinctMemberKeys = await db.Members
-            .Where(m => m.RaApiKey != null && m.RaApiKey != "")
-            .Select(m => m.RaApiKey!)
-            .Distinct()
-            .CountAsync(cancellationToken);
+        var memberKeys = await apiKeyPool.GetMemberKeysAsync(cancellationToken);
+        var distinctMemberKeys = memberKeys.Count;
 
         var sharedKeyConfigured = !string.IsNullOrWhiteSpace(raOptions.Value.ApiKey);
         var keysInPool = RaApiKeyPool.BuildKeyOrder(
             [],
             raOptions.Value.ApiKey,
-            await db.Members
-                .Where(m => m.RaApiKey != null && m.RaApiKey != "")
-                .Select(m => m.RaApiKey!)
-                .Distinct()
-                .ToListAsync(cancellationToken)).Count;
+            memberKeys).Count;
 
         var hangfirePath = hangfireOptions.Value.DashboardPath.TrimEnd('/');
         if (!hangfirePath.StartsWith('/'))
@@ -126,9 +120,7 @@ public sealed class AdminOpsBuilder(
             hangfirePath = "/" + hangfirePath;
         }
 
-        var hangfireDashboardUrl = string.IsNullOrWhiteSpace(hangfireOptions.Value.DashboardSecret)
-            ? hangfirePath
-            : $"{hangfirePath}?secret={Uri.EscapeDataString(hangfireOptions.Value.DashboardSecret)}";
+        var hangfireDashboardUrl = hangfirePath;
 
         var lastSyncByKind = await BuildLastSyncByKindAsync(cancellationToken);
 

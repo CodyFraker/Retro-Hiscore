@@ -21,6 +21,21 @@ public class SignInCheckApiTests : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
+    public async Task GetSignInCheck_WithWrongServiceKey_ReturnsUnauthorized()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-SignIn-Service-Key", "wrong-key");
+
+        // Act
+        var response = await client.GetAsync(
+            $"/api/auth/sign-in-check?discordId={AuthTestHelper.AllowedDiscordUserId}");
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task GetSignInCheck_WithoutServiceKey_ReturnsUnauthorized()
     {
         // Arrange
