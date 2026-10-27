@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
-import { createApiAccessToken } from "@/lib/api-access-token";
+import { createApiAccessToken, ensureApiAccessTokenOnJwt } from "@/lib/api-access-token";
+import { SESSION_MAX_AGE_SECONDS } from "@/lib/session-duration";
 import { createApiClient } from "@/generated/api-client";
 import { getApiBaseUrl } from "@/lib/api-base-url";
 import { isDiscordUserInvited } from "@/lib/sign-in-check";
@@ -13,6 +14,13 @@ import {
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  },
+  jwt: {
+    maxAge: SESSION_MAX_AGE_SECONDS,
+  },
   providers: [
     DiscordProvider({
       clientId: process.env.AUTH_DISCORD_ID ?? "",
@@ -83,7 +91,7 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      return token;
+      return await ensureApiAccessTokenOnJwt(token);
     },
     async session({ session, token }) {
       if (session.user) {

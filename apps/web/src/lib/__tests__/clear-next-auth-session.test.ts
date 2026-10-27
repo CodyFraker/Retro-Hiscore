@@ -36,7 +36,7 @@ describe("applyClearedSessionCookies", () => {
     const prefix = sessionCookiePrefix();
     const request = new NextRequest("http://localhost:18321/", {
       headers: {
-        cookie: `${prefix}=token; ${prefix}.1=part2; other=value`,
+        cookie: `${prefix}=token; ${prefix}.1=part2; next-auth.csrf-token=csrf; other=value`,
       },
     });
     const response = NextResponse.redirect("http://localhost:18321/login");
@@ -45,8 +45,10 @@ describe("applyClearedSessionCookies", () => {
     applyClearedSessionCookies(request, response);
 
     // Assert
-    const cleared = response.cookies.getAll().filter((cookie) => cookie.name.startsWith(prefix));
-    expect(cleared).toHaveLength(2);
+    const cleared = response.cookies
+      .getAll()
+      .filter((cookie) => cookie.name.includes("next-auth") || cookie.name.startsWith(prefix));
+    expect(cleared).toHaveLength(3);
     expect(cleared.every((cookie) => cookie.value === "" && cookie.maxAge === 0)).toBe(true);
   });
 });

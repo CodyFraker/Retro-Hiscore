@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { SignInButton } from "@/components/sign-in-button";
 import { PageHero } from "@/components/layout/page-hero";
 import { authOptions } from "@/lib/auth-options";
+import { isApiAccessTokenExpired } from "@/lib/invalid-session";
 
 type Props = {
   searchParams: Promise<{ callbackUrl?: string; error?: string }>;
@@ -13,7 +14,12 @@ export default async function LoginPage({ searchParams }: Props) {
   const params = await searchParams;
   const session = await getServerSession(authOptions);
 
-  if (session) {
+  const accessToken = session?.apiAccessToken;
+  if (
+    session &&
+    typeof accessToken === "string" &&
+    !isApiAccessTokenExpired(accessToken)
+  ) {
     redirect(params.callbackUrl ?? "/");
   }
 

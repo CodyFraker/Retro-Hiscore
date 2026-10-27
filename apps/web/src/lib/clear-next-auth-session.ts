@@ -19,7 +19,7 @@ export function applyClearedSessionCookies(request: NextRequest, response: NextR
   const secure = useSecureAuthCookies();
 
   for (const { name } of request.cookies.getAll()) {
-    if (!name.startsWith(prefix)) {
+    if (!name.includes("next-auth") && !name.startsWith(prefix)) {
       continue;
     }
 

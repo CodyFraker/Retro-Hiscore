@@ -1,16 +1,10 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import { isApiAccessTokenExpired, signOutRedirectPath } from "@/lib/invalid-session";
 
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
-
-    const apiAccessToken = token?.apiAccessToken;
-    if (typeof apiAccessToken === "string" && isApiAccessTokenExpired(apiAccessToken)) {
-      return NextResponse.redirect(new URL(signOutRedirectPath(), req.url));
-    }
 
     if (
       token?.needsOnboarding === true &&
