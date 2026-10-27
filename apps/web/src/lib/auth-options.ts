@@ -27,6 +27,7 @@ export const authOptions: NextAuthOptions = {
     DiscordProvider({
       clientId: process.env.AUTH_DISCORD_ID ?? "",
       clientSecret: process.env.AUTH_DISCORD_SECRET ?? "",
+      issuer: "https://discord.com",
     }),
   ],
   pages: {
