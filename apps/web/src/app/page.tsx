@@ -4,6 +4,7 @@ import { AlertCircle } from "lucide-react";
 import { DashboardActivityPrimary } from "@/components/dashboard/dashboard-activity-primary";
 import { DashboardHero } from "@/components/dashboard/dashboard-hero";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { NowPlayingRow } from "@/components/dashboard/now-playing-row";
 import { SetupReminderBanner } from "@/components/dashboard/setup-reminder-banner";
 import { DashboardPageSkeleton } from "@/components/layout/dashboard-page-skeleton";
 import type {
@@ -79,6 +80,15 @@ async function HomePageContent({ searchParams }: Props) {
   let groupActivity: DashboardGroupActivityResponse | null = null;
   let showSetupReminder = false;
   let currentMemberId: string | null = null;
+  let chaseItems: Awaited<ReturnType<Awaited<ReturnType<typeof getServerApiClient>>["getMemberChase"]>>["items"] =
+    [];
+  let pinnedGames: Awaited<ReturnType<Awaited<ReturnType<typeof getServerApiClient>>["getMemberPins"]>>["items"] =
+    [];
+  let nowPlaying: Awaited<ReturnType<Awaited<ReturnType<typeof getServerApiClient>>["getDashboardNowPlaying"]>> | null =
+    null;
+  let seasonStandings:
+    | Awaited<ReturnType<Awaited<ReturnType<typeof getServerApiClient>>["getDashboardSeason"]>>
+    | null = null;
   let error: string | null = null;
 
   try {
@@ -117,6 +127,26 @@ async function HomePageContent({ searchParams }: Props) {
     } catch {
       showSetupReminder = false;
     }
+    try {
+      chaseItems = (await api.getMemberChase()).items;
+    } catch {
+      chaseItems = [];
+    }
+    try {
+      pinnedGames = (await api.getMemberPins()).items;
+    } catch {
+      pinnedGames = [];
+    }
+    try {
+      nowPlaying = await api.getDashboardNowPlaying();
+    } catch {
+      nowPlaying = null;
+    }
+    try {
+      seasonStandings = await api.getDashboardSeason();
+    } catch {
+      seasonStandings = null;
+    }
   } catch (err) {
     rethrowIfNavigationError(err);
     error = err instanceof Error ? err.message : "Failed to load dashboard";
@@ -138,7 +168,12 @@ async function HomePageContent({ searchParams }: Props) {
         <>
           {showSetupReminder ? <SetupReminderBanner /> : null}
           <DashboardLayout
-            header={<DashboardHero />}
+            header={
+              <div className="space-y-4">
+                <DashboardHero />
+                {nowPlaying ? <NowPlayingRow items={nowPlaying.items} /> : null}
+              </div>
+            }
             primary={
               <DashboardActivityPrimary
                 championship={dashboard.championship}
@@ -151,6 +186,9 @@ async function HomePageContent({ searchParams }: Props) {
                 groupActivity={groupActivity}
                 isAdmin={isAdmin}
                 currentMemberId={currentMemberId}
+                chaseItems={chaseItems}
+                pinnedGames={pinnedGames}
+                seasonStandings={seasonStandings ?? undefined}
               />
             }
           />

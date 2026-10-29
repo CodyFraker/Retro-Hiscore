@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Dashboard;
+using RetroHiscore.Api.Features.Members;
+using RetroHiscore.Api.Features.Notifications;
 
 namespace RetroHiscore.Api.Features.Notifications;
 
@@ -12,7 +14,8 @@ public interface ILeaderboardSyncNotificationService
 
 public sealed class LeaderboardSyncNotificationService(
     AppDbContext db,
-    INotificationOutboxWriter outboxWriter) : ILeaderboardSyncNotificationService
+    INotificationOutboxWriter outboxWriter,
+    IMemberAlertWriter memberAlertWriter) : ILeaderboardSyncNotificationService
 {
     public async Task EnqueueForGameAsync(
         Guid gameId,
@@ -63,6 +66,7 @@ public sealed class LeaderboardSyncNotificationService(
         foreach (var boardGroup in snapshots.GroupBy(s => s.LeaderboardId))
         {
             var first = boardGroup.First();
+            var board = first.Leaderboard;
             var series = boardGroup
                 .GroupBy(s => s.MemberId)
                 .Select(memberGroup =>
@@ -78,6 +82,14 @@ public sealed class LeaderboardSyncNotificationService(
                             s.GlobalRank)).ToList());
                 })
                 .ToList();
+
+            await memberAlertWriter.WriteLeaderboardAlertsAsync(
+                first.LeaderboardId,
+                series,
+                previousSync,
+                currentSync,
+                board,
+                cancellationToken);
 
             foreach (var memberSeries in series)
             {

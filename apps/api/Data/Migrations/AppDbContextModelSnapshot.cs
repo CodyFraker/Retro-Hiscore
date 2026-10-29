@@ -605,6 +605,85 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.ToTable("Members");
                 });
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.MemberAlert", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("AchievementPoints")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("AchievementTitle")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("ActorMemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("GameTitle")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool?>("Hardcore")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LeaderboardTitle")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("RaGameId")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("RaLeaderboardId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RecipientMemberId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorMemberId");
+
+                    b.HasIndex("RecipientMemberId", "OccurredAt");
+
+                    b.ToTable("MemberAlerts");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.MemberGamePin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("PinnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("MemberId", "GameId")
+                        .IsUnique();
+
+                    b.ToTable("MemberGamePins");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.MemberRaAchievement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -900,6 +979,33 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.ToTable("Consoles", (string)null);
                 });
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.SeasonBoardTake", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("LeaderboardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("TakenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaderboardId");
+
+                    b.HasIndex("TakenAt");
+
+                    b.HasIndex("MemberId", "LeaderboardId", "TakenAt")
+                        .IsUnique();
+
+                    b.ToTable("SeasonBoardTakes");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.SyncLeaderboardSettings", b =>
                 {
                     b.Property<int>("Id")
@@ -1149,6 +1255,43 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Navigation("Leaderboard");
                 });
 
+            modelBuilder.Entity("RetroHiscore.Api.Domain.MemberAlert", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "ActorMember")
+                        .WithMany()
+                        .HasForeignKey("ActorMemberId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "RecipientMember")
+                        .WithMany()
+                        .HasForeignKey("RecipientMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ActorMember");
+
+                    b.Navigation("RecipientMember");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.MemberGamePin", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Game", "Game")
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Game");
+
+                    b.Navigation("Member");
+                });
+
             modelBuilder.Entity("RetroHiscore.Api.Domain.MemberRaAchievement", b =>
                 {
                     b.HasOne("RetroHiscore.Api.Domain.Member", "Member")
@@ -1217,6 +1360,25 @@ namespace RetroHiscore.Api.Data.Migrations
                     b.Navigation("Outbox");
 
                     b.Navigation("WebhookConfig");
+                });
+
+            modelBuilder.Entity("RetroHiscore.Api.Domain.SeasonBoardTake", b =>
+                {
+                    b.HasOne("RetroHiscore.Api.Domain.Leaderboard", "Leaderboard")
+                        .WithMany()
+                        .HasForeignKey("LeaderboardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RetroHiscore.Api.Domain.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Leaderboard");
+
+                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("RetroHiscore.Api.Domain.SyncRun", b =>

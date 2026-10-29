@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { SyncHealthChip } from "@/components/layout/sync-health-chip";
+import { AlertsHeaderLink } from "@/components/alerts/alerts-header-link";
 import { HeaderUserMenu } from "@/components/header-user-menu";
 import type { SyncHealthResponse } from "@/generated/api-client";
 import { SettingsLinkButton } from "@/components/settings-link-button";
@@ -32,6 +33,7 @@ type Props = {
   showAdminNav?: boolean;
   profileHref?: string | null;
   syncHealth?: SyncHealthResponse | null;
+  alertsUnreadCount?: number;
 };
 
 function navLinkClassName(active: boolean, mobile: boolean) {
@@ -103,6 +105,7 @@ export function SiteHeaderBar({
   showAdminNav,
   profileHref,
   syncHealth,
+  alertsUnreadCount = 0,
 }: Props) {
   const [open, setOpen] = useState(false);
   const { theme } = useTheme();
@@ -130,6 +133,7 @@ export function SiteHeaderBar({
 
         <div className="hidden shrink-0 items-center gap-2 md:flex">
           {syncHealth ? <SyncHealthChip health={syncHealth} admin={showAdminNav} /> : null}
+          <AlertsHeaderLink unreadCount={alertsUnreadCount} />
           <HeaderUserMenu
             displayName={displayName}
             avatarUrl={avatarUrl}
@@ -157,6 +161,10 @@ export function SiteHeaderBar({
             </SheetHeader>
             <div className="flex flex-col gap-6 overflow-y-auto px-4 pb-6">
               {syncHealth ? <SyncHealthChip health={syncHealth} admin={showAdminNav} /> : null}
+              <div className="flex items-center gap-2">
+                <AlertsHeaderLink unreadCount={alertsUnreadCount} />
+                <span className="text-sm text-muted-foreground">Alerts</span>
+              </div>
               <NavLinks onNavigate={() => setOpen(false)} links={MAIN_HEADER_NAV_LINKS} />
               <div className="border-t border-border pt-4">
                 <NavLinks

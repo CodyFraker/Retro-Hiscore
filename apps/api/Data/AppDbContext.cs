@@ -31,6 +31,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<GameOfTheWeekPoll> GameOfTheWeekPolls => Set<GameOfTheWeekPoll>();
     public DbSet<GameOfTheWeekBallotEntry> GameOfTheWeekBallotEntries => Set<GameOfTheWeekBallotEntry>();
     public DbSet<GameOfTheWeekVote> GameOfTheWeekVotes => Set<GameOfTheWeekVote>();
+    public DbSet<MemberGamePin> MemberGamePins => Set<MemberGamePin>();
+    public DbSet<MemberAlert> MemberAlerts => Set<MemberAlert>();
+    public DbSet<SeasonBoardTake> SeasonBoardTakes => Set<SeasonBoardTake>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -269,6 +272,31 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(x => new { x.PollId, x.MemberId }).IsUnique();
             e.HasOne(x => x.Poll).WithMany(x => x.Votes).HasForeignKey(x => x.PollId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Member).WithMany().HasForeignKey(x => x.MemberId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<MemberGamePin>(e =>
+        {
+            e.HasIndex(x => new { x.MemberId, x.GameId }).IsUnique();
+            e.HasOne(x => x.Member).WithMany().HasForeignKey(x => x.MemberId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Game).WithMany().HasForeignKey(x => x.GameId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<MemberAlert>(e =>
+        {
+            e.HasIndex(x => new { x.RecipientMemberId, x.OccurredAt });
+            e.Property(x => x.GameTitle).HasMaxLength(256);
+            e.Property(x => x.LeaderboardTitle).HasMaxLength(256);
+            e.Property(x => x.AchievementTitle).HasMaxLength(256);
+            e.HasOne(x => x.RecipientMember).WithMany().HasForeignKey(x => x.RecipientMemberId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.ActorMember).WithMany().HasForeignKey(x => x.ActorMemberId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<SeasonBoardTake>(e =>
+        {
+            e.HasIndex(x => new { x.MemberId, x.LeaderboardId, x.TakenAt }).IsUnique();
+            e.HasIndex(x => x.TakenAt);
+            e.HasOne(x => x.Member).WithMany().HasForeignKey(x => x.MemberId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Leaderboard).WithMany().HasForeignKey(x => x.LeaderboardId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

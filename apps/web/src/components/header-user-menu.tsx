@@ -1,7 +1,7 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { LogOut, Settings, Shield, Swords, User, Users } from "lucide-react";
+import { LogOut, Settings, Shield, Swords, Target, User, Users, Bell } from "lucide-react";
 import Link from "next/link";
 import { accountHeaderNavLinks } from "@/lib/header-nav-links";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +26,8 @@ type Props = {
 const ACCOUNT_NAV_ICON_BY_HREF: Record<string, typeof Users> = {
   "/members": Users,
   "/rivalry": Swords,
+  "/chase": Target,
+  "/alerts": Bell,
   "/admin/members": Shield,
 };
 

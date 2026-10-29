@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ConsoleName } from "@/components/console-name";
 import { GameCardPlayerAvatars } from "@/components/dashboard/game-card-player-avatars";
 import { RaGameModBadges } from "@/components/game/ra-game-mod-badges";
+import { GamePinButton } from "@/components/games/game-pin-button";
 import { Button } from "@/components/ui/button";
 import type { DashboardGameDto } from "@/generated/api-client";
 import { FormattedSyncTime } from "@/components/formatted-sync-time";
@@ -15,9 +16,11 @@ type Props = {
   game: DashboardGameDto;
   onDelete?: () => void;
   deleting?: boolean;
+  pinned?: boolean;
+  showPin?: boolean;
 };
 
-export function GameCard({ game, onDelete, deleting }: Props) {
+export function GameCard({ game, onDelete, deleting, pinned = false, showPin }: Props) {
   const artUrl = game.imageBoxArtUrl ?? game.imageIconUrl;
   const { displayTitle, modTags } = parseRaGameTitle(game.title);
 
@@ -82,6 +85,11 @@ export function GameCard({ game, onDelete, deleting }: Props) {
             aria-hidden
           />
         </Link>
+        {showPin ? (
+          <div className="flex shrink-0 items-center pr-2">
+            <GamePinButton raGameId={game.raGameId} pinned={pinned} variant="ghost" size="icon" />
+          </div>
+        ) : null}
         {onDelete && (
           <Button
             type="button"

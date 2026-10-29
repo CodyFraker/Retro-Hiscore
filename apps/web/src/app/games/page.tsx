@@ -4,6 +4,7 @@ import { GameTrackRequestForm } from "@/components/games/game-track-request-form
 import { TrackedGamesSection } from "@/components/dashboard/tracked-games-section";
 import type { GameTrackRequestQuotaDto } from "@/generated/api-client";
 import { GamesPendingTrackSection } from "@/components/games/games-pending-track-section";
+import { PinnedGamesStrip } from "@/components/dashboard/pinned-games-strip";
 import { TrackedGamesToolbar } from "@/components/dashboard/tracked-games-toolbar";
 import { PageHero } from "@/components/layout/page-hero";
 import { getServerApiClient } from "@/lib/api";
@@ -31,10 +32,17 @@ export default async function GamesIndexPage({ searchParams }: Props) {
   let gamesPage;
   let trackQueue: Awaited<ReturnType<Awaited<ReturnType<typeof getServerApiClient>>["getGameTrackQueue"]>> = [];
   let trackQuota: GameTrackRequestQuotaDto | null = null;
+  let pinnedGames: Awaited<ReturnType<Awaited<ReturnType<typeof getServerApiClient>>["getMemberPins"]>>["items"] =
+    [];
   let error: string | null = null;
 
   try {
     const api = await getServerApiClient();
+    try {
+      pinnedGames = (await api.getMemberPins()).items;
+    } catch {
+      pinnedGames = [];
+    }
     try {
       trackQueue = await api.getGameTrackQueue();
     } catch {
@@ -88,6 +96,7 @@ export default async function GamesIndexPage({ searchParams }: Props) {
       ) : (
         <>
           <GameTrackRequestForm initialQuota={trackQuota} />
+          <PinnedGamesStrip pins={pinnedGames} />
           {gamesPage ? (
             <TrackedGamesSection
               basePath="/games"
@@ -96,6 +105,7 @@ export default async function GamesIndexPage({ searchParams }: Props) {
               sort={sort}
               showHeading={false}
               showToolbar={false}
+              pinnedRaGameIds={new Set(pinnedGames.map((p) => p.raGameId))}
             />
           ) : null}
           

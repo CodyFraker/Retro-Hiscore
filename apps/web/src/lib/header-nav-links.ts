@@ -28,6 +28,8 @@ export const ACCOUNT_HEADER_NAV_LINKS: HeaderNavLink[] = [
     label: "Rivalry",
     match: (path) => path === "/rivalry" || path.startsWith("/rivalry/"),
   },
+  { href: "/chase", label: "Chase", match: (path) => path === "/chase" },
+  { href: "/alerts", label: "Alerts", match: (path) => path === "/alerts" },
 ];
 
 export const ADMIN_HEADER_NAV_LINK: HeaderNavLink = {

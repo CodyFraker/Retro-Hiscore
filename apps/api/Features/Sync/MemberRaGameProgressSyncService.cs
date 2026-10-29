@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using RetroHiscore.Api.Data;
 using RetroHiscore.Api.Domain;
 using RetroHiscore.Api.Features.Games;
+using RetroHiscore.Api.Features.Members;
 using RetroHiscore.Api.Features.Notifications;
 using RetroHiscore.Api.Features.Ra;
 using RetroHiscore.Api.Infrastructure;
@@ -37,6 +38,7 @@ public sealed class MemberRaGameProgressSyncService(
     IRaApiKeyProtector raApiKeyProtector,
     IConsoleIconDownloader badgeDownloader,
     INotificationOutboxWriter notificationOutboxWriter,
+    IMemberAlertWriter memberAlertWriter,
     IOptions<RaOptions> raOptions,
     ILogger<MemberRaGameProgressSyncService> logger) : IMemberRaGameProgressSyncService
 {
@@ -104,6 +106,12 @@ public sealed class MemberRaGameProgressSyncService(
                 return;
             }
 
+            var hadPriorUnlocksForGame = await db.MemberRaAchievements
+                .AsNoTracking()
+                .AnyAsync(
+                    m => m.MemberId == member.Id && m.Achievement.RaGameId == raGameId,
+                    cancellationToken);
+
             foreach (var achievement in progress.Achievements.Values)
             {
                 await UpsertAchievementCatalogAsync(
@@ -120,6 +128,7 @@ public sealed class MemberRaGameProgressSyncService(
                         raGameId,
                         achievement,
                         syncedAt,
+                        hadPriorUnlocksForGame,
                         cancellationToken);
                 }
             }
@@ -229,6 +238,7 @@ public sealed class MemberRaGameProgressSyncService(
         int raGameId,
         RaGameAchievementProgressDto source,
         DateTimeOffset syncedAt,
+        bool hadPriorUnlocksForGame,
         CancellationToken cancellationToken)
     {
         var exists = await db.MemberRaAchievements
@@ -275,6 +285,19 @@ public sealed class MemberRaGameProgressSyncService(
             DiscordNotificationEventKind.AchievementUnlocked,
             payload,
             cancellationToken);
+
+        if (hadPriorUnlocksForGame)
+        {
+            await memberAlertWriter.WriteFriendAchievementAlertsAsync(
+                member,
+                raGameId,
+                gameTitle,
+                source.Title ?? $"Achievement #{source.Id}",
+                source.Points,
+                !string.IsNullOrWhiteSpace(source.DateEarnedHardcore),
+                earnedAt,
+                cancellationToken);
+        }
     }
 
     private static DateTimeOffset? ParseRaDateTime(string? value)

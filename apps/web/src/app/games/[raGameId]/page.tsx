@@ -14,6 +14,7 @@ import { GameMetadata } from "@/components/game/game-metadata";
 import { GamePopulationTrendCharts } from "@/components/game/game-population-trend-charts";
 import { GameTrendsTab } from "@/components/game/game-trends-tab";
 import { GameRefreshButton } from "@/components/game/game-refresh-button";
+import { GamePinButton } from "@/components/games/game-pin-button";
 import { LeaderboardSyncTierBadge } from "@/components/sync/leaderboard-sync-tier-badge";
 import { GameSourcesSection } from "@/components/game/game-sources-section";
 import { GameStandingsWithFilters } from "@/components/game/game-standings-with-filters";
@@ -69,6 +70,13 @@ export default async function GamePage({ params }: Props) {
 
   const api = await getServerApiClient();
   const member = await api.getCurrentMember();
+  let pinned = false;
+  try {
+    const pins = await api.getMemberPins();
+    pinned = pins.items.some((p) => p.raGameId === raGameId);
+  } catch {
+    pinned = false;
+  }
   let data: Awaited<ReturnType<typeof api.getGameLeaderboards>>;
   let history: Awaited<ReturnType<typeof api.getGameHistory>>;
   let populationHistory: Awaited<ReturnType<typeof api.getGameLeaderboardPopulationHistory>>;
@@ -156,6 +164,7 @@ export default async function GamePage({ params }: Props) {
               hasApiKey={member.hasApiKey}
               leaderboardScoresSyncedAt={data.leaderboardScoresSyncedAt}
             />
+            <GamePinButton raGameId={data.raGameId} pinned={pinned} />
             <RetroachievementsLink raGameId={data.raGameId} />
           </div>
         </div>

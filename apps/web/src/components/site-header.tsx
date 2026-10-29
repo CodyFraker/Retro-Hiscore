@@ -16,6 +16,7 @@ export async function SiteHeader() {
 
   let profileHref: string | null = null;
   let syncHealth: SyncHealthResponse | null = null;
+  let alertsUnreadCount = 0;
   try {
     const api = await getServerApiClient();
     const member = await api.getCurrentMember();
@@ -26,6 +27,11 @@ export async function SiteHeader() {
       syncHealth = await api.getSyncHealth();
     } catch {
       syncHealth = null;
+    }
+    try {
+      alertsUnreadCount = (await api.getMemberAlerts()).unreadCount;
+    } catch {
+      alertsUnreadCount = 0;
     }
   } catch (error) {
     rethrowIfNavigationError(error);
@@ -39,6 +45,7 @@ export async function SiteHeader() {
       showAdminNav={showAdminNav}
       profileHref={profileHref}
       syncHealth={syncHealth}
+      alertsUnreadCount={alertsUnreadCount}
     />
   );
 }

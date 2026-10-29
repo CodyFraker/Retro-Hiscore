@@ -18,6 +18,7 @@ type Props = {
   sort: DashboardGameSortKey;
   showHeading?: boolean;
   showToolbar?: boolean;
+  pinnedRaGameIds?: Set<number>;
 };
 
 export function TrackedGamesSection({
@@ -27,6 +28,7 @@ export function TrackedGamesSection({
   sort,
   showHeading = true,
   showToolbar = true,
+  pinnedRaGameIds,
 }: Props) {
 
   if (page.total === 0 && !query.trim()) {
@@ -80,7 +82,12 @@ export function TrackedGamesSection({
           <CardContent className="px-0">
             <ul className="divide-y divide-border">
               {page.items.map((game) => (
-                <GameCard key={game.id} game={game} />
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  pinned={pinnedRaGameIds?.has(game.raGameId)}
+                  showPin
+                />
               ))}
             </ul>
             <TrackedGamesPagination
