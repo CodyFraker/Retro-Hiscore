@@ -227,6 +227,22 @@ export function ChampionshipStandingsPanel({
         )}
       </CardContent>
       <CardFooter className="flex flex-wrap gap-3 border-t py-3">
+        {view === "season" ? (
+          <Link
+            href={`/summary/${season.year}/${season.month}`}
+            className="text-sm text-muted-foreground hover:text-[var(--accent-retro)]"
+          >
+            Full month summary
+          </Link>
+        ) : null}
+        {view === "lifetime" ? (
+          <Link
+            href={`/summary/${new Date().getUTCFullYear()}/${new Date().getUTCMonth() + 1}`}
+            className="text-sm text-muted-foreground hover:text-[var(--accent-retro)]"
+          >
+            This month&apos;s summary
+          </Link>
+        ) : null}
         {view === "lifetime" && championship.length >= 2 ? (
           <Link
             href={rivalryPath(championship[0].raUsername, championship[1].raUsername)}

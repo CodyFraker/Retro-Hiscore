@@ -30,96 +30,6 @@ export interface CurrentMemberDto {
   uiTheme: string;
 }
 
-export interface MemberChaseItemDto {
-  raGameId: number;
-  gameTitle: string;
-  raLeaderboardId: number;
-  leaderboardTitle: string;
-  rankAsc: boolean;
-  leaderRaUsername: string;
-  leaderDisplayName: string;
-  leaderFormattedScore: string;
-  myFormattedScore: string;
-  scoreGap: number;
-  leaderScoreUpdatedAt?: string | null;
-}
-
-export interface MemberChaseResponse {
-  items: MemberChaseItemDto[];
-}
-
-export interface MemberAlertDto {
-  id: string;
-  kind: string;
-  actorMemberId?: string | null;
-  actorDisplayName?: string | null;
-  actorRaUsername?: string | null;
-  actorAvatarUrl?: string | null;
-  raGameId?: number | null;
-  gameTitle?: string | null;
-  raLeaderboardId?: number | null;
-  leaderboardTitle?: string | null;
-  achievementTitle?: string | null;
-  achievementPoints?: number | null;
-  hardcore?: boolean | null;
-  occurredAt: string;
-  readAt?: string | null;
-}
-
-export interface MemberAlertsResponse {
-  items: MemberAlertDto[];
-  unreadCount: number;
-}
-
-export interface MemberPinDto {
-  raGameId: number;
-  title: string;
-  consoleName?: string | null;
-  imageBoxArtUrl?: string | null;
-  imageIconUrl?: string | null;
-  pinnedAt: string;
-}
-
-export interface MemberPinsResponse {
-  items: MemberPinDto[];
-}
-
-export interface NowPlayingItemDto {
-  memberId: string;
-  raUsername: string;
-  displayName: string;
-  avatarUrl?: string | null;
-  raGameId: number;
-  gameTitle: string;
-  isTracked: boolean;
-  richPresenceMsg?: string | null;
-  richPresenceAt?: string | null;
-}
-
-export interface NowPlayingResponse {
-  items: NowPlayingItemDto[];
-}
-
-export interface SeasonStandingsRowDto {
-  memberId: string;
-  raUsername: string;
-  displayName: string;
-  avatarUrl?: string | null;
-  boardsTaken: number;
-}
-
-export interface SeasonMonthDto {
-  year: number;
-  month: number;
-}
-
-export interface SeasonStandingsResponse {
-  year: number;
-  month: number;
-  rows: SeasonStandingsRowDto[];
-  availableMonths: SeasonMonthDto[];
-}
-
 export interface MemberSelfSyncScopeStatusDto {
   lastSyncedAt?: string | null;
   cooldownUntil?: string | null;
@@ -777,6 +687,69 @@ export interface DashboardGroupActivityResponse {
   items: DashboardGroupActivityItemDto[];
 }
 
+export interface MonthSummaryGroupTotalsDto {
+  gamesPlayed: number;
+  achievementsUnlocked: number;
+  hardcoreUnlocks: number;
+  hardcorePoints: number;
+  truePoints: number;
+  boardsTaken: number;
+  scoresImproved: number;
+}
+
+export interface MonthSummaryMemberRowDto {
+  memberId: string;
+  raUsername: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  gamesPlayed: number;
+  achievementsUnlocked: number;
+  hardcoreUnlocks: number;
+  hardcorePoints: number;
+  truePoints: number;
+  boardsTaken: number;
+  scoresImproved: number;
+}
+
+export interface MonthSummaryGameRowDto {
+  raGameId: number;
+  title: string;
+  isTracked: boolean;
+  achievementsUnlocked: number;
+  scoreImprovements: number;
+  memberCount: number;
+  activityScore: number;
+}
+
+export interface SeasonMonthDto {
+  year: number;
+  month: number;
+}
+
+export interface SeasonStandingsRowDto {
+  memberId: string;
+  raUsername: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  boardsTaken: number;
+}
+
+export interface SeasonStandingsResponse {
+  year: number;
+  month: number;
+  rows: SeasonStandingsRowDto[];
+  availableMonths: SeasonMonthDto[];
+}
+
+export interface MonthSummaryResponse {
+  year: number;
+  month: number;
+  groupTotals: MonthSummaryGroupTotalsDto;
+  memberRows: MonthSummaryMemberRowDto[];
+  mostActiveGames: MonthSummaryGameRowDto[];
+  availableMonths: SeasonMonthDto[];
+}
+
 export interface GameTrackQueueItemDto {
   raGameId: number;
   title?: string | null;
@@ -1278,6 +1251,18 @@ export function createApiClient(options: ApiClientOptions) {
       return request<SeasonStandingsResponse>(
         baseUrl,
         `/api/dashboard/seasons${qs ? `?${qs}` : ""}`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getDashboardMonthSummary: (year?: number, month?: number) => {
+      const params = new URLSearchParams();
+      if (year != null) params.set("year", String(year));
+      if (month != null) params.set("month", String(month));
+      const qs = params.toString();
+      return request<MonthSummaryResponse>(
+        baseUrl,
+        `/api/dashboard/month-summary${qs ? `?${qs}` : ""}`,
         undefined,
         fetchImpl,
       );

@@ -217,6 +217,7 @@ app.MapGetDashboardAchievementHistory();
 app.MapGetDashboardGroupActivity();
 app.MapGetDashboardNowPlaying();
 app.MapGetDashboardSeason();
+app.MapGetMonthSummary();
 app.MapGetMembers();
 app.MapGetMembersSummary();
 app.MapGetCurrentMember();

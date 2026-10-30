@@ -687,6 +687,69 @@ export interface DashboardGroupActivityResponse {
   items: DashboardGroupActivityItemDto[];
 }
 
+export interface MonthSummaryGroupTotalsDto {
+  gamesPlayed: number;
+  achievementsUnlocked: number;
+  hardcoreUnlocks: number;
+  hardcorePoints: number;
+  truePoints: number;
+  boardsTaken: number;
+  scoresImproved: number;
+}
+
+export interface MonthSummaryMemberRowDto {
+  memberId: string;
+  raUsername: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  gamesPlayed: number;
+  achievementsUnlocked: number;
+  hardcoreUnlocks: number;
+  hardcorePoints: number;
+  truePoints: number;
+  boardsTaken: number;
+  scoresImproved: number;
+}
+
+export interface MonthSummaryGameRowDto {
+  raGameId: number;
+  title: string;
+  isTracked: boolean;
+  achievementsUnlocked: number;
+  scoreImprovements: number;
+  memberCount: number;
+  activityScore: number;
+}
+
+export interface SeasonMonthDto {
+  year: number;
+  month: number;
+}
+
+export interface SeasonStandingsRowDto {
+  memberId: string;
+  raUsername: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  boardsTaken: number;
+}
+
+export interface SeasonStandingsResponse {
+  year: number;
+  month: number;
+  rows: SeasonStandingsRowDto[];
+  availableMonths: SeasonMonthDto[];
+}
+
+export interface MonthSummaryResponse {
+  year: number;
+  month: number;
+  groupTotals: MonthSummaryGroupTotalsDto;
+  memberRows: MonthSummaryMemberRowDto[];
+  mostActiveGames: MonthSummaryGameRowDto[];
+  availableMonths: SeasonMonthDto[];
+}
+
 export interface GameTrackQueueItemDto {
   raGameId: number;
   title?: string | null;
@@ -1178,6 +1241,32 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       );
     },
+    getDashboardNowPlaying: () =>
+      request<NowPlayingResponse>(baseUrl, "/api/dashboard/now-playing", undefined, fetchImpl),
+    getDashboardSeason: (year?: number, month?: number) => {
+      const params = new URLSearchParams();
+      if (year != null) params.set("year", String(year));
+      if (month != null) params.set("month", String(month));
+      const qs = params.toString();
+      return request<SeasonStandingsResponse>(
+        baseUrl,
+        `/api/dashboard/seasons${qs ? `?${qs}` : ""}`,
+        undefined,
+        fetchImpl,
+      );
+    },
+    getDashboardMonthSummary: (year?: number, month?: number) => {
+      const params = new URLSearchParams();
+      if (year != null) params.set("year", String(year));
+      if (month != null) params.set("month", String(month));
+      const qs = params.toString();
+      return request<MonthSummaryResponse>(
+        baseUrl,
+        `/api/dashboard/month-summary${qs ? `?${qs}` : ""}`,
+        undefined,
+        fetchImpl,
+      );
+    },
     getGameTrackQueue: (raGameId?: number) => {
       const params = new URLSearchParams();
       if (raGameId != null) params.set("raGameId", String(raGameId));
@@ -1217,6 +1306,20 @@ export function createApiClient(options: ApiClientOptions) {
     getMembersSummary: () =>
       request<MembersSummaryDto>(baseUrl, "/api/members/summary", undefined, fetchImpl),
     getCurrentMember: () => request<CurrentMemberDto>(baseUrl, "/api/members/me", undefined, fetchImpl),
+    getMemberChase: () =>
+      request<MemberChaseResponse>(baseUrl, "/api/members/me/chase", undefined, fetchImpl),
+    getMemberAlerts: () =>
+      request<MemberAlertsResponse>(baseUrl, "/api/members/me/alerts", undefined, fetchImpl),
+    postMemberAlertRead: (id: string) =>
+      request<void>(baseUrl, `/api/members/me/alerts/${id}/read`, { method: "POST" }, fetchImpl),
+    postMemberAlertsReadAll: () =>
+      request<void>(baseUrl, "/api/members/me/alerts/read-all", { method: "POST" }, fetchImpl),
+    getMemberPins: () =>
+      request<MemberPinsResponse>(baseUrl, "/api/members/me/pins", undefined, fetchImpl),
+    putMemberPin: (raGameId: number) =>
+      request<void>(baseUrl, `/api/members/me/pins/${raGameId}`, { method: "PUT" }, fetchImpl),
+    deleteMemberPin: (raGameId: number) =>
+      request<void>(baseUrl, `/api/members/me/pins/${raGameId}`, { method: "DELETE" }, fetchImpl),
     getMemberSelfSyncStatus: () =>
       request<MemberSelfSyncStatusDto>(baseUrl, "/api/members/me/sync-status", undefined, fetchImpl),
     postMemberSelfSyncLeaderboards: async () => {

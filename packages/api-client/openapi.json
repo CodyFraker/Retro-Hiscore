@@ -123,6 +123,26 @@
         }
       }
     },
+    "/api/dashboard/month-summary": {
+      "get": {
+        "operationId": "getDashboardMonthSummary",
+        "tags": ["Dashboard"],
+        "parameters": [
+          { "name": "year", "in": "query", "schema": { "type": "integer" } },
+          { "name": "month", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MonthSummaryResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/rivalry/{usernameA}/{usernameB}": {
       "get": {
         "operationId": "getRivalry",
@@ -2744,6 +2764,132 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/DashboardGroupActivityItemDto" }
+          }
+        }
+      },
+      "MonthSummaryGroupTotalsDto": {
+        "type": "object",
+        "required": [
+          "gamesPlayed",
+          "achievementsUnlocked",
+          "hardcoreUnlocks",
+          "hardcorePoints",
+          "truePoints",
+          "boardsTaken",
+          "scoresImproved"
+        ],
+        "properties": {
+          "gamesPlayed": { "type": "integer" },
+          "achievementsUnlocked": { "type": "integer" },
+          "hardcoreUnlocks": { "type": "integer" },
+          "hardcorePoints": { "type": "integer" },
+          "truePoints": { "type": "integer" },
+          "boardsTaken": { "type": "integer" },
+          "scoresImproved": { "type": "integer" }
+        }
+      },
+      "MonthSummaryMemberRowDto": {
+        "type": "object",
+        "required": [
+          "memberId",
+          "raUsername",
+          "displayName",
+          "gamesPlayed",
+          "achievementsUnlocked",
+          "hardcoreUnlocks",
+          "hardcorePoints",
+          "truePoints",
+          "boardsTaken",
+          "scoresImproved"
+        ],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "gamesPlayed": { "type": "integer" },
+          "achievementsUnlocked": { "type": "integer" },
+          "hardcoreUnlocks": { "type": "integer" },
+          "hardcorePoints": { "type": "integer" },
+          "truePoints": { "type": "integer" },
+          "boardsTaken": { "type": "integer" },
+          "scoresImproved": { "type": "integer" }
+        }
+      },
+      "MonthSummaryGameRowDto": {
+        "type": "object",
+        "required": [
+          "raGameId",
+          "title",
+          "isTracked",
+          "achievementsUnlocked",
+          "scoreImprovements",
+          "memberCount",
+          "activityScore"
+        ],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "isTracked": { "type": "boolean" },
+          "achievementsUnlocked": { "type": "integer" },
+          "scoreImprovements": { "type": "integer" },
+          "memberCount": { "type": "integer" },
+          "activityScore": { "type": "integer" }
+        }
+      },
+      "SeasonMonthDto": {
+        "type": "object",
+        "required": ["year", "month"],
+        "properties": {
+          "year": { "type": "integer" },
+          "month": { "type": "integer" }
+        }
+      },
+      "SeasonStandingsRowDto": {
+        "type": "object",
+        "required": ["memberId", "raUsername", "displayName", "boardsTaken"],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "boardsTaken": { "type": "integer" }
+        }
+      },
+      "SeasonStandingsResponse": {
+        "type": "object",
+        "required": ["year", "month", "rows", "availableMonths"],
+        "properties": {
+          "year": { "type": "integer" },
+          "month": { "type": "integer" },
+          "rows": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SeasonStandingsRowDto" }
+          },
+          "availableMonths": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SeasonMonthDto" }
+          }
+        }
+      },
+      "MonthSummaryResponse": {
+        "type": "object",
+        "required": ["year", "month", "groupTotals", "memberRows", "mostActiveGames", "availableMonths"],
+        "properties": {
+          "year": { "type": "integer" },
+          "month": { "type": "integer" },
+          "groupTotals": { "$ref": "#/components/schemas/MonthSummaryGroupTotalsDto" },
+          "memberRows": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MonthSummaryMemberRowDto" }
+          },
+          "mostActiveGames": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MonthSummaryGameRowDto" }
+          },
+          "availableMonths": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SeasonMonthDto" }
           }
         }
       },

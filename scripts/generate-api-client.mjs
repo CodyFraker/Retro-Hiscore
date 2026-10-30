@@ -161,6 +161,18 @@ export function createApiClient(options: ApiClientOptions) {
         fetchImpl,
       );
     },
+    getDashboardMonthSummary: (year?: number, month?: number) => {
+      const params = new URLSearchParams();
+      if (year != null) params.set("year", String(year));
+      if (month != null) params.set("month", String(month));
+      const qs = params.toString();
+      return request<MonthSummaryResponse>(
+        baseUrl,
+        \`/api/dashboard/month-summary\${qs ? \`?\${qs}\` : ""}\`,
+        undefined,
+        fetchImpl,
+      );
+    },
     getGameTrackQueue: (raGameId?: number) => {
       const params = new URLSearchParams();
       if (raGameId != null) params.set("raGameId", String(raGameId));
