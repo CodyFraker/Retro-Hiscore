@@ -143,6 +143,22 @@
         }
       }
     },
+    "/api/dashboard/now-playing": {
+      "get": {
+        "operationId": "getDashboardNowPlaying",
+        "tags": ["Dashboard"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/NowPlayingResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/rivalry/{usernameA}/{usernameB}": {
       "get": {
         "operationId": "getRivalry",
@@ -212,6 +228,105 @@
               }
             }
           },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/chase": {
+      "get": {
+        "operationId": "getMemberChase",
+        "tags": ["Members"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberChaseResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/alerts": {
+      "get": {
+        "operationId": "getMemberAlerts",
+        "tags": ["Members"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberAlertsResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/alerts/{id}/read": {
+      "post": {
+        "operationId": "postMemberAlertRead",
+        "tags": ["Members"],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "No Content" },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/alerts/read-all": {
+      "post": {
+        "operationId": "postMemberAlertsReadAll",
+        "tags": ["Members"],
+        "responses": {
+          "204": { "description": "No Content" },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/pins": {
+      "get": {
+        "operationId": "getMemberPins",
+        "tags": ["Members"],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberPinsResponse" }
+              }
+            }
+          },
+          "404": { "description": "Not Found" }
+        }
+      }
+    },
+    "/api/members/me/pins/{raGameId}": {
+      "put": {
+        "operationId": "putMemberPin",
+        "tags": ["Members"],
+        "parameters": [
+          { "name": "raGameId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "No Content" },
+          "404": { "description": "Not Found" },
+          "409": { "description": "Conflict" }
+        }
+      },
+      "delete": {
+        "operationId": "deleteMemberPin",
+        "tags": ["Members"],
+        "parameters": [
+          { "name": "raGameId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "No Content" },
           "404": { "description": "Not Found" }
         }
       }
@@ -2119,6 +2234,130 @@
           "items": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/MemberHistoryItemDto" }
+          }
+        }
+      },
+      "MemberAlertDto": {
+        "type": "object",
+        "required": ["id", "kind", "occurredAt"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "kind": { "type": "string" },
+          "actorMemberId": { "type": "string", "format": "uuid", "nullable": true },
+          "actorDisplayName": { "type": "string", "nullable": true },
+          "actorRaUsername": { "type": "string", "nullable": true },
+          "actorAvatarUrl": { "type": "string", "nullable": true },
+          "raGameId": { "type": "integer", "nullable": true },
+          "gameTitle": { "type": "string", "nullable": true },
+          "raLeaderboardId": { "type": "integer", "format": "int64", "nullable": true },
+          "leaderboardTitle": { "type": "string", "nullable": true },
+          "achievementTitle": { "type": "string", "nullable": true },
+          "achievementPoints": { "type": "integer", "nullable": true },
+          "hardcore": { "type": "boolean", "nullable": true },
+          "occurredAt": { "type": "string", "format": "date-time" },
+          "readAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "MemberAlertsResponse": {
+        "type": "object",
+        "required": ["items", "unreadCount"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberAlertDto" }
+          },
+          "unreadCount": { "type": "integer" }
+        }
+      },
+      "MemberChaseItemDto": {
+        "type": "object",
+        "required": [
+          "raGameId",
+          "gameTitle",
+          "raLeaderboardId",
+          "leaderboardTitle",
+          "rankAsc",
+          "leaderRaUsername",
+          "leaderDisplayName",
+          "leaderFormattedScore",
+          "myFormattedScore",
+          "scoreGap"
+        ],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "raLeaderboardId": { "type": "integer", "format": "int64" },
+          "leaderboardTitle": { "type": "string" },
+          "rankAsc": { "type": "boolean" },
+          "leaderRaUsername": { "type": "string" },
+          "leaderDisplayName": { "type": "string" },
+          "leaderFormattedScore": { "type": "string" },
+          "myFormattedScore": { "type": "string" },
+          "scoreGap": { "type": "integer", "format": "int64" },
+          "leaderScoreUpdatedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "MemberChaseResponse": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberChaseItemDto" }
+          }
+        }
+      },
+      "MemberPinDto": {
+        "type": "object",
+        "required": ["raGameId", "title", "pinnedAt"],
+        "properties": {
+          "raGameId": { "type": "integer" },
+          "title": { "type": "string" },
+          "consoleName": { "type": "string", "nullable": true },
+          "imageBoxArtUrl": { "type": "string", "nullable": true },
+          "imageIconUrl": { "type": "string", "nullable": true },
+          "pinnedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MemberPinsResponse": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MemberPinDto" }
+          }
+        }
+      },
+      "NowPlayingItemDto": {
+        "type": "object",
+        "required": [
+          "memberId",
+          "raUsername",
+          "displayName",
+          "raGameId",
+          "gameTitle",
+          "isTracked"
+        ],
+        "properties": {
+          "memberId": { "type": "string", "format": "uuid" },
+          "raUsername": { "type": "string" },
+          "displayName": { "type": "string" },
+          "avatarUrl": { "type": "string", "nullable": true },
+          "raGameId": { "type": "integer" },
+          "gameTitle": { "type": "string" },
+          "isTracked": { "type": "boolean" },
+          "richPresenceMsg": { "type": "string", "nullable": true },
+          "richPresenceAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "NowPlayingResponse": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/NowPlayingItemDto" }
           }
         }
       },

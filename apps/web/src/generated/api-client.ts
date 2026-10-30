@@ -267,6 +267,76 @@ export interface MemberHistoryResponse {
   items: MemberHistoryItemDto[];
 }
 
+export interface MemberAlertDto {
+  id: string;
+  kind: string;
+  actorMemberId?: string | null;
+  actorDisplayName?: string | null;
+  actorRaUsername?: string | null;
+  actorAvatarUrl?: string | null;
+  raGameId?: number | null;
+  gameTitle?: string | null;
+  raLeaderboardId?: number | null;
+  leaderboardTitle?: string | null;
+  achievementTitle?: string | null;
+  achievementPoints?: number | null;
+  hardcore?: boolean | null;
+  occurredAt: string;
+  readAt?: string | null;
+}
+
+export interface MemberAlertsResponse {
+  items: MemberAlertDto[];
+  unreadCount: number;
+}
+
+export interface MemberChaseItemDto {
+  raGameId: number;
+  gameTitle: string;
+  raLeaderboardId: number;
+  leaderboardTitle: string;
+  rankAsc: boolean;
+  leaderRaUsername: string;
+  leaderDisplayName: string;
+  leaderFormattedScore: string;
+  myFormattedScore: string;
+  scoreGap: number;
+  leaderScoreUpdatedAt?: string | null;
+}
+
+export interface MemberChaseResponse {
+  items: MemberChaseItemDto[];
+}
+
+export interface MemberPinDto {
+  raGameId: number;
+  title: string;
+  consoleName?: string | null;
+  imageBoxArtUrl?: string | null;
+  imageIconUrl?: string | null;
+  pinnedAt: string;
+}
+
+export interface MemberPinsResponse {
+  items: MemberPinDto[];
+}
+
+export interface NowPlayingItemDto {
+  memberId: string;
+  raUsername: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  raGameId: number;
+  gameTitle: string;
+  isTracked: boolean;
+  richPresenceMsg?: string | null;
+  richPresenceAt?: string | null;
+}
+
+export interface NowPlayingResponse {
+  items: NowPlayingItemDto[];
+}
+
 export interface GameDto {
   id: string;
   raGameId: number;
