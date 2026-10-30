@@ -222,7 +222,6 @@ public static class MonthSummaryQuery
                     if (current.FriendRank == 1 && previous.FriendRank is not 1)
                     {
                         memberAcc.BoardsTaken++;
-                        memberAcc.AddGame(raGameId);
                         groupGameIds.Add(raGameId);
                         gameAcc.MemberIds.Add(memberGroup.Key);
                     }
@@ -230,7 +229,6 @@ public static class MonthSummaryQuery
                     if (ScoreImproved(previous.Score, current.Score, board.RankAsc))
                     {
                         memberAcc.ScoresImproved++;
-                        memberAcc.AddGame(raGameId);
                         groupGameIds.Add(raGameId);
                         gameAcc.ScoreImprovements++;
                         gameAcc.MemberIds.Add(memberGroup.Key);
